@@ -38,8 +38,8 @@ import { ProUpgradeView } from './views/ProUpgradeView';
 import { MainLandingView } from './views/MainLandingView';
 import { InfoView } from './views/InfoView';
 import { SearchResultsView } from './views/SearchResultsView';
-import { ComingSoonView } from './views/ComingSoonView'; // New
-import { SuccessView } from './views/SuccessView'; // New
+import { ComingSoonView } from './views/ComingSoonView';
+import { SuccessView } from './views/SuccessView';
 
 // Create Views
 import { CreateProjectView } from './views/CreateProjectView';
@@ -51,14 +51,14 @@ import { CreateServiceView } from './views/CreateServiceView';
 import { CreateForumPostView } from './views/CreateForumPostView';
 import { CreateEventView } from './views/CreateEventView';
 
-// Simple Wrapper for prop injection if absolutely necessary, but most views now self-manage
+// Wrappers for injections
 function PortfolioWrapper() {
     const { state, actions } = useAppStore();
     return <PortfolioView activeCategory={state.activeCategory} onItemSelect={() => {}} onCreateClick={() => {}} onSave={actions.openSaveModal} contentMode={state.contentMode} />;
 }
 
 function FeedWrapper() {
-    const { state } = useAppStore();
+    const { state, actions } = useAppStore();
     return <FeedView onNavigateToModule={() => {}} onItemSelect={() => {}} contentMode={state.contentMode} />;
 }
 
@@ -70,6 +70,20 @@ function EducationWrapper() {
 function CartViewWrapper() {
     const { state, actions } = useAppStore();
     return <CartView items={state.cartItems} onRemove={actions.removeFromCart} onContinueShopping={() => {}} />;
+}
+
+function AssetDetailWrapper() {
+    const { actions } = useAppStore();
+    return <AssetDetailView onBack={() => window.history.back()} onAddToCart={actions.addToCart} onBuyNow={actions.handleBuyNow} onSave={actions.openSaveModal} />;
+}
+
+function CourseDetailWrapper() {
+    const { actions } = useAppStore();
+    return <CourseDetailView onBack={() => window.history.back()} onAddToCart={actions.addToCart} onBuyNow={actions.handleBuyNow} />;
+}
+
+function CollectionDetailWrapper() {
+    return <CollectionDetailView onBack={() => window.history.back()} onItemSelect={() => {}} />;
 }
 
 function CreateWrapper({ Component }: { Component: React.FC<{ onBack: () => void }> }) {
@@ -86,50 +100,50 @@ export const router = createBrowserRouter([
       
       // Portfolio
       { path: 'portfolio', element: <PortfolioWrapper /> },
-      { path: 'portfolio/:id', element: <PortfolioPostView itemId="" onBack={() => {}} /> }, // View handles ID
+      { path: 'portfolio/:id', element: <PortfolioPostView onBack={() => window.history.back()} /> },
       { path: 'create/portfolio', element: <CreateWrapper Component={CreatePortfolioView} /> },
 
       // Blog
       { path: 'blog', element: <BlogView activeCategory="Home" /> },
-      { path: 'blog/:id', element: <BlogPostView articleId="" onBack={() => {}} onArticleSelect={() => {}} /> },
+      { path: 'blog/:id', element: <BlogPostView onBack={() => window.history.back()} onArticleSelect={() => {}} /> },
       { path: 'create/article', element: <CreateWrapper Component={CreateArticleView} /> },
 
       // Education
       { path: 'education', element: <EducationWrapper /> },
-      { path: 'education/:id', element: <CourseDetailView courseId="" onBack={() => {}} /> },
+      { path: 'education/:id', element: <CourseDetailWrapper /> },
       { path: 'create/course', element: <CreateWrapper Component={CreateCourseView} /> },
 
       // Market
       { path: 'market', element: <AssetsView activeCategory="Home" /> },
-      { path: 'market/:id', element: <AssetDetailView assetId="" onBack={() => {}} /> },
+      { path: 'market/:id', element: <AssetDetailWrapper /> },
       { path: 'create/asset', element: <CreateWrapper Component={CreateAssetView} /> },
 
       // Freelance
       { path: 'freelance', element: <FreelanceView /> },
-      { path: 'freelance/:id', element: <ServiceDetailView serviceId="" onBack={() => {}} /> },
+      { path: 'freelance/:id', element: <ServiceDetailView onBack={() => window.history.back()} /> },
       { path: 'create/service', element: <CreateWrapper Component={CreateServiceView} /> },
 
       // Jobs
       { path: 'jobs', element: <JobsView /> },
-      { path: 'jobs/:id', element: <JobDetailView jobId="" onBack={() => {}} /> },
+      { path: 'jobs/:id', element: <JobDetailView onBack={() => window.history.back()} /> },
       
       // Community
       { path: 'community', element: <CommunityView /> }, 
-      { path: 'community/:id', element: <ProjectDetailView projectId="" onBack={() => {}} /> },
+      { path: 'community/:id', element: <ProjectDetailView onBack={() => window.history.back()} /> },
       { path: 'create/project', element: <CreateWrapper Component={CreateProjectView} /> },
       
       // Challenges
       { path: 'challenges', element: <ChallengesView /> },
-      { path: 'challenges/:id', element: <ChallengeDetailView challengeId="" onBack={() => {}} /> },
+      { path: 'challenges/:id', element: <ChallengeDetailView onBack={() => window.history.back()} /> },
 
       // Events
       { path: 'events', element: <EventsView /> },
-      { path: 'events/:id', element: <EventDetailView eventId="" onBack={() => {}} /> },
+      { path: 'events/:id', element: <EventDetailView onBack={() => window.history.back()} /> },
       { path: 'create/event', element: <CreateWrapper Component={CreateEventView} /> },
 
       // Forum
       { path: 'forum', element: <ForumView /> },
-      { path: 'forum/:id', element: <ForumDetailView postId="" onBack={() => {}} /> },
+      { path: 'forum/:id', element: <ForumDetailView onBack={() => window.history.back()} /> },
       { path: 'create/forum', element: <CreateWrapper Component={CreateForumPostView} /> },
 
       // People
@@ -140,26 +154,26 @@ export const router = createBrowserRouter([
 
       // Personal & Utility
       { path: 'collections', element: <CollectionsView /> },
-      { path: 'collections/:id', element: <CollectionDetailView collectionId="" onBack={() => {}} onItemSelect={() => {}} /> },
+      { path: 'collections/:id', element: <CollectionDetailWrapper /> },
       { path: 'cart', element: <CartViewWrapper /> },
-      { path: 'success', element: <SuccessView /> }, // New
+      { path: 'success', element: <SuccessView /> },
       { path: 'settings', element: <SettingsView /> },
-      { path: 'pro', element: <ProUpgradeView /> },
+      { path: 'pro', element: <ProUpgradeView onBack={() => window.history.back()} /> },
       
       // Search
       { path: 'search', element: <SearchResultsView query="" onItemSelect={() => {}} /> },
 
       // Info Pages
       { path: 'about', element: <MainLandingView /> },
-      { path: 'info/:pageId', element: <InfoView pageId="" onBack={() => {}} /> },
+      { path: 'info/:pageId', element: <InfoView pageId="" onBack={() => window.history.back()} /> },
       
-      // Fallback for not implemented features
+      // Fallback
       { path: 'info/help', element: <ComingSoonView /> },
       { path: 'info/guides', element: <ComingSoonView /> }
     ]
   },
   {
     path: '/learning/:courseId?',
-    element: <CoursePlayerView onBack={() => {}} /> // View self-manages params
+    element: <CoursePlayerView onBack={() => window.history.back()} />
   }
 ]);

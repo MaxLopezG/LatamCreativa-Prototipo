@@ -1,28 +1,26 @@
 
 import React from 'react';
+import { useParams } from 'react-router-dom';
 import { ArrowLeft, MoreHorizontal, Lock, Globe, Filter, Trash2 } from 'lucide-react';
 import { USER_COLLECTIONS, PORTFOLIO_ITEMS, ASSET_ITEMS } from '../data/content';
 import { PortfolioCard } from '../components/cards/PortfolioCard';
 import { AssetCard } from '../components/cards/AssetCard';
 
 interface CollectionDetailViewProps {
-  collectionId: string;
   onBack: () => void;
   onItemSelect: (id: string, type: string) => void;
 }
 
-export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({ collectionId, onBack, onItemSelect }) => {
-  const collection = USER_COLLECTIONS.find(c => c.id === collectionId) || USER_COLLECTIONS[0];
+export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({ onBack, onItemSelect }) => {
+  const { id } = useParams<{ id: string }>();
+  const collection = USER_COLLECTIONS.find(c => c.id === id) || USER_COLLECTIONS[0];
 
-  // Simulate saved items by taking a mix of portfolio and assets
-  // In a real app, this would be fetched based on relationships
   const savedPortfolio = PORTFOLIO_ITEMS.slice(0, 4);
   const savedAssets = ASSET_ITEMS.slice(0, 2);
 
   return (
     <div className="max-w-[2560px] mx-auto animate-fade-in pb-20">
       
-      {/* Navbar Overlay */}
       <div className="sticky top-0 z-30 bg-white/90 dark:bg-[#030304]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 h-16 flex items-center justify-between">
         <button 
           onClick={onBack}
@@ -38,7 +36,6 @@ export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({ coll
 
       <div className="px-6 md:px-10 py-10">
           
-          {/* Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
               <div>
                   <div className="flex items-center gap-3 mb-2 text-sm text-slate-500">
@@ -75,7 +72,6 @@ export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({ coll
               </button>
           </div>
 
-          {/* Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {savedPortfolio.map(item => (
                   <div key={`p-${item.id}`} className="relative group">

@@ -7,10 +7,17 @@ import { VideoPlayer } from '../components/education/VideoPlayer';
 import { CurriculumSidebar } from '../components/education/CurriculumSidebar';
 import { useAppStore } from '../hooks/useAppStore';
 
-export const CoursePlayerView: React.FC = () => {
-  const { courseId } = useParams();
+interface CoursePlayerViewProps {
+  courseId?: string;
+  onBack?: () => void;
+}
+
+export const CoursePlayerView: React.FC<CoursePlayerViewProps> = ({ courseId: propCourseId, onBack }) => {
+  const { courseId: paramCourseId } = useParams();
   const navigate = useNavigate();
   const { state } = useAppStore();
+  
+  const courseId = propCourseId || paramCourseId;
   const course = EDUCATION_ITEMS.find(c => c.id === courseId) || EDUCATION_ITEMS[0];
   
   const [activeTab, setActiveTab] = useState<'overview' | 'resources' | 'qa'>('overview');
@@ -41,13 +48,21 @@ export const CoursePlayerView: React.FC = () => {
     }
   ];
 
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      navigate('/education');
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen bg-[#0A0A0C] text-white fixed inset-0 z-50 overflow-hidden">
       
       {/* Top Bar */}
       <header className="h-16 bg-[#1C1D1F] border-b border-white/10 flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/education')} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white">
+          <button onClick={handleBack} className="p-2 hover:bg-white/10 rounded-full transition-colors text-slate-400 hover:text-white">
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="border-l border-white/10 pl-4">
