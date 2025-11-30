@@ -6,7 +6,7 @@ import { USER_COLLECTIONS } from '../data/content';
 export type ContentMode = 'creative' | 'dev';
 
 export const useAppStore = () => {
-  // Navigation State (UI only)
+  // Navigation State (UI only - persistent)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('Home');
   

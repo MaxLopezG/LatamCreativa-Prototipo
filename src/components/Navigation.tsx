@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Settings, Search, X, Sun, Moon, Sliders, Code, Palette } from 'lucide-react';
 import { PRIMARY_NAV_ITEMS, NAV_SECTIONS, NAV_SECTIONS_DEV, SUBSCRIPTIONS } from '../data/navigation';
 import { ContentMode } from '../hooks/useAppStore';
@@ -149,6 +149,7 @@ interface SecondarySidebarProps {
   onSubscriptionSelect?: (authorName: string) => void;
   onProClick?: () => void;
   activeModule?: string;
+  onModuleSelect?: (moduleId: string) => void;
   hiddenOnDesktop?: boolean;
   contentMode: ContentMode;
   onToggleContentMode: () => void;
@@ -162,6 +163,7 @@ export const SecondarySidebar = ({
   onSubscriptionSelect, 
   onProClick,
   activeModule,
+  onModuleSelect,
   hiddenOnDesktop,
   contentMode,
   onToggleContentMode
@@ -230,7 +232,7 @@ export const SecondarySidebar = ({
                       <button 
                         key={item.id}
                         onClick={() => {
-                            navigate(`/${item.id}`);
+                            onModuleSelect?.(item.id);
                             onClose?.();
                         }}
                         className={`flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl transition-colors ${

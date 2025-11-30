@@ -139,8 +139,6 @@ const UserProfileWrapper = () => {
   const navigate = useNavigate();
   const { actions } = useAppStore();
   
-  // Clean handle for mock data lookup if needed, usually passed directly
-  // Mocking name restoration from handle for demo
   const authorName = username ? username.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Unknown';
 
   const handleItemSelect = (id: string, type: string) => {
@@ -173,7 +171,7 @@ export const router = createBrowserRouter([
     path: '/',
     element: <MainLayout />,
     children: [
-      { index: true, element: <MainLandingView onNavigate={(path) => window.location.href = `/${path}`} /> }, // Landing at root
+      { index: true, element: <MainLandingView onNavigate={(path) => window.location.href = `/${path}`} /> }, 
       { path: 'home', element: <FeedWrapper /> },
       
       // Portfolio
@@ -206,7 +204,7 @@ export const router = createBrowserRouter([
       { path: 'jobs/:id', element: <JobDetailWrapper /> },
       
       // Community & Projects
-      { path: 'community', element: <CommunityWrapper /> }, // Projects
+      { path: 'community', element: <CommunityWrapper /> }, 
       { path: 'community/:id', element: <ProjectDetailWrapper /> },
       { path: 'create/project', element: <CreateWrapper Component={CreateProjectView} /> },
       
@@ -246,7 +244,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/learning/:courseId?',
-    element: <PlayerWrapper /> // Full screen layout
+    element: <PlayerWrapper />
   }
 ]);
 

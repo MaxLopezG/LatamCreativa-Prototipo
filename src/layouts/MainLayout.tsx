@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { PrimarySidebar, SecondarySidebar } from '../components/Navigation';
 import { Header } from '../components/Header';
@@ -13,17 +13,24 @@ export const MainLayout: React.FC = () => {
   const { state, actions } = useAppStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const mainContentRef = useRef<HTMLDivElement>(null);
 
-  // Helper to determine active module from path
+  // Scroll to top whenever the path changes
+  useEffect(() => {
+    mainContentRef.current?.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  // Helper to determine active module from path for UI highlighting
   const getActiveModule = () => {
-    const path = location.pathname.split('/')[1] || 'home';
-    return path;
+    // extract first segment: /portfolio/123 -> portfolio
+    const path = location.pathname.split('/')[1]; 
+    return path || 'home';
   };
 
   const activeModule = getActiveModule();
 
-  // Determine if secondary sidebar should be hidden (mimicking previous logic)
-  const isFullWidthPage = ['events', 'people', 'community', 'learning', 'settings', 'pro', 'cart'].includes(activeModule);
+  // Determine if secondary sidebar should be hidden
+  const isFullWidthPage = ['events', 'people', 'community', 'learning', 'settings', 'pro', 'cart', 'user'].includes(activeModule);
   const isLanding = location.pathname === '/about' || location.pathname === '/';
 
   return (
@@ -51,9 +58,10 @@ export const MainLayout: React.FC = () => {
         onClose={() => actions.setIsSidebarOpen(false)}
         activeCategory={state.activeCategory} 
         onCategorySelect={actions.setActiveCategory}
-        onSubscriptionSelect={(author) => navigate(`/user/${author.replace(/\s+/g, '-').toLowerCase()}`)}
+        onSubscriptionSelect={(authorName) => navigate(`/user/${authorName.replace(/\s+/g, '-').toLowerCase()}`)}
         onProClick={() => navigate('/pro')}
         activeModule={activeModule}
+        onModuleSelect={(moduleId) => navigate(`/${moduleId}`)}
         hiddenOnDesktop={isFullWidthPage || isLanding}
         contentMode={state.contentMode}
         onToggleContentMode={actions.toggleContentMode}
@@ -75,8 +83,11 @@ export const MainLayout: React.FC = () => {
             />
         )}
         
-        {/* Main Content Area with Outlet */}
-        <div className={`custom-scrollbar flex-1 overflow-y-auto ${!isLanding ? 'pt-20' : ''} pb-20 md:pb-0`}>
+        {/* Main Content Area with Outlet and Ref for Scroll Restoration */}
+        <div 
+          ref={mainContentRef}
+          className={`custom-scrollbar flex-1 overflow-y-auto ${!isLanding ? 'pt-20' : ''} pb-20 md:pb-0`}
+        >
           <Outlet />
         </div>
       </main>
@@ -93,6 +104,7 @@ export const MainLayout: React.FC = () => {
         activeModule={activeModule}
         onNavigate={(path) => navigate(`/${path}`)}
         onOpenChat={() => actions.setIsChatOpen(!state.isChatOpen)}
+        onCreateAction={(path) => navigate(path)}
       />
 
       <SaveToCollectionModal 

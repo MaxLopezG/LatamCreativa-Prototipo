@@ -75,7 +75,7 @@ export const Header = ({
     { path: '/create/course', icon: Video, label: 'Crear Curso', desc: 'Educación', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
     { path: '/create/asset', icon: Box, label: 'Vender Asset', desc: 'Mercado', color: 'text-rose-500', bg: 'bg-rose-500/10' },
     { path: '/create/service', icon: Briefcase, label: 'Ofrecer Servicio', desc: 'Freelance', color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
-    { path: '/create/service', icon: Building2, label: 'Publicar Empleo', desc: 'Jobs', color: 'text-indigo-500', bg: 'bg-indigo-500/10' }, // Reusing service for now as per previous logic or separate? Assuming same for simplicity based on previous setup
+    { path: '/create/service', icon: Building2, label: 'Publicar Empleo', desc: 'Jobs', color: 'text-indigo-500', bg: 'bg-indigo-500/10' }, 
     { path: '/create/project', icon: Users, label: 'Reclutar Equipo', desc: 'Proyectos', color: 'text-purple-500', bg: 'bg-purple-500/10' },
     { path: '/create/forum', icon: MessageCircleQuestion, label: 'Preguntar', desc: 'Foro', color: 'text-orange-500', bg: 'bg-orange-500/10' },
     { path: '/create/event', icon: CalendarDays, label: 'Publicar Evento', desc: 'Eventos', color: 'text-red-500', bg: 'bg-red-500/10' },
