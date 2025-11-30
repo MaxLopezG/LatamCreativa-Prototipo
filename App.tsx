@@ -48,6 +48,7 @@ const App: React.FC = () => {
         onModuleSelect={actions.handleModuleSelect}
         hiddenOnDesktop={isLearningMode || ['landing', 'home', 'settings', 'pro', 'search', 'collections', 'cart', 'people', 'community', 'events'].includes(state.activeModule) || !!state.viewingAuthorName}
         contentMode={state.contentMode}
+        onToggleContentMode={actions.toggleContentMode}
       />
 
       <main className={`relative flex min-w-0 flex-1 flex-col overflow-hidden z-10 ${isLearningMode ? 'bg-[#0A0A0C]' : ''}`}>
@@ -70,22 +71,8 @@ const App: React.FC = () => {
         {/* Adjusted padding bottom for mobile tab bar, remove padding in learning mode */}
         <div className={`custom-scrollbar flex-1 overflow-y-auto ${isLearningMode ? 'pt-0' : 'pt-20'} pb-20 md:pb-0`}>
           <VideoContent 
-            activeCategory={state.activeCategory} 
-            onCategorySelect={actions.setActiveCategory}
-            activeModule={state.activeModule}
-            onModuleSelect={actions.handleModuleSelect}
-            viewingAuthorName={state.viewingAuthorName}
-            onAuthorClick={(name) => actions.setViewingAuthorName(name)}
-            createMode={state.createMode}
-            setCreateMode={actions.setCreateMode}
-            searchQuery={state.searchQuery}
-            onAddToCart={actions.addToCart}
-            onRemoveFromCart={actions.removeFromCart}
-            onBuyNow={actions.handleBuyNow}
-            cartItems={state.cartItems}
-            onOpenChat={actions.openChatWithUser}
-            onOpenSaveModal={actions.openSaveModal}
-            contentMode={state.contentMode}
+            state={state}
+            actions={actions}
           />
         </div>
       </main>
@@ -104,8 +91,8 @@ const App: React.FC = () => {
           <MobileTabBar 
             activeModule={state.activeModule}
             onNavigate={actions.handleModuleSelect}
-            onOpenChat={() => actions.setIsChatOpen(true)}
-            onCreateClick={() => actions.setIsSidebarOpen(true)}
+            onOpenChat={() => actions.setIsChatOpen(!state.isChatOpen)}
+            onCreateAction={actions.handleCreateAction}
           />
       )}
 

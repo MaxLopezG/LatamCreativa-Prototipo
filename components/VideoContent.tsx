@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { CreateMode, ContentMode } from '../hooks/useAppStore';
 import { BlogView } from '../views/BlogView';
 import { PortfolioView } from '../views/PortfolioView';
 import { HomeView } from '../views/HomeView';
@@ -45,47 +44,35 @@ import { CreateServiceView } from '../views/CreateServiceView';
 import { CreateForumPostView } from '../views/CreateForumPostView';
 import { CreateEventView } from '../views/CreateEventView'; 
 import { CartItem } from '../types';
+import { useAppStore } from '../hooks/useAppStore';
+
+// Define the shape of props based on the return type of useAppStore
+type AppState = ReturnType<typeof useAppStore>['state'];
+type AppActions = ReturnType<typeof useAppStore>['actions'];
 
 interface VideoContentProps {
-  activeCategory?: string;
-  onCategorySelect?: (category: string) => void;
-  activeModule?: string;
-  onModuleSelect?: (moduleId: string) => void;
-  viewingAuthorName?: string | null;
-  onAuthorClick?: (authorName: string | null) => void;
-  createMode: CreateMode;
-  setCreateMode: (mode: CreateMode) => void;
-  searchQuery?: string;
-  onAddToCart?: (item: CartItem) => void;
-  onRemoveFromCart?: (itemId: string) => void;
-  onBuyNow?: (item: CartItem) => void;
-  cartItems?: CartItem[];
-  onOpenChat?: (authorName: string) => void;
-  onOpenSaveModal?: (id: string, image: string) => void;
-  contentMode: ContentMode;
+  state: AppState;
+  actions: AppActions;
 }
 
-export const VideoContent: React.FC<VideoContentProps> = ({ 
-  activeCategory = 'Home', 
-  onCategorySelect, 
-  activeModule = 'portfolio',
-  onModuleSelect,
-  viewingAuthorName,
-  onAuthorClick,
-  createMode,
-  setCreateMode,
-  searchQuery,
-  onAddToCart,
-  onRemoveFromCart,
-  onBuyNow,
-  cartItems = [],
-  onOpenChat,
-  onOpenSaveModal,
-  contentMode
-}) => {
+export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) => {
   // Consolidated state for selected items across all modules
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   
+  // Destructure for easier access
+  const { activeModule, activeCategory, createMode, viewingAuthorName, searchQuery, cartItems, contentMode } = state;
+  const { 
+    setActiveCategory, 
+    handleModuleSelect: onModuleSelect, 
+    setViewingAuthorName: onAuthorClick, 
+    setCreateMode, 
+    addToCart: onAddToCart, 
+    removeFromCart: onRemoveFromCart, 
+    handleBuyNow: onBuyNow, 
+    openChatWithUser: onOpenChat, 
+    openSaveModal: onOpenSaveModal 
+  } = actions;
+
   // Reset selected item if module or category changes
   useEffect(() => {
     // Keep selection if moving to player
@@ -260,7 +247,7 @@ export const VideoContent: React.FC<VideoContentProps> = ({
 
       // HOME / DEFAULT
       if (activeCategory === 'Home') {
-        return <HomeView onCategorySelect={onCategorySelect || (() => {})} />;
+        return <HomeView onCategorySelect={setActiveCategory || (() => {})} />;
       }
 
       return <CategoryGridView activeCategory={activeCategory} />;

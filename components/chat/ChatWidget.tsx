@@ -84,10 +84,10 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
   return (
     <>
-      {/* Trigger Button */}
+      {/* Trigger Button - Higher z-index and bottom-20 for mobile to clear tab bar */}
       <button
         onClick={handleToggle}
-        className={`fixed bottom-6 right-4 md:right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full shadow-2xl shadow-amber-500/20 transition-all duration-300 hover:scale-105 active:scale-95 ${
+        className={`fixed bottom-24 md:bottom-6 right-4 md:right-6 z-[60] flex h-14 w-14 items-center justify-center rounded-full shadow-2xl shadow-amber-500/20 transition-all duration-300 hover:scale-105 active:scale-95 ${
           isOpen ? 'bg-slate-900 dark:bg-white text-white dark:text-black rotate-90' : 'bg-gradient-to-r from-amber-500 to-orange-600 text-white'
         }`}
       >
@@ -99,9 +99,9 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
         )}
       </button>
 
-      {/* Widget Container */}
+      {/* Widget Container - Higher z-index, adjusted bottom position for mobile */}
       <div 
-        className={`fixed bottom-24 right-4 md:right-6 z-50 w-[calc(100vw-2rem)] md:w-[380px] h-[65vh] md:h-[600px] bg-white dark:bg-[#0A0A0C] rounded-2xl shadow-2xl ring-1 ring-slate-200 dark:ring-white/10 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
+        className={`fixed bottom-40 md:bottom-24 right-4 md:right-6 z-[60] w-[calc(100vw-2rem)] md:w-[380px] h-[55vh] md:h-[600px] bg-white dark:bg-[#0A0A0C] rounded-2xl shadow-2xl ring-1 ring-slate-200 dark:ring-white/10 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
           isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-10 pointer-events-none'
         }`}
       >

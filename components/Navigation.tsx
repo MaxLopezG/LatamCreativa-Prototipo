@@ -45,9 +45,10 @@ export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, con
     setIsSettingsOpen(false);
   };
 
+  // Active state colors based on mode
   const activeColorClass = contentMode === 'dev' 
     ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' 
-    : 'bg-slate-900 text-white dark:bg-white/10 dark:text-white shadow-lg shadow-amber-500/10 ring-1 ring-black/5 dark:ring-white/10';
+    : 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'; // Changed from slate-900 to amber-500 for Creative Mode
 
   return (
     <aside className="hidden flex-col border-r border-slate-200 dark:border-white/[0.06] md:flex z-50 bg-white/90 dark:bg-[#050506]/90 w-[88px] pt-8 pb-8 backdrop-blur-xl items-center h-screen sticky top-0 transition-colors">
@@ -153,6 +154,7 @@ interface SecondarySidebarProps {
   onModuleSelect?: (moduleId: string) => void;
   hiddenOnDesktop?: boolean;
   contentMode: ContentMode;
+  onToggleContentMode: () => void;
 }
 
 export const SecondarySidebar = ({ 
@@ -165,7 +167,8 @@ export const SecondarySidebar = ({
   activeModule,
   onModuleSelect,
   hiddenOnDesktop,
-  contentMode
+  contentMode,
+  onToggleContentMode
 }: SecondarySidebarProps) => {
   const [isDark, setIsDark] = useState(true);
 
@@ -190,8 +193,8 @@ export const SecondarySidebar = ({
   };
 
   const activeItemClass = contentMode === 'dev'
-    ? 'bg-blue-500/10 ring-1 ring-inset ring-blue-500/20 text-blue-700 dark:text-blue-400'
-    : 'bg-amber-500/10 ring-1 ring-inset ring-amber-500/20 text-amber-700 dark:text-white';
+    ? 'bg-blue-500/10 ring-1 ring-inset ring-blue-500/20 text-blue-600 dark:text-blue-400'
+    : 'bg-amber-500/10 ring-1 ring-inset ring-amber-500/20 text-amber-600 dark:text-amber-400';
 
   const activeIconClass = contentMode === 'dev'
     ? 'text-blue-500 dark:text-blue-400 bg-blue-500/20'
@@ -356,6 +359,16 @@ export const SecondarySidebar = ({
                       <Settings className="h-5 w-5" />
                   </button>
               </div>
+              <button 
+                  onClick={() => {
+                    onToggleContentMode();
+                    onClose?.();
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors mb-2"
+              >
+                  {contentMode === 'dev' ? <Palette className="h-5 w-5" /> : <Code className="h-5 w-5" />}
+                  <span className="text-sm font-medium">{contentMode === 'dev' ? 'Modo Creativo' : 'Modo Developer'}</span>
+              </button>
               <button 
                   onClick={toggleTheme}
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"

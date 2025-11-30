@@ -84,7 +84,7 @@ export const NAV_SECTIONS_DEV: NavSection[] = [
     title: 'Descubrir',
     items: [
       { icon: Compass, label: 'Home', subLabel: 'Tech Feed', active: true },
-      { icon: Flame, label: 'Trending Repos', subLabel: 'GitHub Stars' },
+      { icon: Flame, label: 'Tendencias', subLabel: 'GitHub Stars' },
       { icon: Clock, label: 'Nuevos', subLabel: 'Lanzamientos' },
     ]
   },
