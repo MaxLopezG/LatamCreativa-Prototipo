@@ -133,7 +133,16 @@ export const Header = ({
             <button onClick={onMenuClick} className="xl:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors p-1">
               <Menu className="h-6 w-6" />
             </button>
-            <button onClick={onLogoClick} className="flex flex-col hover:opacity-80 transition-opacity text-left">
+            
+            {/* Mobile Search Trigger - Left of Logo */}
+            <button 
+                onClick={() => setIsMobileSearchOpen(true)}
+                className="md:hidden p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+                <Search className="h-6 w-6" />
+            </button>
+
+            <button onClick={onLogoClick} className="flex flex-col hover:opacity-80 transition-opacity text-left ml-2 md:ml-0">
                 <span className="text-lg md:text-xl font-bold tracking-tight text-slate-900 dark:text-white leading-none">Latam<span className={accentText}>.</span>Creativa</span>
             </button>
           </div>
@@ -170,14 +179,6 @@ export const Header = ({
           {/* RIGHT: Actions */}
           <div className="flex items-center justify-end gap-1.5 md:gap-4 flex-1 md:w-1/3">
             
-            {/* Mobile Search Trigger */}
-            <button 
-                onClick={() => setIsMobileSearchOpen(true)}
-                className="md:hidden flex h-10 w-10 items-center justify-center rounded-full text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-white/5"
-            >
-                <Search className="h-5 w-5" />
-            </button>
-
             {/* Shopping Cart */}
             <button 
                 onClick={onCartClick}

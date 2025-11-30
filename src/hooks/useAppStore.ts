@@ -64,12 +64,6 @@ export const useAppStore = () => {
     setIsSidebarOpen(false);
   };
 
-  const handleProClick = () => {
-    if (window.innerWidth < 1280) {
-      setIsSidebarOpen(false);
-    }
-  };
-
   const handleSearch = (query: string) => {
     setSearchQuery(query);
   };
@@ -183,7 +177,6 @@ export const useAppStore = () => {
       setIsChatOpen,
       handleSubscriptionSelect,
       handleCreateAction,
-      handleProClick,
       handleSearch,
       addToCart,
       removeFromCart,

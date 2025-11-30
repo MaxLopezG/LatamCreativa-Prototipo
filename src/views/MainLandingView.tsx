@@ -222,7 +222,7 @@ export const MainLandingView: React.FC = () => {
                 <Shield className="h-12 w-12 text-slate-400 mx-auto mb-6" />
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Construido para la comunidad</h2>
                 <p className="text-slate-500 max-w-xl mx-auto mb-8">
-                    Latam Creativa un proyecto dedicado a potenciar el talento en Latinoamérica. Sin algoritmos ocultos, solo arte puro.
+                    Latam Creativa es un proyecto dedicado a potenciar el talento en Latinoamérica. Sin algoritmos ocultos, solo arte puro.
                 </p>
                 <div className="flex flex-wrap justify-center gap-6 md:gap-10 opacity-50 grayscale hover:grayscale-0 transition-all">
                     <span className="font-bold text-lg md:text-xl text-slate-600 dark:text-slate-400">UNREAL ENGINE</span>
