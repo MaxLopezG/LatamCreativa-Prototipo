@@ -163,92 +163,6 @@ const FeedWrapper = () => {
     return <FeedView onNavigateToModule={(mod) => navigate(`/${mod}`)} onItemSelect={handleItemSelect} contentMode={state.contentMode} />;
 };
 
-// --- ROUTER CONFIGURATION ---
-
-export const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <MainLayout />,
-    children: [
-      { index: true, element: <MainLandingView /> }, 
-      { path: 'home', element: <FeedWrapper /> },
-      
-      // Portfolio
-      { path: 'portfolio', element: <PortfolioWrapper /> },
-      { path: 'portfolio/:id', element: <PortfolioDetailWrapper /> },
-      { path: 'create/portfolio', element: <CreateWrapper Component={CreatePortfolioView} /> },
-
-      // Blog
-      { path: 'blog', element: <BlogWrapper /> },
-      { path: 'blog/:id', element: <BlogDetailWrapper /> },
-      { path: 'create/article', element: <CreateWrapper Component={CreateArticleView} /> },
-
-      // Education
-      { path: 'education', element: <EducationWrapper /> },
-      { path: 'education/:id', element: <CourseDetailWrapper /> },
-      { path: 'create/course', element: <CreateWrapper Component={CreateCourseView} /> },
-
-      // Market (Assets)
-      { path: 'market', element: <MarketWrapper /> },
-      { path: 'market/:id', element: <AssetDetailWrapper /> },
-      { path: 'create/asset', element: <CreateWrapper Component={CreateAssetView} /> },
-
-      // Freelance
-      { path: 'freelance', element: <FreelanceWrapper /> },
-      { path: 'freelance/:id', element: <ServiceDetailWrapper /> },
-      { path: 'create/service', element: <CreateWrapper Component={CreateServiceView} /> },
-
-      // Jobs
-      { path: 'jobs', element: <JobsWrapper /> },
-      { path: 'jobs/:id', element: <JobDetailWrapper /> },
-      
-      // Community & Projects
-      { path: 'community', element: <CommunityWrapper /> }, 
-      { path: 'community/:id', element: <ProjectDetailWrapper /> },
-      { path: 'create/project', element: <CreateWrapper Component={CreateProjectView} /> },
-      
-      // Challenges
-      { path: 'challenges', element: <ChallengesWrapper /> },
-      { path: 'challenges/:id', element: <ChallengeDetailWrapper /> },
-
-      // Events
-      { path: 'events', element: <EventsWrapper /> },
-      { path: 'events/:id', element: <EventDetailWrapper /> },
-      { path: 'create/event', element: <CreateWrapper Component={CreateEventView} /> },
-
-      // Forum
-      { path: 'forum', element: <ForumWrapper /> },
-      { path: 'forum/:id', element: <ForumDetailWrapper /> },
-      { path: 'create/forum', element: <CreateWrapper Component={CreateForumPostView} /> },
-
-      // People
-      { path: 'people', element: <PeopleWrapper /> },
-
-      // User Profile
-      { path: 'user/:username', element: <UserProfileWrapper /> },
-
-      // Personal
-      { path: 'collections', element: <CollectionsWrapper /> },
-      { path: 'cart', element: <CartViewWrapper /> },
-      { path: 'settings', element: <SettingsView /> },
-      { path: 'pro', element: <ProUpgradeView onBack={() => window.history.back()} /> },
-      
-      // Search
-      { path: 'search', element: <SearchWrapper /> },
-
-      // Info Pages
-      { path: 'about', element: <MainLandingView /> },
-      { path: 'info/:pageId', element: <InfoPageWrapper /> }
-    ]
-  },
-  {
-    path: '/learning/:courseId?',
-    element: <PlayerWrapper />
-  }
-]);
-
-// --- Additional Functional Wrappers ---
-
 function PortfolioWrapper() {
     const { state, actions } = useAppStore();
     const navigate = useNavigate();
@@ -336,3 +250,85 @@ function CreateWrapper({ Component }: { Component: React.FC<{ onBack: () => void
     const navigate = useNavigate();
     return <Component onBack={() => navigate(-1)} />;
 }
+
+export const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <MainLayout />,
+    children: [
+      { index: true, element: <MainLandingView /> }, 
+      { path: 'home', element: <FeedWrapper /> },
+      
+      // Portfolio
+      { path: 'portfolio', element: <PortfolioWrapper /> },
+      { path: 'portfolio/:id', element: <PortfolioDetailWrapper /> },
+      { path: 'create/portfolio', element: <CreateWrapper Component={CreatePortfolioView} /> },
+
+      // Blog
+      { path: 'blog', element: <BlogWrapper /> },
+      { path: 'blog/:id', element: <BlogDetailWrapper /> },
+      { path: 'create/article', element: <CreateWrapper Component={CreateArticleView} /> },
+
+      // Education
+      { path: 'education', element: <EducationWrapper /> },
+      { path: 'education/:id', element: <CourseDetailWrapper /> },
+      { path: 'create/course', element: <CreateWrapper Component={CreateCourseView} /> },
+
+      // Market (Assets)
+      { path: 'market', element: <MarketWrapper /> },
+      { path: 'market/:id', element: <AssetDetailWrapper /> },
+      { path: 'create/asset', element: <CreateWrapper Component={CreateAssetView} /> },
+
+      // Freelance
+      { path: 'freelance', element: <FreelanceWrapper /> },
+      { path: 'freelance/:id', element: <ServiceDetailWrapper /> },
+      { path: 'create/service', element: <CreateWrapper Component={CreateServiceView} /> },
+
+      // Jobs
+      { path: 'jobs', element: <JobsWrapper /> },
+      { path: 'jobs/:id', element: <JobDetailWrapper /> },
+      
+      // Community & Projects
+      { path: 'community', element: <CommunityWrapper /> }, 
+      { path: 'community/:id', element: <ProjectDetailWrapper /> },
+      { path: 'create/project', element: <CreateWrapper Component={CreateProjectView} /> },
+      
+      // Challenges
+      { path: 'challenges', element: <ChallengesWrapper /> },
+      { path: 'challenges/:id', element: <ChallengeDetailWrapper /> },
+
+      // Events
+      { path: 'events', element: <EventsWrapper /> },
+      { path: 'events/:id', element: <EventDetailWrapper /> },
+      { path: 'create/event', element: <CreateWrapper Component={CreateEventView} /> },
+
+      // Forum
+      { path: 'forum', element: <ForumWrapper /> },
+      { path: 'forum/:id', element: <ForumDetailWrapper /> },
+      { path: 'create/forum', element: <CreateWrapper Component={CreateForumPostView} /> },
+
+      // People
+      { path: 'people', element: <PeopleWrapper /> },
+
+      // User Profile
+      { path: 'user/:username', element: <UserProfileWrapper /> },
+
+      // Personal
+      { path: 'collections', element: <CollectionsWrapper /> },
+      { path: 'cart', element: <CartViewWrapper /> },
+      { path: 'settings', element: <SettingsView /> },
+      { path: 'pro', element: <ProUpgradeView onBack={() => window.history.back()} /> },
+      
+      // Search
+      { path: 'search', element: <SearchWrapper /> },
+
+      // Info Pages
+      { path: 'about', element: <MainLandingView /> },
+      { path: 'info/:pageId', element: <InfoPageWrapper /> }
+    ]
+  },
+  {
+    path: '/learning/:courseId?',
+    element: <PlayerWrapper />
+  }
+]);

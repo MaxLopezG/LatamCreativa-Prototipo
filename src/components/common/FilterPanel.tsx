@@ -17,9 +17,6 @@ const COUNTRIES = [
 const LANGUAGES = ["Español", "Inglés", "Portugués"];
 
 export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose, topics }) => {
-  // Early return is handled by conditional rendering in parent or CSS classes
-  // But for animation we might want to keep it mounted and toggle classes.
-  // For simplicity with current structure:
   if (!isOpen) return null;
 
   return (
@@ -84,7 +81,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose, topic
                 <label key={topic} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-xl cursor-pointer transition-colors">
                   <div className="relative flex items-center">
                     <input type="checkbox" className="peer h-4 w-4 cursor-pointer appearance-none rounded border border-slate-300 dark:border-white/20 checked:bg-amber-500 checked:border-amber-500 transition-all" />
-                    <svg className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 w-3 h-3 text-white" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <svg className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 w-3 h-3 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   </div>
                   <span className="text-sm text-slate-700 dark:text-slate-300">{topic}</span>
                 </label>
