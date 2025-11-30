@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { createBrowserRouter, Navigate, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
@@ -29,6 +30,7 @@ import { ForumView } from './views/ForumView';
 import { ForumDetailView } from './views/ForumDetailView';
 import { PeopleView } from './views/PeopleView';
 import { CollectionsView } from './views/CollectionsView';
+import { CollectionDetailView } from './views/CollectionDetailView'; // Import new view
 import { UserProfileView } from './views/UserProfileView';
 import { CartView } from './views/CartView';
 import { SettingsView } from './views/SettingsView';
@@ -161,6 +163,18 @@ const FeedWrapper = () => {
     };
 
     return <FeedView onNavigateToModule={(mod) => navigate(`/${mod}`)} onItemSelect={handleItemSelect} contentMode={state.contentMode} />;
+};
+
+const CollectionDetailWrapper = () => {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    
+    const handleItemSelect = (itemId: string, type: string) => {
+        if(type === 'portfolio') navigate(`/portfolio/${itemId}`);
+        if(type === 'asset') navigate(`/market/${itemId}`);
+    };
+
+    return <CollectionDetailView collectionId={id!} onBack={() => navigate(-1)} onItemSelect={handleItemSelect} />;
 };
 
 function PortfolioWrapper() {
@@ -315,6 +329,7 @@ export const router = createBrowserRouter([
 
       // Personal
       { path: 'collections', element: <CollectionsWrapper /> },
+      { path: 'collections/:id', element: <CollectionDetailWrapper /> }, // New Route
       { path: 'cart', element: <CartViewWrapper /> },
       { path: 'settings', element: <SettingsView /> },
       { path: 'pro', element: <ProUpgradeView onBack={() => window.history.back()} /> },
