@@ -1,24 +1,26 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, Heart, Eye, Share2, MessageSquare, Briefcase, UserPlus, CheckCircle2, MoreHorizontal, Maximize2, X, Download, Bookmark } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { ArrowLeft, Heart, Share2, MessageSquare, Briefcase, UserPlus, CheckCircle2, Maximize2, X, Bookmark } from 'lucide-react';
 import { PORTFOLIO_ITEMS } from '../data/content';
 
 interface PortfolioPostViewProps {
-  itemId: string;
+  itemId?: string;
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
   onSave?: (id: string, image: string) => void;
 }
 
 export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, onBack, onAuthorClick, onSave }) => {
-  const item = PORTFOLIO_ITEMS.find(p => p.id === itemId) || PORTFOLIO_ITEMS[0];
-  const relatedItems = PORTFOLIO_ITEMS.filter(p => p.id !== itemId && p.category === item.category).slice(0, 4);
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = itemId || paramId;
+  const item = PORTFOLIO_ITEMS.find(p => p.id === id) || PORTFOLIO_ITEMS[0];
+  const relatedItems = PORTFOLIO_ITEMS.filter(p => p.id !== id && p.category === item.category).slice(0, 4);
 
   const [isLiked, setIsLiked] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
-  // Use specific project images if available, otherwise fallback to main image and placeholders
   const projectImages = item.images && item.images.length > 0 
     ? item.images 
     : [
@@ -39,7 +41,6 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
   return (
     <div className="max-w-[1800px] mx-auto animate-fade-in pb-20 relative">
       
-      {/* Lightbox Modal */}
       {lightboxImage && (
         <div className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in" onClick={() => setLightboxImage(null)}>
             <button 
@@ -52,7 +53,6 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
         </div>
       )}
 
-      {/* Top Navigation Bar */}
       <div className="sticky top-0 z-30 bg-white/90 dark:bg-[#030304]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 h-16 flex items-center justify-between transition-colors">
         <div className="flex items-center gap-4">
           <button 
@@ -100,10 +100,8 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-4 md:px-10 py-8">
         
-        {/* LEFT COLUMN: Main Visual Content */}
         <div className="lg:col-span-9 space-y-8">
           
-          {/* Main Image (Hero) */}
           <div className="relative group rounded-xl overflow-hidden shadow-2xl bg-slate-900">
              <img 
                 src={projectImages[0]} 
@@ -118,7 +116,6 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
              </div>
           </div>
 
-          {/* Description Section */}
           <div className="py-6 border-b border-slate-200 dark:border-white/10">
              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Sobre el proyecto</h3>
              <div className="prose prose-lg prose-slate dark:prose-invert max-w-none text-slate-600 dark:text-slate-300">
@@ -128,7 +125,6 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
              </div>
           </div>
 
-          {/* Secondary Images (Mosaic Grid) */}
           {projectImages.length > 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {projectImages.slice(1).map((img, index) => (
@@ -148,12 +144,10 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
             </div>
           )}
 
-          {/* Comments Area */}
           <div className="pt-8">
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
               <MessageSquare className="h-5 w-5" /> Comentarios
             </h3>
-            {/* Simple Comment Mock */}
             <div className="flex gap-4 mb-8">
                 <div className="h-10 w-10 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&fit=crop" alt="Me" className="h-full w-full object-cover" />
@@ -172,11 +166,9 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Sidebar Info (Sticky) */}
         <aside className="lg:col-span-3 space-y-6">
             <div className="sticky top-24">
                 
-                {/* Artist Card */}
                 <div className="bg-white dark:bg-white/[0.03] p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none mb-6">
                     <div className="flex items-center gap-4 mb-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 p-2 -m-2 rounded-xl transition-colors" onClick={() => onAuthorClick?.(item.artist)}>
                         <div className="h-14 w-14 rounded-full overflow-hidden ring-2 ring-slate-100 dark:ring-white/10">
@@ -210,7 +202,6 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
                     </div>
                 </div>
 
-                {/* Project Stats */}
                 <div className="bg-white dark:bg-white/[0.03] p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none mb-6">
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Estadísticas</h4>
                     <div className="grid grid-cols-3 gap-4 text-center">
@@ -229,7 +220,6 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
                     </div>
                 </div>
 
-                {/* Software Used */}
                 <div className="mb-8">
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Software Usado</h4>
                     <div className="flex flex-wrap gap-2">
@@ -241,7 +231,6 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
                     </div>
                 </div>
 
-                {/* Tags */}
                 <div className="mb-8">
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Etiquetas</h4>
                     <div className="flex flex-wrap gap-2">
@@ -253,7 +242,6 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
                     </div>
                 </div>
 
-                 {/* More from Artist */}
                  <div>
                     <div className="flex items-center justify-between mb-4">
                         <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Más del artista</h4>
@@ -272,7 +260,6 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
         </aside>
       </div>
 
-      {/* Sticky Bottom Bar for Mobile */}
       <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0A0A0C] border-t border-slate-200 dark:border-white/10 p-4 lg:hidden flex items-center justify-between z-40 safe-area-pb">
            <div className="flex items-center gap-4">
                <button className="flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-amber-500 transition-colors">

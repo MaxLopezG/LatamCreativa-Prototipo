@@ -20,7 +20,14 @@ const EDUCATION = [
   { id: 1, degree: "Máster en Arte Digital", school: "Voxel School", period: "2017 - 2018" }
 ];
 
-export const UserProfileView: React.FC = () => {
+interface UserProfileViewProps {
+  authorName?: string;
+  onBack?: () => void;
+  onItemSelect?: (id: string, type: 'portfolio' | 'blog' | 'course') => void;
+  onOpenChat?: (authorName: string) => void;
+}
+
+export const UserProfileView: React.FC<UserProfileViewProps> = (props) => {
   const { username } = useParams();
   const navigate = useNavigate();
   const { actions, state } = useAppStore();
@@ -29,9 +36,9 @@ export const UserProfileView: React.FC = () => {
   const [isFriend, setIsFriend] = useState(false);
 
   // Normalize username for display
-  const authorName = username 
+  const authorName = props.authorName || (username 
     ? username.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') 
-    : 'Usuario';
+    : 'Usuario');
 
   // Find detailed artist info if available, otherwise mock
   const artistDetails = ARTIST_DIRECTORY.find(a => a.name.toLowerCase() === authorName.toLowerCase()) || {
@@ -55,13 +62,34 @@ export const UserProfileView: React.FC = () => {
   const accentText = mode === 'dev' ? 'text-blue-500' : 'text-amber-500';
   const accentBorder = mode === 'dev' ? 'border-blue-500' : 'border-amber-500';
 
+  const handleBack = () => {
+      if (props.onBack) props.onBack();
+      else navigate(-1);
+  }
+
+  const handleItemSelect = (id: string, type: 'portfolio' | 'blog' | 'course') => {
+      if (props.onItemSelect) {
+          props.onItemSelect(id, type);
+      } else {
+          // Route navigation fallback
+          if (type === 'portfolio') navigate(`/portfolio/${id}`);
+          if (type === 'course') navigate(`/education/${id}`);
+          if (type === 'blog') navigate(`/blog/${id}`);
+      }
+  }
+
+  const handleChat = (name: string) => {
+      if (props.onOpenChat) props.onOpenChat(name);
+      else actions.openChatWithUser(name);
+  }
+
   return (
     <div className="w-full max-w-[2560px] mx-auto animate-fade-in pb-20">
       
       {/* Navigation */}
       <div className="fixed top-0 left-0 right-0 z-40 px-6 py-4 pointer-events-none">
         <button 
-          onClick={() => navigate(-1)}
+          onClick={handleBack}
           className="pointer-events-auto flex items-center justify-center w-10 h-10 rounded-full bg-black/50 backdrop-blur-md text-white hover:bg-black/70 transition-colors"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -79,7 +107,7 @@ export const UserProfileView: React.FC = () => {
         isFriend={isFriend}
         onFollow={() => setIsFollowing(!isFollowing)}
         onFriend={() => setIsFriend(!isFriend)}
-        onMessage={() => actions.openChatWithUser(artistDetails.name)}
+        onMessage={() => handleChat(artistDetails.name)}
         contentMode={mode}
       />
 
@@ -143,7 +171,7 @@ export const UserProfileView: React.FC = () => {
             {activeTab === 'portfolio' && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-5 animate-slide-up">
                     {userPortfolio.map(item => (
-                        <PortfolioCard key={item.id} item={item} onClick={() => navigate(`/portfolio/${item.id}`)} />
+                        <PortfolioCard key={item.id} item={item} onClick={() => handleItemSelect(item.id, 'portfolio')} />
                     ))}
                 </div>
             )}
@@ -151,7 +179,7 @@ export const UserProfileView: React.FC = () => {
             {activeTab === 'courses' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 animate-slide-up">
                     {userCourses.map(item => (
-                        <EducationCard key={item.id} course={item} onClick={() => navigate(`/education/${item.id}`)} />
+                        <EducationCard key={item.id} course={item} onClick={() => handleItemSelect(item.id, 'course')} />
                     ))}
                 </div>
             )}
@@ -159,7 +187,7 @@ export const UserProfileView: React.FC = () => {
             {activeTab === 'blog' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-slide-up">
                     {userBlog.map(item => (
-                        <BlogCard key={item.id} article={item} onClick={() => navigate(`/blog/${item.id}`)} />
+                        <BlogCard key={item.id} article={item} onClick={() => handleItemSelect(item.id, 'blog')} />
                     ))}
                 </div>
             )}

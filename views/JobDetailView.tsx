@@ -1,20 +1,22 @@
 
 import React from 'react';
-import { ArrowLeft, Building2, MapPin, Clock, DollarSign, Briefcase, Share2, CheckCircle2, Globe, ExternalLink } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { ArrowLeft, Building2, MapPin, Clock, DollarSign, Briefcase, Share2, Globe, ExternalLink } from 'lucide-react';
 import { JOB_ITEMS } from '../data/content';
 
 interface JobDetailViewProps {
-  jobId: string;
+  jobId?: string;
   onBack: () => void;
 }
 
 export const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onBack }) => {
-  const job = JOB_ITEMS.find(j => j.id === jobId) || JOB_ITEMS[0];
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = jobId || paramId;
+  const job = JOB_ITEMS.find(j => j.id === id) || JOB_ITEMS[0];
 
   return (
     <div className="max-w-[1400px] mx-auto animate-fade-in pb-20">
       
-      {/* Navbar Overlay */}
       <div className="sticky top-0 z-30 bg-white/90 dark:bg-[#030304]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 h-16 flex items-center justify-between">
         <button 
           onClick={onBack}
@@ -30,7 +32,6 @@ export const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onBack }) =
 
       <div className="px-6 md:px-10 py-10">
           
-          {/* Header */}
           <div className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-2xl p-8 mb-8 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
               
@@ -82,7 +83,6 @@ export const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onBack }) =
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
               
-              {/* Main Content */}
               <div className="lg:col-span-8 space-y-8">
                   <div className="prose prose-slate dark:prose-invert max-w-none text-slate-600 dark:text-slate-300">
                       <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Descripción del Puesto</h3>
@@ -111,7 +111,6 @@ export const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onBack }) =
                       </ul>
                   </div>
 
-                  {/* Skills Tags */}
                   <div>
                       <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Habilidades Requeridas</h3>
                       <div className="flex flex-wrap gap-2">
@@ -124,7 +123,6 @@ export const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onBack }) =
                   </div>
               </div>
 
-              {/* Sidebar */}
               <div className="lg:col-span-4 space-y-6">
                   <div className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-2xl p-6">
                       <h3 className="font-bold text-slate-900 dark:text-white mb-6">Sobre la Empresa</h3>
@@ -157,18 +155,6 @@ export const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onBack }) =
                       <button className="w-full py-2 border border-slate-200 dark:border-white/10 rounded-lg text-slate-700 dark:text-slate-300 font-bold text-sm hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                           Seguir Empresa
                       </button>
-                  </div>
-
-                  <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-500/20 rounded-2xl p-6">
-                      <h3 className="font-bold text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">
-                          <CheckCircle2 className="h-5 w-5" /> Beneficios
-                      </h3>
-                      <ul className="space-y-2 text-sm text-slate-600 dark:text-blue-200/80">
-                          <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Seguro médico privado</li>
-                          <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Trabajo remoto flexible</li>
-                          <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Budget para educación</li>
-                          <li className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Equipo de última generación</li>
-                      </ul>
                   </div>
               </div>
 

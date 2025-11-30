@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, Star, Heart, Share2, ShieldCheck, Download, Layers, ShoppingCart, Maximize2, Bookmark, MessageSquare, ThumbsUp, Box, Rotate3d, Move } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { ArrowLeft, Star, Heart, Share2, ShieldCheck, Download, Layers, ShoppingCart, Maximize2, Bookmark, MessageSquare, ThumbsUp, Box, Rotate3d } from 'lucide-react';
 import { ASSET_ITEMS } from '../data/content';
 import { CartItem } from '../types';
 
 interface AssetDetailViewProps {
-  assetId: string;
+  assetId?: string;
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
   onAddToCart?: (item: CartItem) => void;
@@ -14,7 +15,9 @@ interface AssetDetailViewProps {
 }
 
 export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBack, onAuthorClick, onAddToCart, onBuyNow, onSave }) => {
-  const asset = ASSET_ITEMS.find(a => a.id === assetId) || ASSET_ITEMS[0];
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = assetId || paramId;
+  const asset = ASSET_ITEMS.find(a => a.id === id) || ASSET_ITEMS[0];
   const [activeImage, setActiveImage] = useState(asset.images[0]);
   const [viewMode, setViewMode] = useState<'gallery' | '3d'>('gallery');
   const [rotation, setRotation] = useState(0);
@@ -38,7 +41,6 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBac
   return (
     <div className="max-w-[1600px] mx-auto animate-fade-in pb-20">
       
-      {/* Navbar Overlay Style */}
       <div className="sticky top-0 z-30 bg-white/90 dark:bg-[#030304]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 h-16 flex items-center justify-between">
         <button 
           onClick={onBack}
@@ -66,13 +68,10 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBac
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 px-6 md:px-10 py-10">
         
-        {/* Left: Images & Info */}
         <div className="lg:col-span-8 space-y-10">
            
-           {/* Interactive Main Viewer */}
            <div className="space-y-4">
               
-              {/* Viewer Container */}
               <div className="relative aspect-video bg-slate-200 dark:bg-slate-800 rounded-2xl overflow-hidden group border border-slate-200 dark:border-white/5 shadow-inner">
                  
                  {viewMode === 'gallery' ? (
@@ -83,21 +82,17 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBac
                         </button>
                      </>
                  ) : (
-                     // Simulated 3D Viewer
                      <div className="w-full h-full bg-[#1A1A1C] flex items-center justify-center relative cursor-move overflow-hidden">
-                         {/* Grid Floor Simulation */}
                          <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ 
                              backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)',
                              backgroundSize: '40px 40px',
                              transform: 'perspective(500px) rotateX(60deg) translateY(100px) scale(2)'
                          }}></div>
                          
-                         {/* Spinning Model Simulation (Image Rotation) */}
                          <div className="relative z-10 transition-transform duration-100 ease-out" style={{ transform: `rotateY(${rotation}deg)` }}>
                              <img src={asset.thumbnail} alt="3D Model" className="max-h-[300px] object-contain drop-shadow-2xl" />
                          </div>
 
-                         {/* Viewer Controls Overlay */}
                          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-md rounded-full px-6 py-2 flex items-center gap-6 border border-white/10">
                              <Rotate3d className="h-5 w-5 text-white animate-spin-slow" />
                              <input 
@@ -116,7 +111,6 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBac
                      </div>
                  )}
 
-                 {/* Mode Toggle Switch */}
                  <div className="absolute bottom-4 right-4 flex bg-black/70 backdrop-blur-md rounded-xl p-1 border border-white/10">
                      <button 
                         onClick={() => setViewMode('gallery')}
@@ -137,7 +131,6 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBac
                  </div>
               </div>
               
-              {/* Thumbnails */}
               {viewMode === 'gallery' && (
                   <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
                      {asset.images.map((img, idx) => (
@@ -155,7 +148,6 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBac
               )}
            </div>
 
-           {/* Description */}
            <div className="bg-white dark:bg-white/[0.02] p-8 rounded-2xl border border-slate-200 dark:border-white/10">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Descripción</h2>
               <div className="prose prose-slate dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -174,7 +166,6 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBac
               </div>
            </div>
 
-           {/* Technical Specs */}
            <div className="bg-white dark:bg-white/[0.02] p-8 rounded-2xl border border-slate-200 dark:border-white/10">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                  <Layers className="h-5 w-5 text-amber-500" /> Detalles Técnicos
@@ -221,7 +212,6 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBac
               </div>
            </div>
 
-           {/* User Reviews */}
            <div className="bg-white dark:bg-white/[0.02] p-8 rounded-2xl border border-slate-200 dark:border-white/10">
               <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                  <MessageSquare className="h-5 w-5 text-blue-500" /> Reseñas ({asset.reviewCount})
@@ -260,11 +250,9 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBac
 
         </div>
 
-        {/* Right: Purchase Box */}
         <div className="lg:col-span-4 space-y-6">
            <div className="sticky top-24 space-y-6">
               
-              {/* Main Card */}
               <div className="bg-white dark:bg-[#0A0A0C] p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl">
                  <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{asset.title}</h1>
                  
@@ -279,7 +267,6 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBac
 
                  <div className="text-4xl font-bold text-slate-900 dark:text-white mb-6">${asset.price}</div>
 
-                 {/* License Select */}
                  <div className="space-y-3 mb-6">
                      <div className="p-4 rounded-xl border-2 border-amber-500 bg-amber-500/5 cursor-pointer relative transition-colors">
                          <div className="flex justify-between font-bold text-slate-900 dark:text-white text-sm mb-1">
@@ -324,7 +311,6 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBac
                  </div>
               </div>
 
-              {/* Creator Card */}
               <div className="bg-white dark:bg-white/[0.02] p-4 rounded-2xl border border-slate-200 dark:border-white/10 flex items-center gap-4 hover:border-amber-500/30 transition-colors cursor-pointer" onClick={() => onAuthorClick?.(asset.creator)}>
                  <img src={asset.creatorAvatar} alt={asset.creator} className="h-12 w-12 rounded-full object-cover ring-2 ring-slate-100 dark:ring-white/5" />
                  <div>

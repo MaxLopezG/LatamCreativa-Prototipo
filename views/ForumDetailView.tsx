@@ -1,22 +1,24 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, ArrowUp, ArrowDown, MessageSquare, Share2, Flag, Check, MoreVertical } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { ArrowLeft, ArrowUp, ArrowDown, Check } from 'lucide-react';
 import { FORUM_ITEMS } from '../data/content';
 
 interface ForumDetailViewProps {
-  postId: string;
+  postId?: string;
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
 }
 
 export const ForumDetailView: React.FC<ForumDetailViewProps> = ({ postId, onBack, onAuthorClick }) => {
-  const post = FORUM_ITEMS.find(p => p.id === postId) || FORUM_ITEMS[0];
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = postId || paramId;
+  const post = FORUM_ITEMS.find(p => p.id === id) || FORUM_ITEMS[0];
   const [replyText, setReplyText] = useState('');
 
   return (
     <div className="max-w-[1200px] mx-auto px-6 py-10 animate-fade-in pb-24">
       
-      {/* Navbar Overlay */}
       <div className="sticky top-0 z-30 bg-white/90 dark:bg-[#030304]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] -mx-6 px-6 h-16 flex items-center justify-between mb-8">
         <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
           <ArrowLeft className="h-4 w-4" /> Volver al Foro
@@ -26,7 +28,6 @@ export const ForumDetailView: React.FC<ForumDetailViewProps> = ({ postId, onBack
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           
           <div className="lg:col-span-9">
-              {/* Question Header */}
               <div className="mb-6">
                   <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-4 leading-tight">{post.title}</h1>
                   <div className="flex items-center gap-4 text-sm text-slate-500 border-b border-slate-200 dark:border-white/10 pb-6">
@@ -36,9 +37,7 @@ export const ForumDetailView: React.FC<ForumDetailViewProps> = ({ postId, onBack
                   </div>
               </div>
 
-              {/* Question Body */}
               <div className="flex gap-6 mb-12">
-                  {/* Voting */}
                   <div className="flex flex-col items-center gap-2">
                       <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-orange-500 transition-colors">
                           <ArrowUp className="h-8 w-8" />
@@ -49,7 +48,6 @@ export const ForumDetailView: React.FC<ForumDetailViewProps> = ({ postId, onBack
                       </button>
                   </div>
 
-                  {/* Content */}
                   <div className="flex-1">
                       <div className="prose prose-slate dark:prose-invert max-w-none text-lg text-slate-700 dark:text-slate-300 leading-relaxed mb-6">
                           <p>{post.content}</p>
@@ -80,7 +78,6 @@ export const ForumDetailView: React.FC<ForumDetailViewProps> = ({ postId, onBack
                   </div>
               </div>
 
-              {/* Answers */}
               <div className="mb-8">
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">{post.replies.length} Respuestas</h3>
                   
@@ -112,7 +109,6 @@ export const ForumDetailView: React.FC<ForumDetailViewProps> = ({ postId, onBack
                   </div>
               </div>
 
-              {/* Reply Box */}
               <div className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 rounded-2xl p-6">
                   <h3 className="font-bold text-slate-900 dark:text-white mb-4">Tu Respuesta</h3>
                   <textarea 

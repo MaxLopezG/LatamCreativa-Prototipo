@@ -10,14 +10,16 @@ import { EDUCATION_ITEMS } from '../data/content';
 import { CartItem } from '../types';
 
 interface CourseDetailViewProps {
+  courseId?: string;
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
   onAddToCart?: (item: CartItem) => void;
   onBuyNow?: (item: CartItem) => void;
 }
 
-export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ onBack, onAuthorClick, onAddToCart, onBuyNow }) => {
-  const { id } = useParams<{ id: string }>();
+export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId, onBack, onAuthorClick, onAddToCart, onBuyNow }) => {
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = courseId || paramId;
   const course = EDUCATION_ITEMS.find(c => c.id === id) || EDUCATION_ITEMS[0];
   
   const itemPayload: CartItem = {

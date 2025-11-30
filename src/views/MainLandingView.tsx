@@ -1,10 +1,23 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ImageIcon, GraduationCap, Store, Newspaper, Users, ArrowRight, Zap, Globe, Shield, Briefcase, Quote } from 'lucide-react';
 import { Footer } from '../components/layout/Footer';
 
-export const MainLandingView: React.FC = () => {
+interface MainLandingViewProps {
+  onNavigate?: (moduleId: string) => void;
+}
+
+export const MainLandingView: React.FC<MainLandingViewProps> = ({ onNavigate }) => {
   const navigate = useNavigate();
+
+  const handleNav = (path: string) => {
+      if (onNavigate) {
+          onNavigate(path);
+      } else {
+          navigate(`/${path}`);
+      }
+  };
 
   const services = [
     {
@@ -94,13 +107,13 @@ export const MainLandingView: React.FC = () => {
             </p>
             <div className="flex flex-wrap gap-4">
               <button 
-                  onClick={() => navigate('/portfolio')}
+                  onClick={() => handleNav('portfolio')}
                   className="px-8 py-4 bg-white text-black font-bold rounded-xl hover:bg-slate-200 transition-colors shadow-lg shadow-white/10 w-full md:w-auto"
               >
                   Explorar Portafolios
               </button>
               <button 
-                  onClick={() => navigate('/community')}
+                  onClick={() => handleNav('community')}
                   className="px-8 py-4 bg-white/5 text-white border border-white/10 font-bold rounded-xl hover:bg-white/10 transition-colors backdrop-blur-md w-full md:w-auto"
               >
                   Unirse a la Comunidad
@@ -150,7 +163,7 @@ export const MainLandingView: React.FC = () => {
               {services.map((service) => (
                   <div 
                       key={service.id}
-                      onClick={() => navigate(`/${service.id}`)}
+                      onClick={() => handleNav(service.id)}
                       className={`group relative p-8 rounded-3xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 transition-all cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/20 ${service.border}`}
                   >
                       <div className={`w-14 h-14 rounded-2xl ${service.bg} flex items-center justify-center mb-6 transition-transform group-hover:scale-110`}>
@@ -170,7 +183,7 @@ export const MainLandingView: React.FC = () => {
               
               {/* Pro Card */}
               <div 
-                  onClick={() => navigate('/pro')}
+                  onClick={() => handleNav('pro')}
                   className="group relative p-8 rounded-3xl bg-gradient-to-br from-amber-500 to-orange-600 text-white transition-all cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-500/30"
               >
                   <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center mb-6">

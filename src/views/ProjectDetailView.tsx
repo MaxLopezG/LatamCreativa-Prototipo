@@ -5,6 +5,7 @@ import { ArrowLeft, Users, Calendar, Target, MessageSquare, Share2, CheckCircle2
 import { COMMUNITY_GROUPS } from '../data/content';
 
 interface ProjectDetailViewProps {
+  projectId?: string;
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
 }
@@ -41,8 +42,9 @@ const PROJECT_UPDATES = [
   }
 ];
 
-export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ onBack, onAuthorClick }) => {
-  const { id } = useParams<{ id: string }>();
+export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onBack, onAuthorClick }) => {
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = projectId || paramId;
   const project = COMMUNITY_GROUPS.find(g => g.id === id) || COMMUNITY_GROUPS[0];
   const [activeTab, setActiveTab] = useState<'info' | 'updates'>('info');
   const [isApplying, setIsApplying] = useState(false);

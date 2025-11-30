@@ -1,16 +1,19 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, Star, Clock, Check, MessageSquare, ShieldCheck, Zap } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { ArrowLeft, Star, Clock, Check, MessageSquare, Zap } from 'lucide-react';
 import { FREELANCE_SERVICES } from '../data/content';
 
 interface ServiceDetailViewProps {
-  serviceId: string;
+  serviceId?: string;
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
 }
 
 export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ serviceId, onBack, onAuthorClick }) => {
-  const service = FREELANCE_SERVICES.find(s => s.id === serviceId) || FREELANCE_SERVICES[0];
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = serviceId || paramId;
+  const service = FREELANCE_SERVICES.find(s => s.id === id) || FREELANCE_SERVICES[0];
   const [selectedPackage, setSelectedPackage] = useState<'basic' | 'standard' | 'premium'>('standard');
 
   const currentPkg = service.packages[selectedPackage];
@@ -18,7 +21,6 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ serviceId,
   return (
     <div className="max-w-[1600px] mx-auto animate-fade-in pb-20">
       
-      {/* Navbar Overlay */}
       <div className="sticky top-0 z-30 bg-white/90 dark:bg-[#030304]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 h-16 flex items-center justify-between">
         <button 
           onClick={onBack}
@@ -31,7 +33,6 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ serviceId,
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 px-6 md:px-10 py-10">
         
-        {/* Left Content */}
         <div className="lg:col-span-8 space-y-8">
            
            <h1 className="text-3xl font-bold text-slate-900 dark:text-white leading-tight">{service.title}</h1>
@@ -49,14 +50,12 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ serviceId,
                </div>
            </div>
 
-           {/* Gallery */}
            <div className="space-y-4">
                <div className="aspect-video bg-slate-200 dark:bg-slate-800 rounded-2xl overflow-hidden shadow-lg">
                    <img src={service.images[0]} alt={service.title} className="w-full h-full object-cover" />
                </div>
            </div>
 
-           {/* Description */}
            <div className="prose prose-slate dark:prose-invert max-w-none text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
                <h3 className="font-bold text-slate-900 dark:text-white mb-4">Sobre este servicio</h3>
                <p>{service.description}</p>
@@ -74,11 +73,9 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ serviceId,
 
         </div>
 
-        {/* Right Sidebar - Pricing */}
         <div className="lg:col-span-4">
             <div className="sticky top-24 bg-white dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl overflow-hidden">
                 
-                {/* Visual Tabs */}
                 <div className="flex p-1 bg-slate-100 dark:bg-white/5 m-4 rounded-xl">
                     {['basic', 'standard', 'premium'].map((pkg) => (
                         <button 

@@ -1,21 +1,23 @@
 
 import React from 'react';
+import { useParams } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, MapPin, Users, Share2, Ticket, Globe, Video } from 'lucide-react';
 import { EVENT_ITEMS } from '../data/content';
 
 interface EventDetailViewProps {
-  eventId: string;
+  eventId?: string;
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
 }
 
 export const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, onAuthorClick }) => {
-  const event = EVENT_ITEMS.find(e => e.id === eventId) || EVENT_ITEMS[0];
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = eventId || paramId;
+  const event = EVENT_ITEMS.find(e => e.id === id) || EVENT_ITEMS[0];
 
   return (
     <div className="max-w-[1400px] mx-auto animate-fade-in pb-20">
       
-      {/* Navbar Overlay */}
       <div className="sticky top-0 z-30 bg-white/90 dark:bg-[#030304]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 h-16 flex items-center justify-between">
         <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
           <ArrowLeft className="h-4 w-4" /> Volver a Eventos
@@ -27,7 +29,6 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBac
 
       <div className="px-6 md:px-10 py-10">
           
-          {/* Header Image */}
           <div className="relative aspect-video md:aspect-[21/9] rounded-3xl overflow-hidden mb-10 shadow-2xl bg-slate-800">
               <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#030304] via-[#030304]/40 to-transparent opacity-90"></div>
@@ -62,7 +63,6 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBac
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
               
-              {/* Main Content */}
               <div className="lg:col-span-8 space-y-10">
                   <div className="prose prose-slate dark:prose-invert max-w-none text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
                       <h3 className="font-bold text-slate-900 dark:text-white">Sobre el evento</h3>
@@ -85,7 +85,6 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBac
                       </div>
                   </div>
 
-                  {/* Mock Schedule */}
                   <div>
                       <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Cronograma</h3>
                       <div className="space-y-4">
@@ -102,7 +101,6 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBac
                   </div>
               </div>
 
-              {/* Sidebar */}
               <div className="lg:col-span-4 space-y-6">
                   <div className="sticky top-24">
                       <div className="bg-white dark:bg-[#0A0A0C] border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-xl">

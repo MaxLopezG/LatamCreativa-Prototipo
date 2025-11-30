@@ -1,30 +1,29 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, Calendar, Clock, MessageSquare, Heart, Share2, Bookmark, MoreHorizontal, Send, ThumbsUp, ThumbsDown, CheckCircle2, BellRing } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { ArrowLeft, Clock, MessageSquare, Heart, Share2, Bookmark, MoreHorizontal, CheckCircle2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { BLOG_ITEMS, COMMENTS } from '../data/content';
-import { ArticleItem } from '../types';
 
 interface BlogPostViewProps {
-  articleId: string;
+  articleId?: string;
   onBack: () => void;
-  onArticleSelect: (id: string) => void;
   onAuthorClick?: (authorName: string) => void;
+  onArticleSelect: (id: string) => void;
   onSave?: (id: string, image: string) => void;
 }
 
-export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, onArticleSelect, onAuthorClick, onSave }) => {
-  // Find the article (mock data)
-  const article = BLOG_ITEMS.find(item => item.id === articleId) || BLOG_ITEMS[0];
-  const relatedArticles = BLOG_ITEMS.filter(item => item.id !== articleId).slice(0, 3);
+export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, onAuthorClick, onArticleSelect, onSave }) => {
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = articleId || paramId;
+  const article = BLOG_ITEMS.find(item => item.id === id) || BLOG_ITEMS[0];
+  const relatedArticles = BLOG_ITEMS.filter(item => item.id !== id).slice(0, 3);
 
-  // Interaction States
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [userReaction, setUserReaction] = useState<'none' | 'liked' | 'disliked'>('none');
 
   return (
     <div className="max-w-[1200px] mx-auto transition-colors animate-fade-in pb-20">
       
-      {/* Navigation Bar */}
       <div className="sticky top-0 z-20 bg-white/90 dark:bg-[#030304]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 py-4 flex items-center justify-between">
         <button 
           onClick={onBack}
@@ -46,9 +45,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 px-6 md:px-10 py-10">
         
-        {/* Main Content Column */}
         <article className="lg:col-span-8">
-            {/* Article Header */}
             <div className="mb-10">
                 <div className="flex items-center gap-3 mb-6">
                     <span className="px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider border border-amber-500/20">
@@ -65,9 +62,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                     {article.title}
                 </h1>
 
-                {/* Author & Actions Bar (Pill Design) */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-y border-slate-200 dark:border-white/10 py-6">
-                    {/* Left Side: Author + Subscribe */}
                     <div className="flex items-center gap-4">
                         <div 
                           className="h-12 w-12 rounded-full overflow-hidden ring-2 ring-slate-100 dark:ring-white/10 cursor-pointer hover:ring-amber-500 transition-all"
@@ -99,9 +94,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                         </button>
                     </div>
 
-                    {/* Right Side: Actions */}
                     <div className="flex items-center gap-3">
-                        {/* Like/Dislike Pill */}
                         <div className="flex h-10 items-center bg-slate-100 dark:bg-white/5 rounded-full ring-1 ring-slate-200 dark:ring-white/10 overflow-hidden">
                             <button 
                                 onClick={() => setUserReaction(userReaction === 'liked' ? 'none' : 'liked')}
@@ -124,12 +117,10 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                             </button>
                         </div>
 
-                        {/* Share Button */}
                         <button className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 ring-1 ring-slate-200 dark:ring-white/10 transition-colors text-slate-700 dark:text-slate-300">
                             <Share2 className="h-5 w-5" />
                         </button>
 
-                        {/* More Button */}
                         <button className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 ring-1 ring-slate-200 dark:ring-white/10 transition-colors text-slate-700 dark:text-slate-300">
                             <MoreHorizontal className="h-5 w-5" />
                         </button>
@@ -137,12 +128,10 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                 </div>
             </div>
 
-            {/* Featured Image */}
             <div className="mb-12 rounded-3xl overflow-hidden aspect-[21/9] shadow-2xl">
                 <img src={article.image} alt={article.title} className="w-full h-full object-cover" />
             </div>
 
-            {/* Article Body */}
             <div className="prose prose-lg prose-slate dark:prose-invert max-w-none text-slate-700 dark:text-slate-300 leading-loose">
                 {article.content ? (
                     <div dangerouslySetInnerHTML={{ __html: article.content }} />
@@ -158,7 +147,6 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                 )}
             </div>
 
-            {/* Tags */}
             <div className="flex flex-wrap gap-2 mt-12 mb-16 pt-8 border-t border-slate-200 dark:border-white/10">
                 {['3D', 'Tutorial', 'Industria', 'Career'].map(tag => (
                     <span key={tag} className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 text-sm font-bold hover:bg-amber-500/10 hover:text-amber-500 cursor-pointer transition-colors border border-transparent hover:border-amber-500/20">
@@ -167,7 +155,6 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                 ))}
             </div>
 
-            {/* Comments Section */}
             <section id="comments" className="bg-slate-50 dark:bg-white/[0.02] -mx-6 md:-mx-10 px-6 md:px-10 py-12 border-t border-slate-200 dark:border-white/5">
                 <div className="max-w-3xl mx-auto">
                     <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-8 flex items-center gap-3">
@@ -175,7 +162,6 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                         Comentarios <span className="text-lg font-normal text-slate-500">({COMMENTS.length})</span>
                     </h3>
 
-                    {/* Comment Input */}
                     <div className="flex gap-4 mb-12">
                         <img 
                             src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&fit=crop" 
@@ -197,7 +183,6 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                         </div>
                     </div>
 
-                    {/* Comments List */}
                     <div className="space-y-8">
                         {COMMENTS.map((comment) => (
                             <div key={comment.id} className="flex gap-4 group">
@@ -228,7 +213,6 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
             </section>
         </article>
 
-        {/* Sidebar - Recommendations */}
         <aside className="lg:col-span-4 space-y-10">
             <div className="sticky top-24">
                 <div className="bg-white dark:bg-white/[0.02] rounded-2xl border border-slate-200 dark:border-white/5 p-6 shadow-xl">
@@ -260,24 +244,6 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                                 </div>
                             </div>
                         ))}
-                    </div>
-                </div>
-
-                {/* Newsletter Box */}
-                <div className="mt-8 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-center border border-white/10 shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                    <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-lg shadow-amber-500/20">
-                        <Send className="h-6 w-6 ml-1" />
-                    </div>
-                    <h4 className="text-white font-bold text-lg mb-2">Newsletter Semanal</h4>
-                    <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-                        Recibe los mejores tutoriales, noticias y recursos gratuitos directamente en tu correo.
-                    </p>
-                    <div className="space-y-3">
-                        <input type="email" placeholder="tu@correo.com" className="w-full bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-amber-500 transition-colors" />
-                        <button className="w-full bg-amber-500 text-white text-sm font-bold py-3 rounded-xl hover:bg-amber-600 transition-colors shadow-lg">
-                            Suscribirme
-                        </button>
                     </div>
                 </div>
             </div>

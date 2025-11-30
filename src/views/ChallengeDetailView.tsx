@@ -6,11 +6,13 @@ import { CHALLENGE_ITEMS, PORTFOLIO_ITEMS } from '../data/content';
 import { PortfolioCard } from '../components/cards/PortfolioCard';
 
 interface ChallengeDetailViewProps {
+  challengeId?: string;
   onBack: () => void;
 }
 
-export const ChallengeDetailView: React.FC<ChallengeDetailViewProps> = ({ onBack }) => {
-  const { id } = useParams<{ id: string }>();
+export const ChallengeDetailView: React.FC<ChallengeDetailViewProps> = ({ challengeId, onBack }) => {
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = challengeId || paramId;
   const challenge = CHALLENGE_ITEMS.find(c => c.id === id) || CHALLENGE_ITEMS[0];
   const [activeTab, setActiveTab] = useState<'brief' | 'entries'>('brief');
 
