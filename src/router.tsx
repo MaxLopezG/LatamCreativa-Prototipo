@@ -171,7 +171,7 @@ export const router = createBrowserRouter([
     path: '/',
     element: <MainLayout />,
     children: [
-      { index: true, element: <MainLandingView onNavigate={(path) => window.location.href = `/${path}`} /> }, 
+      { index: true, element: <MainLandingView /> }, 
       { path: 'home', element: <FeedWrapper /> },
       
       // Portfolio
@@ -238,7 +238,7 @@ export const router = createBrowserRouter([
       { path: 'search', element: <SearchWrapper /> },
 
       // Info Pages
-      { path: 'about', element: <MainLandingView onNavigate={() => {}} /> },
+      { path: 'about', element: <MainLandingView /> },
       { path: 'info/:pageId', element: <InfoPageWrapper /> }
     ]
   },

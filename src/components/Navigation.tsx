@@ -274,6 +274,7 @@ export const SecondarySidebar = ({
                                 onClick={(e) => {
                                     e.preventDefault();
                                     onCategorySelect(item.label);
+                                    navigate('/home'); // Redirect to home/feed to apply filter
                                     onClose?.(); 
                                 }}
                                 className={`group flex items-center gap-3 rounded-xl p-2.5 px-3 transition-all ${
