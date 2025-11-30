@@ -1,16 +1,16 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Bookmark, Plus, Lock, Globe, MoreHorizontal, Image as ImageIcon } from 'lucide-react';
 import { USER_COLLECTIONS } from '../data/content';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { CollectionItem } from '../types';
 
 interface CollectionsViewProps {
+  collections?: CollectionItem[];
   onCreateClick?: () => void;
 }
 
-export const CollectionsView: React.FC<CollectionsViewProps> = ({ onCreateClick }) => {
-  const navigate = useNavigate();
-
+export const CollectionsView: React.FC<CollectionsViewProps> = ({ collections = USER_COLLECTIONS, onCreateClick }) => {
   return (
     <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors animate-fade-in">
       
@@ -35,11 +35,11 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({ onCreateClick 
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
-          {USER_COLLECTIONS.map((col) => (
-              <div 
+          {collections.map((col) => (
+              <Link 
                 key={col.id} 
-                className="group cursor-pointer"
-                onClick={() => navigate(`/collections/${col.id}`)}
+                to={`/collections/${col.id}`}
+                className="group cursor-pointer block"
               >
                   {/* Grid Preview */}
                   <div className="aspect-square bg-slate-100 dark:bg-white/5 rounded-2xl overflow-hidden mb-4 grid grid-cols-2 gap-1 p-1 hover:ring-2 ring-amber-500/50 transition-all shadow-sm hover:shadow-lg">
@@ -77,7 +77,7 @@ export const CollectionsView: React.FC<CollectionsViewProps> = ({ onCreateClick 
                           <MoreHorizontal className="h-5 w-5" />
                       </button>
                   </div>
-              </div>
+              </Link>
           ))}
           
           {/* Create New Card */}

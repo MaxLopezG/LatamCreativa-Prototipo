@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, useNavigate } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { useAppStore } from './hooks/useAppStore';
 
@@ -82,8 +82,15 @@ function CourseDetailWrapper() {
     return <CourseDetailView onBack={() => window.history.back()} onAddToCart={actions.addToCart} onBuyNow={actions.handleBuyNow} />;
 }
 
+function CollectionsWrapper() {
+    const { state } = useAppStore();
+    // In a real app we would pass a handler to open the create modal
+    return <CollectionsView collections={state.collections} onCreateClick={() => {}} />;
+}
+
 function CollectionDetailWrapper() {
-    return <CollectionDetailView onBack={() => window.history.back()} onItemSelect={() => {}} />;
+    const navigate = useNavigate();
+    return <CollectionDetailView onBack={() => navigate(-1)} onItemSelect={() => {}} />;
 }
 
 function CreateWrapper({ Component }: { Component: React.FC<{ onBack: () => void }> }) {
@@ -153,7 +160,7 @@ export const router = createBrowserRouter([
       { path: 'user/:username', element: <UserProfileView /> },
 
       // Personal & Utility
-      { path: 'collections', element: <CollectionsView /> },
+      { path: 'collections', element: <CollectionsWrapper /> },
       { path: 'collections/:id', element: <CollectionDetailWrapper /> },
       { path: 'cart', element: <CartViewWrapper /> },
       { path: 'success', element: <SuccessView /> },
