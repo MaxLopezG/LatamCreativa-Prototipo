@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { createBrowserRouter, Navigate, useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { createBrowserRouter } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { useAppStore } from './hooks/useAppStore';
 
@@ -30,7 +30,7 @@ import { ForumView } from './views/ForumView';
 import { ForumDetailView } from './views/ForumDetailView';
 import { PeopleView } from './views/PeopleView';
 import { CollectionsView } from './views/CollectionsView';
-import { CollectionDetailView } from './views/CollectionDetailView'; // Import new view
+import { CollectionDetailView } from './views/CollectionDetailView';
 import { UserProfileView } from './views/UserProfileView';
 import { CartView } from './views/CartView';
 import { SettingsView } from './views/SettingsView';
@@ -38,6 +38,8 @@ import { ProUpgradeView } from './views/ProUpgradeView';
 import { MainLandingView } from './views/MainLandingView';
 import { InfoView } from './views/InfoView';
 import { SearchResultsView } from './views/SearchResultsView';
+import { ComingSoonView } from './views/ComingSoonView'; // New
+import { SuccessView } from './views/SuccessView'; // New
 
 // Create Views
 import { CreateProjectView } from './views/CreateProjectView';
@@ -49,220 +51,29 @@ import { CreateServiceView } from './views/CreateServiceView';
 import { CreateForumPostView } from './views/CreateForumPostView';
 import { CreateEventView } from './views/CreateEventView';
 
-// --- WRAPPERS ---
-
-const PortfolioDetailWrapper = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { actions } = useAppStore();
-  return <PortfolioPostView itemId={id!} onBack={() => navigate(-1)} onAuthorClick={(name) => navigate(`/user/${name}`)} onSave={actions.openSaveModal} />;
-};
-
-const BlogDetailWrapper = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { actions } = useAppStore();
-  return <BlogPostView articleId={id!} onBack={() => navigate(-1)} onArticleSelect={(newId) => navigate(`/blog/${newId}`)} onAuthorClick={(name) => navigate(`/user/${name}`)} onSave={actions.openSaveModal} />;
-};
-
-const CourseDetailWrapper = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { actions } = useAppStore();
-  return <CourseDetailView courseId={id!} onBack={() => navigate(-1)} onAuthorClick={(name) => navigate(`/user/${name}`)} onAddToCart={actions.addToCart} onBuyNow={(item) => { actions.addToCart(item); navigate('/cart'); }} />;
-};
-
-const AssetDetailWrapper = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { actions } = useAppStore();
-  return <AssetDetailView assetId={id!} onBack={() => navigate(-1)} onAuthorClick={(name) => navigate(`/user/${name}`)} onAddToCart={actions.addToCart} onBuyNow={(item) => { actions.addToCart(item); navigate('/cart'); }} onSave={actions.openSaveModal} />;
-};
-
-const ServiceDetailWrapper = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { actions } = useAppStore();
-  return <ServiceDetailView serviceId={id!} onBack={() => navigate(-1)} onAuthorClick={(name) => navigate(`/user/${name}`)} />;
-};
-
-const JobDetailWrapper = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  return <JobDetailView jobId={id!} onBack={() => navigate(-1)} />;
-};
-
-const ProjectDetailWrapper = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { actions } = useAppStore();
-  return <ProjectDetailView projectId={id!} onBack={() => navigate(-1)} onAuthorClick={(name) => navigate(`/user/${name}`)} />;
-};
-
-const ChallengeDetailWrapper = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  return <ChallengeDetailView challengeId={id!} onBack={() => navigate(-1)} />;
-};
-
-const EventDetailWrapper = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { actions } = useAppStore();
-  return <EventDetailView eventId={id!} onBack={() => navigate(-1)} onAuthorClick={(name) => navigate(`/user/${name}`)} />;
-};
-
-const ForumDetailWrapper = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { actions } = useAppStore();
-  return <ForumDetailView postId={id!} onBack={() => navigate(-1)} onAuthorClick={(name) => navigate(`/user/${name}`)} />;
-};
-
-const SearchWrapper = () => {
-  const [searchParams] = useSearchParams();
-  const query = searchParams.get('q') || '';
-  const navigate = useNavigate();
-  
-  const handleItemSelect = (id: string, type: string) => {
-     if(type === 'portfolio') navigate(`/portfolio/${id}`);
-     if(type === 'course') navigate(`/education/${id}`);
-     if(type === 'asset') navigate(`/market/${id}`);
-     if(type === 'blog') navigate(`/blog/${id}`);
-     if(type === 'service') navigate(`/freelance/${id}`);
-  };
-
-  return <SearchResultsView query={query} onItemSelect={handleItemSelect} />;
-};
-
-const UserProfileWrapper = () => {
-  const { username } = useParams();
-  const navigate = useNavigate();
-  const { actions } = useAppStore();
-  
-  const authorName = username ? username.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Unknown';
-
-  const handleItemSelect = (id: string, type: string) => {
-     if(type === 'portfolio') navigate(`/portfolio/${id}`);
-     if(type === 'course') navigate(`/education/${id}`);
-     if(type === 'blog') navigate(`/blog/${id}`);
-  };
-
-  return <UserProfileView authorName={authorName} onBack={() => navigate(-1)} onItemSelect={handleItemSelect} onOpenChat={actions.openChatWithUser} />;
-};
-
-const FeedWrapper = () => {
-    const navigate = useNavigate();
-    const { state } = useAppStore();
-    
-    const handleItemSelect = (id: string, type: string) => {
-        if(type === 'portfolio') navigate(`/portfolio/${id}`);
-        if(type === 'course') navigate(`/education/${id}`);
-        if(type === 'asset') navigate(`/market/${id}`);
-        if(type === 'blog') navigate(`/blog/${id}`);
-    };
-
-    return <FeedView onNavigateToModule={(mod) => navigate(`/${mod}`)} onItemSelect={handleItemSelect} contentMode={state.contentMode} />;
-};
-
-const CollectionDetailWrapper = () => {
-    const { id } = useParams();
-    const navigate = useNavigate();
-    
-    const handleItemSelect = (itemId: string, type: string) => {
-        if(type === 'portfolio') navigate(`/portfolio/${itemId}`);
-        if(type === 'asset') navigate(`/market/${itemId}`);
-    };
-
-    return <CollectionDetailView collectionId={id!} onBack={() => navigate(-1)} onItemSelect={handleItemSelect} />;
-};
-
+// Simple Wrapper for prop injection if absolutely necessary, but most views now self-manage
 function PortfolioWrapper() {
     const { state, actions } = useAppStore();
-    const navigate = useNavigate();
-    return <PortfolioView activeCategory={state.activeCategory} onItemSelect={(id) => navigate(`/portfolio/${id}`)} onCreateClick={() => navigate('/create/portfolio')} onSave={actions.openSaveModal} contentMode={state.contentMode} />;
+    return <PortfolioView activeCategory={state.activeCategory} onItemSelect={() => {}} onCreateClick={() => {}} onSave={actions.openSaveModal} contentMode={state.contentMode} />;
 }
 
-function BlogWrapper() {
-    const { state, actions } = useAppStore();
-    const navigate = useNavigate();
-    return <BlogView activeCategory={state.activeCategory} onArticleSelect={(id) => navigate(`/blog/${id}`)} onCreateClick={() => navigate('/create/article')} onSave={actions.openSaveModal} />;
+function FeedWrapper() {
+    const { state } = useAppStore();
+    return <FeedView onNavigateToModule={() => {}} onItemSelect={() => {}} contentMode={state.contentMode} />;
 }
 
 function EducationWrapper() {
     const { state } = useAppStore();
-    const navigate = useNavigate();
-    return <EducationView activeCategory={state.activeCategory} onCourseSelect={(id) => navigate(`/education/${id}`)} onCreateClick={() => navigate('/create/course')} contentMode={state.contentMode} />;
-}
-
-function MarketWrapper() {
-    const { state, actions } = useAppStore();
-    const navigate = useNavigate();
-    return <AssetsView activeCategory={state.activeCategory} onAssetSelect={(id) => navigate(`/market/${id}`)} onCreateClick={() => navigate('/create/asset')} onSave={actions.openSaveModal} />;
-}
-
-function FreelanceWrapper() {
-    const { state } = useAppStore();
-    const navigate = useNavigate();
-    return <FreelanceView activeCategory={state.activeCategory} onServiceSelect={(id) => navigate(`/freelance/${id}`)} onCreateClick={() => navigate('/create/service')} />;
-}
-
-function JobsWrapper() {
-    const navigate = useNavigate();
-    return <JobsView onJobSelect={(id) => navigate(`/jobs/${id}`)} onCreateClick={() => navigate('/create/service')} />;
-}
-
-function CommunityWrapper() {
-    const navigate = useNavigate();
-    return <CommunityView onProjectSelect={(id) => navigate(`/community/${id}`)} onCreateProjectClick={() => navigate('/create/project')} />;
-}
-
-function ChallengesWrapper() {
-    const navigate = useNavigate();
-    return <ChallengesView onChallengeSelect={(id) => navigate(`/challenges/${id}`)} />;
-}
-
-function EventsWrapper() {
-    const navigate = useNavigate();
-    return <EventsView onEventSelect={(id) => navigate(`/events/${id}`)} onCreateClick={() => navigate('/create/event')} />;
-}
-
-function ForumWrapper() {
-    const navigate = useNavigate();
-    return <ForumView onPostSelect={(id) => navigate(`/forum/${id}`)} onCreateClick={() => navigate('/create/forum')} />;
-}
-
-function PeopleWrapper() {
-    const navigate = useNavigate();
-    return <PeopleView onProfileSelect={(name) => navigate(`/user/${name.replace(/\s+/g, '-').toLowerCase()}`)} />;
-}
-
-function CollectionsWrapper() {
-    const navigate = useNavigate();
-    return <CollectionsView onCreateClick={() => navigate('/collections')} />;
+    return <EducationView activeCategory={state.activeCategory} contentMode={state.contentMode} />;
 }
 
 function CartViewWrapper() {
     const { state, actions } = useAppStore();
-    const navigate = useNavigate();
-    return <CartView items={state.cartItems} onRemove={actions.removeFromCart} onContinueShopping={() => navigate('/market')} />;
-}
-
-function InfoPageWrapper() {
-    const { pageId } = useParams();
-    const navigate = useNavigate();
-    return <InfoView pageId={`info-${pageId}`} onBack={() => navigate(-1)} />;
-}
-
-function PlayerWrapper() {
-    const { courseId } = useParams();
-    const navigate = useNavigate();
-    return <CoursePlayerView courseId={courseId} onBack={() => navigate('/education')} />;
+    return <CartView items={state.cartItems} onRemove={actions.removeFromCart} onContinueShopping={() => {}} />;
 }
 
 function CreateWrapper({ Component }: { Component: React.FC<{ onBack: () => void }> }) {
-    const navigate = useNavigate();
-    return <Component onBack={() => navigate(-1)} />;
+    return <Component onBack={() => window.history.back()} />;
 }
 
 export const router = createBrowserRouter([
@@ -275,75 +86,80 @@ export const router = createBrowserRouter([
       
       // Portfolio
       { path: 'portfolio', element: <PortfolioWrapper /> },
-      { path: 'portfolio/:id', element: <PortfolioDetailWrapper /> },
+      { path: 'portfolio/:id', element: <PortfolioPostView itemId="" onBack={() => {}} /> }, // View handles ID
       { path: 'create/portfolio', element: <CreateWrapper Component={CreatePortfolioView} /> },
 
       // Blog
-      { path: 'blog', element: <BlogWrapper /> },
-      { path: 'blog/:id', element: <BlogDetailWrapper /> },
+      { path: 'blog', element: <BlogView activeCategory="Home" /> },
+      { path: 'blog/:id', element: <BlogPostView articleId="" onBack={() => {}} onArticleSelect={() => {}} /> },
       { path: 'create/article', element: <CreateWrapper Component={CreateArticleView} /> },
 
       // Education
       { path: 'education', element: <EducationWrapper /> },
-      { path: 'education/:id', element: <CourseDetailWrapper /> },
+      { path: 'education/:id', element: <CourseDetailView courseId="" onBack={() => {}} /> },
       { path: 'create/course', element: <CreateWrapper Component={CreateCourseView} /> },
 
-      // Market (Assets)
-      { path: 'market', element: <MarketWrapper /> },
-      { path: 'market/:id', element: <AssetDetailWrapper /> },
+      // Market
+      { path: 'market', element: <AssetsView activeCategory="Home" /> },
+      { path: 'market/:id', element: <AssetDetailView assetId="" onBack={() => {}} /> },
       { path: 'create/asset', element: <CreateWrapper Component={CreateAssetView} /> },
 
       // Freelance
-      { path: 'freelance', element: <FreelanceWrapper /> },
-      { path: 'freelance/:id', element: <ServiceDetailWrapper /> },
+      { path: 'freelance', element: <FreelanceView /> },
+      { path: 'freelance/:id', element: <ServiceDetailView serviceId="" onBack={() => {}} /> },
       { path: 'create/service', element: <CreateWrapper Component={CreateServiceView} /> },
 
       // Jobs
-      { path: 'jobs', element: <JobsWrapper /> },
-      { path: 'jobs/:id', element: <JobDetailWrapper /> },
+      { path: 'jobs', element: <JobsView /> },
+      { path: 'jobs/:id', element: <JobDetailView jobId="" onBack={() => {}} /> },
       
-      // Community & Projects
-      { path: 'community', element: <CommunityWrapper /> }, 
-      { path: 'community/:id', element: <ProjectDetailWrapper /> },
+      // Community
+      { path: 'community', element: <CommunityView /> }, 
+      { path: 'community/:id', element: <ProjectDetailView projectId="" onBack={() => {}} /> },
       { path: 'create/project', element: <CreateWrapper Component={CreateProjectView} /> },
       
       // Challenges
-      { path: 'challenges', element: <ChallengesWrapper /> },
-      { path: 'challenges/:id', element: <ChallengeDetailWrapper /> },
+      { path: 'challenges', element: <ChallengesView /> },
+      { path: 'challenges/:id', element: <ChallengeDetailView challengeId="" onBack={() => {}} /> },
 
       // Events
-      { path: 'events', element: <EventsWrapper /> },
-      { path: 'events/:id', element: <EventDetailWrapper /> },
+      { path: 'events', element: <EventsView /> },
+      { path: 'events/:id', element: <EventDetailView eventId="" onBack={() => {}} /> },
       { path: 'create/event', element: <CreateWrapper Component={CreateEventView} /> },
 
       // Forum
-      { path: 'forum', element: <ForumWrapper /> },
-      { path: 'forum/:id', element: <ForumDetailWrapper /> },
+      { path: 'forum', element: <ForumView /> },
+      { path: 'forum/:id', element: <ForumDetailView postId="" onBack={() => {}} /> },
       { path: 'create/forum', element: <CreateWrapper Component={CreateForumPostView} /> },
 
       // People
-      { path: 'people', element: <PeopleWrapper /> },
+      { path: 'people', element: <PeopleView /> },
 
       // User Profile
-      { path: 'user/:username', element: <UserProfileWrapper /> },
+      { path: 'user/:username', element: <UserProfileView /> },
 
-      // Personal
-      { path: 'collections', element: <CollectionsWrapper /> },
-      { path: 'collections/:id', element: <CollectionDetailWrapper /> }, // New Route
+      // Personal & Utility
+      { path: 'collections', element: <CollectionsView /> },
+      { path: 'collections/:id', element: <CollectionDetailView collectionId="" onBack={() => {}} onItemSelect={() => {}} /> },
       { path: 'cart', element: <CartViewWrapper /> },
+      { path: 'success', element: <SuccessView /> }, // New
       { path: 'settings', element: <SettingsView /> },
-      { path: 'pro', element: <ProUpgradeView onBack={() => window.history.back()} /> },
+      { path: 'pro', element: <ProUpgradeView /> },
       
       // Search
-      { path: 'search', element: <SearchWrapper /> },
+      { path: 'search', element: <SearchResultsView query="" onItemSelect={() => {}} /> },
 
       // Info Pages
       { path: 'about', element: <MainLandingView /> },
-      { path: 'info/:pageId', element: <InfoPageWrapper /> }
+      { path: 'info/:pageId', element: <InfoView pageId="" onBack={() => {}} /> },
+      
+      // Fallback for not implemented features
+      { path: 'info/help', element: <ComingSoonView /> },
+      { path: 'info/guides', element: <ComingSoonView /> }
     ]
   },
   {
     path: '/learning/:courseId?',
-    element: <PlayerWrapper />
+    element: <CoursePlayerView onBack={() => {}} /> // View self-manages params
   }
 ]);
