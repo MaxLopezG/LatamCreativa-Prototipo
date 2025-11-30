@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { createBrowserRouter, Navigate, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
@@ -48,7 +47,7 @@ import { CreateServiceView } from './views/CreateServiceView';
 import { CreateForumPostView } from './views/CreateForumPostView';
 import { CreateEventView } from './views/CreateEventView';
 
-// --- WRAPPERS to bridge Router Params to Component Props ---
+// --- WRAPPERS ---
 
 const PortfolioDetailWrapper = () => {
   const { id } = useParams();
@@ -248,7 +247,7 @@ export const router = createBrowserRouter([
   }
 ]);
 
-// --- Additional Functional Wrappers to connect Store ---
+// --- Additional Functional Wrappers ---
 
 function PortfolioWrapper() {
     const { state, actions } = useAppStore();
