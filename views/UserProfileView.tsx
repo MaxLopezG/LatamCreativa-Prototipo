@@ -157,6 +157,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                     Unirse
                 </button>
 
+                {/* Follow Button */}
                 <button 
                     onClick={() => setIsFollowing(!isFollowing)}
                     className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${
@@ -169,16 +170,23 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                     {isFollowing ? 'Siguiendo' : 'Seguir'}
                 </button>
 
+                {/* Friend Button - NEW */}
                 <button 
-                    onClick={() => {
-                        onOpenChat?.(authorName);
-                        setIsFriend(!isFriend);
-                    }}
+                    onClick={() => setIsFriend(!isFriend)}
                     className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all border ${
                         isFriend 
-                        ? 'bg-white/10 border-transparent text-white hover:bg-white/20' 
+                        ? 'bg-green-500/10 border-green-500/20 text-green-500 hover:bg-green-500/20' 
                         : 'bg-transparent border-white/20 text-white hover:bg-white/10'
                     }`}
+                >
+                    {isFriend ? <UserCheck className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                    {isFriend ? 'Amigo' : 'Agregar'}
+                </button>
+
+                {/* Message Button */}
+                <button 
+                    onClick={() => onOpenChat?.(authorName)}
+                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all border bg-transparent border-white/20 text-white hover:bg-white/10"
                 >
                     <MessageSquare className="h-4 w-4" />
                     Mensaje

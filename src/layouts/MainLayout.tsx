@@ -98,6 +98,7 @@ export const MainLayout: React.FC = () => {
         onToggle={() => actions.setIsChatOpen(!state.isChatOpen)}
         activeUserId={state.chatActiveUser}
         onCloseChat={() => actions.setChatActiveUser(null)}
+        contentMode={state.contentMode}
       />
 
       <MobileTabBar 
