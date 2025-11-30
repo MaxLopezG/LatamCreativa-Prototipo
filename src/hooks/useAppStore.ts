@@ -3,15 +3,23 @@ import { useState } from 'react';
 import { CartItem, Notification, CollectionItem } from '../types';
 import { USER_COLLECTIONS } from '../data/content';
 
+export type CreateMode = 'none' | 'project' | 'article' | 'portfolio' | 'course' | 'asset' | 'service' | 'forum' | 'event';
 export type ContentMode = 'creative' | 'dev';
 
 export const useAppStore = () => {
   // Navigation State (UI only - persistent)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('Home');
+  const [viewingAuthorName, setViewingAuthorName] = useState<string | null>(null);
   
   // Content Mode State (Creative vs Dev)
   const [contentMode, setContentMode] = useState<ContentMode>('creative');
+
+  // Creation Mode State
+  const [createMode, setCreateMode] = useState<CreateMode>('none');
+
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Cart State
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -44,6 +52,28 @@ export const useAppStore = () => {
       setTimeout(() => setToastMessage(null), 2000);
   };
 
+  const handleSubscriptionSelect = (authorName: string) => {
+    setViewingAuthorName(authorName);
+    if (window.innerWidth < 1280) {
+      setIsSidebarOpen(false);
+    }
+  };
+
+  const handleCreateAction = (actionId: string) => {
+    setCreateMode(actionId as CreateMode);
+    setIsSidebarOpen(false);
+  };
+
+  const handleProClick = () => {
+    if (window.innerWidth < 1280) {
+      setIsSidebarOpen(false);
+    }
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+  };
+
   const addToCart = (item: CartItem) => {
     // Prevent duplicates
     if (!cartItems.find(i => i.id === item.id)) {
@@ -58,6 +88,12 @@ export const useAppStore = () => {
 
   const removeFromCart = (itemId: string) => {
     setCartItems(prev => prev.filter(i => i.id !== itemId));
+  };
+
+  const handleBuyNow = (item: CartItem) => {
+    if (!cartItems.find(i => i.id === item.id)) {
+        setCartItems(prev => [...prev, item]);
+    }
   };
 
   const openChatWithUser = (userName: string) => {
@@ -124,7 +160,10 @@ export const useAppStore = () => {
     state: {
       isSidebarOpen,
       activeCategory,
+      viewingAuthorName,
       contentMode, 
+      createMode,
+      searchQuery,
       cartItems,
       toastMessage,
       isChatOpen,
@@ -137,11 +176,18 @@ export const useAppStore = () => {
     actions: {
       setIsSidebarOpen,
       setActiveCategory,
+      setViewingAuthorName,
       toggleContentMode, 
+      setCreateMode,
       setChatActiveUser,
       setIsChatOpen,
+      handleSubscriptionSelect,
+      handleCreateAction,
+      handleProClick,
+      handleSearch,
       addToCart,
       removeFromCart,
+      handleBuyNow,
       openChatWithUser,
       markNotificationRead,
       markAllNotificationsRead,
