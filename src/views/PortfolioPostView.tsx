@@ -1,16 +1,15 @@
 
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { ArrowLeft, Heart, Share2, MessageSquare, Briefcase, UserPlus, CheckCircle2, Maximize2, X, Bookmark } from 'lucide-react';
+import { ArrowLeft, Heart, Share2, MessageSquare, Briefcase, UserPlus, CheckCircle2, Maximize2, X } from 'lucide-react';
 import { PORTFOLIO_ITEMS } from '../data/content';
 
 interface PortfolioPostViewProps {
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
-  onSave?: (id: string, image: string) => void;
 }
 
-export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ onBack, onAuthorClick, onSave }) => {
+export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ onBack, onAuthorClick }) => {
   const { id } = useParams<{ id: string }>();
   const item = PORTFOLIO_ITEMS.find(p => p.id === id) || PORTFOLIO_ITEMS[0];
   const relatedItems = PORTFOLIO_ITEMS.filter(p => p.id !== id && p.category === item.category).slice(0, 4);
@@ -82,14 +81,6 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ onBack, on
             <span className="hidden sm:inline">{isLiked ? 'Te gusta' : 'Me gusta'}</span>
           </button>
           
-          <button 
-            onClick={() => onSave?.(item.id, item.image)}
-            className="p-2.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white hover:bg-amber-500 hover:text-white transition-colors"
-            title="Guardar"
-          >
-            <Bookmark className="h-4 w-4" />
-          </button>
-
           <button className="p-2.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 transition-colors">
             <Share2 className="h-4 w-4" />
           </button>
@@ -97,9 +88,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ onBack, on
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-4 md:px-10 py-8">
-        
         <div className="lg:col-span-9 space-y-8">
-          
           <div className="relative group rounded-xl overflow-hidden shadow-2xl bg-slate-900">
              <img 
                 src={projectImages[0]} 

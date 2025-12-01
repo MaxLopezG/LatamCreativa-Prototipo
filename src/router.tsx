@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { createBrowserRouter, useNavigate } from 'react-router-dom';
+import { createBrowserRouter } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { useAppStore } from './hooks/useAppStore';
 
@@ -54,7 +54,7 @@ import { CreateEventView } from './views/CreateEventView';
 // Wrappers for injections
 function PortfolioWrapper() {
     const { state, actions } = useAppStore();
-    return <PortfolioView activeCategory={state.activeCategory} onItemSelect={() => {}} onCreateClick={() => {}} onSave={actions.openSaveModal} contentMode={state.contentMode} />;
+    return <PortfolioView activeCategory={state.activeCategory} onItemSelect={() => {}} onCreateClick={() => {}} contentMode={state.contentMode} />;
 }
 
 function FeedWrapper() {
@@ -74,28 +74,25 @@ function CartViewWrapper() {
 
 function AssetDetailWrapper() {
     const { actions } = useAppStore();
-    return <AssetDetailView onBack={() => window.history.back()} onAddToCart={actions.addToCart} onBuyNow={actions.handleBuyNow} onSave={actions.openSaveModal} />;
+    return <AssetDetailView onBack={() => window.history.back()} onAddToCart={actions.addToCart} onBuyNow={actions.handleBuyNow} />;
 }
 
 function CourseDetailWrapper() {
+    const { id } = useParams<{ id: string }>();
     const { actions } = useAppStore();
-    return <CourseDetailView onBack={() => window.history.back()} onAddToCart={actions.addToCart} onBuyNow={actions.handleBuyNow} />;
-}
-
-function CollectionsWrapper() {
-    const { state } = useAppStore();
-    // In a real app we would pass a handler to open the create modal
-    return <CollectionsView collections={state.collections} onCreateClick={() => {}} />;
+    return <CourseDetailView courseId={id} onBack={() => window.history.back()} onAddToCart={actions.addToCart} onBuyNow={actions.handleBuyNow} />;
 }
 
 function CollectionDetailWrapper() {
-    const navigate = useNavigate();
-    return <CollectionDetailView onBack={() => navigate(-1)} onItemSelect={() => {}} />;
+    return <CollectionDetailView onBack={() => window.history.back()} onItemSelect={() => {}} />;
 }
 
 function CreateWrapper({ Component }: { Component: React.FC<{ onBack: () => void }> }) {
     return <Component onBack={() => window.history.back()} />;
 }
+
+// Router Configuration
+import { useParams } from 'react-router-dom';
 
 export const router = createBrowserRouter([
   {
@@ -160,7 +157,7 @@ export const router = createBrowserRouter([
       { path: 'user/:username', element: <UserProfileView /> },
 
       // Personal & Utility
-      { path: 'collections', element: <CollectionsWrapper /> },
+      { path: 'collections', element: <CollectionsView /> },
       { path: 'collections/:id', element: <CollectionDetailWrapper /> },
       { path: 'cart', element: <CartViewWrapper /> },
       { path: 'success', element: <SuccessView /> },

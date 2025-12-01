@@ -1,18 +1,17 @@
 
 import { useState } from 'react';
-import { CartItem, Notification, CollectionItem } from '../types';
-import { USER_COLLECTIONS } from '../data/content';
+import { CartItem, Notification } from '../types';
 
 export type CreateMode = 'none' | 'project' | 'article' | 'portfolio' | 'course' | 'asset' | 'service' | 'forum' | 'event';
 export type ContentMode = 'creative' | 'dev';
 
 export const useAppStore = () => {
-  // Navigation State (UI only - persistent)
+  // Navigation State
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState('Home');
   const [viewingAuthorName, setViewingAuthorName] = useState<string | null>(null);
   
-  // Content Mode State (Creative vs Dev)
+  // Content Mode State
   const [contentMode, setContentMode] = useState<ContentMode>('creative');
 
   // Creation Mode State
@@ -29,11 +28,6 @@ export const useAppStore = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatActiveUser, setChatActiveUser] = useState<string | null>(null);
 
-  // Collections / Save State
-  const [collections, setCollections] = useState<CollectionItem[]>(USER_COLLECTIONS);
-  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
-  const [itemToSave, setItemToSave] = useState<{id: string, image: string} | null>(null);
-
   // Notification State
   const [notifications, setNotifications] = useState<Notification[]>([
     { id: 1, type: 'comment', user: 'Sarah Jenkins', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&fit=crop', content: 'comentó en tu proyecto "Cyberpunk City"', time: 'Hace 2 min', read: false },
@@ -42,8 +36,7 @@ export const useAppStore = () => {
     { id: 4, type: 'like', user: 'Diego Lopez', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&fit=crop', content: 'le gustó tu artículo', time: 'Ayer', read: true },
   ]);
 
-  // --- Actions ---
-
+  // Actions
   const toggleContentMode = () => {
       const newMode = contentMode === 'creative' ? 'dev' : 'creative';
       setContentMode(newMode);
@@ -69,7 +62,6 @@ export const useAppStore = () => {
   };
 
   const addToCart = (item: CartItem) => {
-    // Prevent duplicates
     if (!cartItems.find(i => i.id === item.id)) {
         setCartItems(prev => [...prev, item]);
         setToastMessage(`Añadido al carrito: ${item.title}`);
@@ -92,7 +84,7 @@ export const useAppStore = () => {
 
   const openChatWithUser = (userName: string) => {
       setIsChatOpen(true);
-      setChatActiveUser('1'); // Mock ID
+      setChatActiveUser('1'); 
   };
 
   const markNotificationRead = (id: number) => {
@@ -101,53 +93,6 @@ export const useAppStore = () => {
 
   const markAllNotificationsRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
-  // --- Collection Actions ---
-  const openSaveModal = (id: string, image: string) => {
-      setItemToSave({ id, image });
-      setIsSaveModalOpen(true);
-  };
-
-  const closeSaveModal = () => {
-      setIsSaveModalOpen(false);
-      setItemToSave(null);
-  };
-
-  const saveToCollection = (collectionId: string) => {
-      if (!itemToSave) return;
-      
-      setCollections(prev => prev.map(col => {
-          if (col.id === collectionId) {
-              return {
-                  ...col,
-                  itemCount: col.itemCount + 1,
-                  thumbnails: [itemToSave.image, ...col.thumbnails.slice(0, 3)]
-              };
-          }
-          return col;
-      }));
-
-      setToastMessage("Guardado en colección");
-      setTimeout(() => setToastMessage(null), 3000);
-      closeSaveModal();
-  };
-
-  const createCollection = (title: string, isPrivate: boolean) => {
-      if (!itemToSave) return;
-
-      const newCol: CollectionItem = {
-          id: Date.now().toString(),
-          title,
-          isPrivate,
-          itemCount: 1,
-          thumbnails: [itemToSave.image]
-      };
-
-      setCollections(prev => [newCol, ...prev]);
-      setToastMessage("Nueva colección creada y guardada");
-      setTimeout(() => setToastMessage(null), 3000);
-      closeSaveModal();
   };
 
   return {
@@ -162,10 +107,7 @@ export const useAppStore = () => {
       toastMessage,
       isChatOpen,
       chatActiveUser,
-      notifications,
-      collections,
-      isSaveModalOpen,
-      itemToSave
+      notifications
     },
     actions: {
       setIsSidebarOpen,
@@ -183,11 +125,7 @@ export const useAppStore = () => {
       handleBuyNow,
       openChatWithUser,
       markNotificationRead,
-      markAllNotificationsRead,
-      openSaveModal,
-      closeSaveModal,
-      saveToCollection,
-      createCollection
+      markAllNotificationsRead
     }
   };
 };

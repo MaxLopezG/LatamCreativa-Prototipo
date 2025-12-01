@@ -5,7 +5,6 @@ import { PrimarySidebar, SecondarySidebar } from '../components/Navigation';
 import { Header } from '../components/Header';
 import { MobileTabBar } from '../components/layout/MobileTabBar';
 import { ChatWidget } from '../components/chat/ChatWidget';
-import { SaveToCollectionModal } from '../components/modals/SaveToCollectionModal';
 import { CheckCircle } from 'lucide-react';
 import { useAppStore } from '../hooks/useAppStore';
 
@@ -106,15 +105,6 @@ export const MainLayout: React.FC = () => {
         onNavigate={(path) => navigate(`/${path}`)}
         onOpenChat={() => actions.setIsChatOpen(!state.isChatOpen)}
         onCreateAction={(path) => navigate(path)}
-      />
-
-      <SaveToCollectionModal 
-        isOpen={state.isSaveModalOpen}
-        onClose={actions.closeSaveModal}
-        collections={state.collections}
-        onSave={actions.saveToCollection}
-        onCreate={actions.createCollection}
-        itemImage={state.itemToSave?.image}
       />
 
       {/* Toast Notification */}

@@ -247,7 +247,7 @@ export const MainLandingView: React.FC<MainLandingViewProps> = ({ onNavigate }) 
 
       </div>
       
-      <Footer onNavigate={(path) => navigate(`/${path}`)} />
+      <Footer onNavigate={(path) => handleNav(path)} />
     </div>
   );
 };

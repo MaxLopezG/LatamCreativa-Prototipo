@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { ArrowLeft, Star, Heart, Share2, ShieldCheck, Download, Layers, ShoppingCart, Maximize2, Bookmark, MessageSquare, ThumbsUp, Box, Rotate3d } from 'lucide-react';
+import { ArrowLeft, Star, Heart, Share2, ShieldCheck, Download, Layers, ShoppingCart, Maximize2, MessageSquare, ThumbsUp, Box, Rotate3d } from 'lucide-react';
 import { ASSET_ITEMS } from '../data/content';
 import { CartItem } from '../types';
 
@@ -10,10 +10,9 @@ interface AssetDetailViewProps {
   onAuthorClick?: (authorName: string) => void;
   onAddToCart?: (item: CartItem) => void;
   onBuyNow?: (item: CartItem) => void;
-  onSave?: (id: string, image: string) => void;
 }
 
-export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ onBack, onAuthorClick, onAddToCart, onBuyNow, onSave }) => {
+export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ onBack, onAuthorClick, onAddToCart, onBuyNow }) => {
   const { id } = useParams<{ id: string }>();
   const asset = ASSET_ITEMS.find(a => a.id === id) || ASSET_ITEMS[0];
   const [activeImage, setActiveImage] = useState(asset.images[0]);
@@ -48,13 +47,6 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ onBack, onAuth
           Volver a la Tienda
         </button>
         <div className="flex items-center gap-3">
-           <button 
-             onClick={() => onSave?.(asset.id, asset.thumbnail)}
-             className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-500 transition-colors"
-             title="Guardar"
-           >
-             <Bookmark className="h-5 w-5" />
-           </button>
            <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors">
              <Heart className="h-5 w-5" />
            </button>

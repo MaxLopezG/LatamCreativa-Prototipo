@@ -1,17 +1,16 @@
 
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { ArrowLeft, Clock, MessageSquare, Heart, Share2, Bookmark, MoreHorizontal, CheckCircle2, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { ArrowLeft, Clock, MessageSquare, Share2, MoreHorizontal, CheckCircle2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { BLOG_ITEMS, COMMENTS } from '../data/content';
 
 interface BlogPostViewProps {
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
   onArticleSelect: (id: string) => void;
-  onSave?: (id: string, image: string) => void;
 }
 
-export const BlogPostView: React.FC<BlogPostViewProps> = ({ onBack, onAuthorClick, onArticleSelect, onSave }) => {
+export const BlogPostView: React.FC<BlogPostViewProps> = ({ onBack, onAuthorClick, onArticleSelect }) => {
   const { id } = useParams<{ id: string }>();
   const article = BLOG_ITEMS.find(item => item.id === id) || BLOG_ITEMS[0];
   const relatedArticles = BLOG_ITEMS.filter(item => item.id !== id).slice(0, 3);
@@ -30,15 +29,6 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ onBack, onAuthorClic
           <ArrowLeft className="h-4 w-4" />
           Volver al Blog
         </button>
-        <div className="flex items-center gap-2">
-           <button 
-             onClick={() => onSave?.(article.id, article.image)}
-             className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 hover:text-amber-500 dark:hover:text-amber-500 transition-colors"
-             title="Guardar"
-           >
-             <Bookmark className="h-5 w-5" />
-           </button>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 px-6 md:px-10 py-10">

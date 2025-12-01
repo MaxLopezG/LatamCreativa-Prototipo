@@ -5,7 +5,7 @@ export const BLOG_ITEMS: ArticleItem[] = [
   {
     id: 'b1',
     title: 'Futuro del Render',
-    excerpt: 'UE5 está cambiando todo.',
+    excerpt: 'UE5 es increible.',
     image: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=600&fit=crop',
     author: 'Carlos Ruiz',
     authorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&fit=crop',

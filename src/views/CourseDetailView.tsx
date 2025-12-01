@@ -8,19 +8,23 @@ import {
 } from 'lucide-react';
 import { EDUCATION_ITEMS } from '../data/content';
 import { CartItem } from '../types';
+import { VideoPlayer } from '../components/education/VideoPlayer';
+import { CurriculumSidebar } from '../components/education/CurriculumSidebar';
+import { useAppStore } from '../hooks/useAppStore';
 
 interface CourseDetailViewProps {
   courseId?: string;
-  onBack: () => void;
+  onBack?: () => void;
   onAuthorClick?: (authorName: string) => void;
   onAddToCart?: (item: CartItem) => void;
   onBuyNow?: (item: CartItem) => void;
 }
 
-export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId, onBack, onAuthorClick, onAddToCart, onBuyNow }) => {
+export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId: propCourseId, onBack, onAuthorClick, onAddToCart, onBuyNow }) => {
   const { id: paramId } = useParams<{ id: string }>();
-  const id = courseId || paramId;
+  const id = propCourseId || paramId;
   const course = EDUCATION_ITEMS.find(c => c.id === id) || EDUCATION_ITEMS[0];
+  const { state } = useAppStore();
   
   const itemPayload: CartItem = {
       id: course.id,
@@ -38,37 +42,41 @@ export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId, on
     onBuyNow?.(itemPayload);
   };
 
+  const contentMode = state.contentMode;
+  const accentText = contentMode === 'dev' ? 'text-blue-500' : 'text-amber-500';
+  const accentBorder = contentMode === 'dev' ? 'border-blue-500' : 'border-amber-500';
+
   const CURRICULUM = [
     {
+      id: '1',
       title: 'Introducción al Curso',
-      lectures: 3,
-      duration: '15 min',
-      items: [
-        { title: 'Bienvenida y visión general', time: '05:00', free: true },
-        { title: 'Configurando el espacio de trabajo', time: '08:20', free: true },
-        { title: 'Recursos descargables', time: '01:40', free: false }
-      ]
+      lectures: [
+        { id: '1-1', title: 'Bienvenida y visión general', time: '05:00', free: true },
+        { id: '1-2', title: 'Configurando el espacio de trabajo', time: '08:20', free: true },
+        { id: '1-3', title: 'Recursos descargables', time: '01:40', free: false }
+      ],
+      duration: '15 min'
     },
     {
+      id: '2',
       title: 'Fundamentos Esenciales',
-      lectures: 5,
-      duration: '45 min',
-      items: [
-        { title: 'Interfaz de usuario y navegación', time: '12:00', free: false },
-        { title: 'Herramientas básicas de modelado', time: '15:30', free: false },
-        { title: 'Atajos de teclado imprescindibles', time: '08:15', free: false },
-        { title: 'Trabajando con primitivas', time: '10:00', free: false }
-      ]
+      lectures: [
+        { id: '2-1', title: 'Interfaz de usuario y navegación', time: '12:00', free: false },
+        { id: '2-2', title: 'Herramientas básicas de modelado', time: '15:30', free: false },
+        { id: '2-3', title: 'Atajos de teclado imprescindibles', time: '08:15', free: false },
+        { id: '2-4', title: 'Trabajando con primitivas', time: '10:00', free: false }
+      ],
+      duration: '45 min'
     },
     {
+      id: '3',
       title: 'Modelado Avanzado',
-      lectures: 8,
-      duration: '2h 10m',
-      items: [
-        { title: 'Topología limpia para animación', time: '20:00', free: false },
-        { title: 'Modificadores no destructivos', time: '25:00', free: false },
-        { title: 'Esculpido digital básico', time: '30:00', free: false }
-      ]
+      lectures: [
+        { id: '3-1', title: 'Topología limpia para animación', time: '20:00', free: false },
+        { id: '3-2', title: 'Modificadores no destructivos', time: '25:00', free: false },
+        { id: '3-3', title: 'Esculpido digital básico', time: '30:00', free: false }
+      ],
+      duration: '2h 10m'
     }
   ];
 
@@ -80,7 +88,7 @@ export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId, on
           
           <div className="lg:col-span-8 z-10">
             <div className="flex items-center gap-2 text-sm text-blue-200 mb-4 font-medium">
-              <button onClick={onBack} className="hover:text-white flex items-center gap-1">
+              <button onClick={() => onBack?.()} className="hover:text-white flex items-center gap-1">
                  <ArrowLeft className="h-4 w-4" /> Volver
               </button>
               <span className="text-slate-400">/</span>
@@ -155,7 +163,7 @@ export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId, on
              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Contenido del curso</h2>
              <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400 mb-4">
                 <span>{course.lectures} clases • {course.duration} de duración total</span>
-                <button className="text-amber-600 dark:text-amber-500 font-bold hover:underline">Expandir todo</button>
+                <button className={`font-bold hover:underline ${accentText}`}>Expandir todo</button>
              </div>
              
              <div className="border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden bg-white dark:bg-white/[0.02]">
@@ -200,7 +208,7 @@ export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId, on
              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Instructor</h2>
              <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-2">
-                   <button onClick={() => onAuthorClick?.(course.instructor)} className="text-xl font-bold text-amber-600 dark:text-amber-500 underline hover:text-amber-700">{course.instructor}</button>
+                   <button onClick={() => onAuthorClick?.(course.instructor)} className={`text-xl font-bold underline hover:opacity-80 ${accentText}`}>{course.instructor}</button>
                    <span className="text-slate-500 text-sm">Senior 3D Artist & Educator</span>
                 </div>
                 
@@ -260,7 +268,7 @@ export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId, on
                           <span className="text-lg text-slate-500 line-through mb-1">${course.originalPrice}</span>
                        )}
                        {course.originalPrice && (
-                          <span className="text-base text-amber-600 dark:text-amber-500 font-medium mb-1">
+                          <span className={`text-base font-medium mb-1 ${accentText}`}>
                              {Math.round(((course.originalPrice - course.price) / course.originalPrice) * 100)}% Dto.
                           </span>
                        )}
@@ -274,13 +282,13 @@ export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId, on
                     <div className="flex flex-col gap-3 mb-6">
                        <button 
                           onClick={handleAddToCart}
-                          className="w-full py-3.5 bg-amber-500 text-white font-bold text-base rounded-lg hover:bg-amber-600 transition-colors shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
+                          className={`w-full py-3.5 bg-white border border-slate-200 dark:bg-white/10 dark:border-white/10 text-slate-900 dark:text-white font-bold text-base rounded-lg hover:bg-slate-50 dark:hover:bg-white/20 transition-colors shadow-sm`}
                        >
-                          <ShoppingCart className="h-5 w-5" /> Añadir al cesta
+                          <ShoppingCart className="h-5 w-5 inline mr-2" /> Añadir al cesta
                        </button>
                        <button 
                           onClick={handleBuyNow}
-                          className="w-full py-3.5 bg-white dark:bg-white/10 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-white font-bold text-base rounded-lg hover:bg-slate-50 dark:hover:bg-white/20 transition-colors"
+                          className={`w-full py-3.5 ${contentMode === 'dev' ? 'bg-blue-500 hover:bg-blue-600' : 'bg-amber-500 hover:bg-amber-600'} text-white font-bold text-base rounded-lg transition-colors`}
                        >
                           Comprar ahora
                        </button>
@@ -344,13 +352,13 @@ const CurriculumSection: React.FC<{ section: any }> = ({ section }) => {
                {section.title}
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-               {section.lectures} clases • {section.duration}
+               {section.lectures.length} clases • {section.duration}
             </div>
          </button>
          
          {isOpen && (
             <div className="bg-white dark:bg-[#030304]">
-               {section.items.map((item: any, idx: number) => (
+               {section.lectures.map((item: any, idx: number) => (
                   <div key={idx} className="flex items-center justify-between p-3 pl-11 hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
                      <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
                         <PlayCircle className="h-4 w-4 text-slate-400" />

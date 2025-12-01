@@ -6,7 +6,7 @@ import { COMMUNITY_GROUPS } from '../data/content';
 
 interface ProjectDetailViewProps {
   projectId?: string;
-  onBack: () => void;
+  onBack?: () => void;
   onAuthorClick?: (authorName: string) => void;
 }
 
@@ -58,12 +58,17 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId,
     description: 'Buscamos a alguien apasionado que pueda comprometerse 5-10 horas semanales.'
   }));
 
+  const handleBack = () => {
+      if (onBack) onBack();
+      else window.history.back();
+  }
+
   return (
     <div className="max-w-[1600px] mx-auto animate-fade-in pb-20">
       
       <div className="sticky top-0 z-30 bg-white/90 dark:bg-[#030304]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 h-16 flex items-center justify-between">
         <button 
-          onClick={onBack}
+          onClick={handleBack}
           className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
