@@ -1,16 +1,19 @@
 
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { ArrowLeft, Clock, Users, Trophy, Target, AlertCircle, Share2, Image as ImageIcon, UploadCloud } from 'lucide-react';
 import { CHALLENGE_ITEMS, PORTFOLIO_ITEMS } from '../data/content';
 import { PortfolioCard } from '../components/cards/PortfolioCard';
 
 interface ChallengeDetailViewProps {
-  challengeId: string;
+  challengeId?: string;
   onBack: () => void;
 }
 
 export const ChallengeDetailView: React.FC<ChallengeDetailViewProps> = ({ challengeId, onBack }) => {
-  const challenge = CHALLENGE_ITEMS.find(c => c.id === challengeId) || CHALLENGE_ITEMS[0];
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = challengeId || paramId;
+  const challenge = CHALLENGE_ITEMS.find(c => c.id === id) || CHALLENGE_ITEMS[0];
   const [activeTab, setActiveTab] = useState<'brief' | 'entries'>('brief');
 
   // Mock entries using portfolio items

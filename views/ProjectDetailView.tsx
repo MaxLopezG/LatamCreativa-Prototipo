@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { ArrowLeft, Users, Calendar, Target, MessageSquare, Share2, CheckCircle2, Briefcase, Zap, Flag, Layers, ImageIcon, Clock } from 'lucide-react';
 import { COMMUNITY_GROUPS } from '../data/content';
 
 interface ProjectDetailViewProps {
-  projectId: string;
+  projectId?: string;
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
 }
@@ -43,7 +44,8 @@ const PROJECT_UPDATES = [
 ];
 
 export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onBack, onAuthorClick }) => {
-  const project = COMMUNITY_GROUPS.find(g => g.id === projectId) || COMMUNITY_GROUPS[0];
+  const { id: paramId } = useParams<{ id: string }>();
+  const project = COMMUNITY_GROUPS.find(g => g.id === (projectId || paramId)) || COMMUNITY_GROUPS[0];
   const [activeTab, setActiveTab] = useState<'info' | 'updates'>('info');
   const [isApplying, setIsApplying] = useState(false);
 

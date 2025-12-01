@@ -30,7 +30,6 @@ import { ChallengesView } from '../views/ChallengesView';
 import { ChallengeDetailView } from '../views/ChallengeDetailView';
 import { JobsView } from '../views/JobsView';
 import { JobDetailView } from '../views/JobDetailView';
-import { CollectionsView } from '../views/CollectionsView';
 import { CartView } from '../views/CartView';
 import { InfoView } from '../views/InfoView';
 
@@ -170,9 +169,6 @@ export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) =>
 
       // --- MODULE ROUTING ---
       
-      // COLLECTIONS
-      if (activeModule === 'collections') return <CollectionsView onCreateClick={() => {}} />;
-
       // CHALLENGES
       if (activeModule === 'challenges') {
           if (selectedItemId) return <ChallengeDetailView challengeId={selectedItemId} onBack={() => setSelectedItemId(null)} />;

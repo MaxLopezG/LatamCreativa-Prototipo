@@ -29,9 +29,6 @@ export const PRIMARY_NAV_ITEMS: NavItem[] = [
 
   // 5. Content & News
   { id: 'blog', icon: Newspaper, label: 'Blog' },
-
-  // 6. Personal Utilities
-  { id: 'collections', icon: Bookmark, label: 'Colecciones' }, 
 ];
 
 // --- SECONDARY SIDEBAR ITEMS (CREATIVE) ---

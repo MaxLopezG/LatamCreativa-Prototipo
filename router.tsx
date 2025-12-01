@@ -29,8 +29,6 @@ import { EventDetailView } from './views/EventDetailView';
 import { ForumView } from './views/ForumView';
 import { ForumDetailView } from './views/ForumDetailView';
 import { PeopleView } from './views/PeopleView';
-import { CollectionsView } from './views/CollectionsView';
-import { CollectionDetailView } from './views/CollectionDetailView';
 import { UserProfileView } from './views/UserProfileView';
 import { CartView } from './views/CartView';
 import { SettingsView } from './views/SettingsView';
@@ -82,8 +80,20 @@ function CourseDetailWrapper() {
     return <CourseDetailView onBack={() => window.history.back()} onAddToCart={actions.addToCart} onBuyNow={actions.handleBuyNow} />;
 }
 
-function CollectionDetailWrapper() {
-    return <CollectionDetailView onBack={() => window.history.back()} onItemSelect={() => {}} />;
+function MainLandingWrapper() {
+    const { actions } = useAppStore();
+    return <MainLandingView onNavigate={actions.handleModuleSelect} />;
+}
+
+function UserProfileWrapper() {
+    const { actions } = useAppStore();
+    return (
+        <UserProfileView 
+            onBack={() => window.history.back()} 
+            onItemSelect={(id, type) => console.log('Select item', id, type)} 
+            onOpenChat={actions.openChatWithUser}
+        />
+    );
 }
 
 function CreateWrapper({ Component }: { Component: React.FC<{ onBack: () => void }> }) {
@@ -95,7 +105,7 @@ export const router = createBrowserRouter([
     path: '/',
     element: <MainLayout />,
     children: [
-      { index: true, element: <MainLandingView /> }, 
+      { index: true, element: <MainLandingWrapper /> }, 
       { path: 'home', element: <FeedWrapper /> },
       
       // Portfolio
@@ -150,11 +160,9 @@ export const router = createBrowserRouter([
       { path: 'people', element: <PeopleView /> },
 
       // User Profile
-      { path: 'user/:username', element: <UserProfileView /> },
+      { path: 'user/:username', element: <UserProfileWrapper /> },
 
       // Personal & Utility
-      { path: 'collections', element: <CollectionsView /> },
-      { path: 'collections/:id', element: <CollectionDetailWrapper /> },
       { path: 'cart', element: <CartViewWrapper /> },
       { path: 'success', element: <SuccessView /> },
       { path: 'settings', element: <SettingsView /> },
@@ -164,7 +172,7 @@ export const router = createBrowserRouter([
       { path: 'search', element: <SearchResultsView query="" onItemSelect={() => {}} /> },
 
       // Info Pages
-      { path: 'about', element: <MainLandingView /> },
+      { path: 'about', element: <MainLandingWrapper /> },
       { path: 'info/:pageId', element: <InfoView pageId="" onBack={() => window.history.back()} /> },
       
       // Fallback

@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, Link as LinkIcon, Calendar, CheckCircle2, UserPlus, Mail, MessageSquare, Layers, Twitter, Instagram, Globe, MoreHorizontal, Briefcase, GraduationCap, UserCheck, Star, Heart, Lock, Check, Award, Zap, Trophy } from 'lucide-react';
 import { PORTFOLIO_ITEMS, BLOG_ITEMS, EDUCATION_ITEMS, ARTIST_TIERS } from '../data/content';
 import { PortfolioCard } from '../components/cards/PortfolioCard';
@@ -7,7 +8,7 @@ import { BlogCard } from '../components/cards/BlogCard';
 import { EducationCard } from '../components/cards/EducationCard';
 
 interface UserProfileViewProps {
-  authorName: string;
+  authorName?: string;
   onBack: () => void;
   onItemSelect: (id: string, type: 'portfolio' | 'blog' | 'course') => void;
   onOpenChat?: (authorName: string) => void;
@@ -59,19 +60,21 @@ const EDUCATION = [
 ];
 
 export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, onBack, onItemSelect, onOpenChat }) => {
+  const { username } = useParams<{ username: string }>();
+  const name = authorName || username || 'Unknown User';
   const [activeTab, setActiveTab] = useState<'portfolio' | 'blog' | 'courses' | 'membership'>('portfolio');
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFriend, setIsFriend] = useState(false);
 
   // Mock filtering based on name (in a real app, use ID)
-  const userPortfolio = PORTFOLIO_ITEMS.filter(p => p.artist === authorName).length > 0 
-    ? PORTFOLIO_ITEMS.filter(p => p.artist === authorName)
+  const userPortfolio = PORTFOLIO_ITEMS.filter(p => p.artist === name).length > 0 
+    ? PORTFOLIO_ITEMS.filter(p => p.artist === name)
     : PORTFOLIO_ITEMS.slice(0, 6); // Fallback data
   
   const userBlog = BLOG_ITEMS.slice(0, 3); // Fallback data for demo
 
   // Filter courses by instructor
-  const userCourses = EDUCATION_ITEMS.filter(c => c.instructor === authorName);
+  const userCourses = EDUCATION_ITEMS.filter(c => c.instructor === name);
   // Fallback for demo if no courses found matching exact name, show a couple random ones
   const displayCourses = userCourses.length > 0 ? userCourses : EDUCATION_ITEMS.slice(0, 2);
 
@@ -114,7 +117,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                 <div className="h-32 w-32 md:h-40 md:w-40 2xl:h-48 2xl:w-48 rounded-3xl p-1 bg-[#030304] ring-1 ring-white/10 overflow-hidden shadow-2xl">
                     <img 
                         src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=400&auto=format&fit=crop" 
-                        alt={authorName} 
+                        alt={name} 
                         className="w-full h-full object-cover rounded-2xl bg-slate-800"
                     />
                 </div>
@@ -124,7 +127,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
             {/* Info Text */}
             <div className="flex-1 pb-2 w-full">
                 <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <h1 className="text-3xl md:text-4xl 2xl:text-5xl font-bold text-white tracking-tight">{authorName}</h1>
+                    <h1 className="text-3xl md:text-4xl 2xl:text-5xl font-bold text-white tracking-tight">{name}</h1>
                     <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6 2xl:h-8 2xl:w-8 text-amber-500 fill-amber-500/20" />
                     <span className="px-2 py-0.5 rounded text-[10px] 2xl:text-xs font-bold bg-amber-500/20 text-amber-500 border border-amber-500/20 uppercase tracking-wider ml-2">Pro</span>
                 </div>
@@ -137,7 +140,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                     </div>
                     <div className="flex items-center gap-1.5">
                         <LinkIcon className="h-4 w-4 text-slate-500" />
-                        <a href="#" className="hover:text-amber-500 transition-colors truncate max-w-[200px] md:max-w-none">artstation.com/{authorName.replace(/\s/g, '').toLowerCase()}</a>
+                        <a href="#" className="hover:text-amber-500 transition-colors truncate max-w-[200px] md:max-w-none">artstation.com/{name.replace(/\s/g, '').toLowerCase()}</a>
                     </div>
                     <div className="flex items-center gap-1.5 hidden sm:flex">
                         <Calendar className="h-4 w-4 text-slate-500" />
@@ -185,7 +188,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
 
                 {/* Message Button */}
                 <button 
-                    onClick={() => onOpenChat?.(authorName)}
+                    onClick={() => onOpenChat?.(name)}
                     className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all border bg-transparent border-white/20 text-white hover:bg-white/10"
                 >
                     <MessageSquare className="h-4 w-4" />
