@@ -110,14 +110,14 @@ export const MobileTabBar: React.FC<MobileTabBarProps> = ({ activeModule, onNavi
           </button>
 
           <button 
-            onClick={() => onNavigate('settings')} 
+            onClick={() => onNavigate('profile')} 
             className={`flex flex-col items-center justify-center w-full h-full gap-1 ${
-              activeModule === 'settings' 
+              activeModule === 'profile' 
                 ? 'text-amber-500' 
                 : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
             }`}
           >
-            <div className={`h-6 w-6 rounded-full overflow-hidden border-2 ${activeModule === 'settings' ? 'border-amber-500' : 'border-transparent'}`}>
+            <div className={`h-6 w-6 rounded-full overflow-hidden border-2 ${activeModule === 'profile' ? 'border-amber-500' : 'border-transparent'}`}>
                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop" alt="Profile" className="w-full h-full object-cover" />
             </div>
             <span className="text-[10px] font-medium">Yo</span>

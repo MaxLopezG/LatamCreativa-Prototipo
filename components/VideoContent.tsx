@@ -32,6 +32,8 @@ import { JobsView } from '../views/JobsView';
 import { JobDetailView } from '../views/JobDetailView';
 import { CartView } from '../views/CartView';
 import { InfoView } from '../views/InfoView';
+import { CollectionsView } from '../views/CollectionsView'; 
+import { CollectionDetailView } from '../views/CollectionDetailView';
 
 // Creation Views
 import { CreateProjectView } from '../views/CreateProjectView';
@@ -57,6 +59,7 @@ interface VideoContentProps {
 export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) => {
   // Consolidated state for selected items across all modules
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   
   // Destructure for easier access
   const { activeModule, activeCategory, createMode, viewingAuthorName, searchQuery, cartItems, contentMode } = state;
@@ -72,12 +75,13 @@ export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) =>
     openSaveModal: onOpenSaveModal 
   } = actions;
 
-  // Reset selected item if module or category changes
+  // Reset selection if module or category changes
   useEffect(() => {
     // Keep selection if moving to player
     if (activeModule === 'learning') return;
     
     setSelectedItemId(null);
+    setSelectedCollectionId(null);
     if (onAuthorClick) onAuthorClick(null);
   }, [activeModule, activeCategory]);
 
@@ -113,6 +117,10 @@ export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) =>
       }
   };
 
+  const handleCollectionSelect = (id: string) => {
+      setSelectedCollectionId(id);
+  };
+
   // Custom handler to go to course player
   const handleStartLearning = (item: CartItem) => {
       onModuleSelect?.('learning');
@@ -141,11 +149,37 @@ export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) =>
           return <CartView items={cartItems} onRemove={onRemoveFromCart || (() => {})} onContinueShopping={() => onModuleSelect?.('market')} />;
       }
 
+      // --- COLLECTIONS MODULE ---
+      if (activeModule === 'collections') {
+          if (selectedCollectionId) {
+              return (
+                  <CollectionDetailView 
+                      collectionId={selectedCollectionId} 
+                      onBack={() => setSelectedCollectionId(null)}
+                      onItemSelect={(id) => handleItemSelect(id, 'portfolio')} 
+                  />
+              );
+          }
+          return <CollectionsView onCreateClick={() => onOpenSaveModal('', '')} onCollectionSelect={handleCollectionSelect} />;
+      }
+
       // --- SETTINGS PAGE ---
       if (activeModule === 'settings') return <SettingsView />;
 
       // --- PRO UPGRADE PAGE ---
       if (activeModule === 'pro') return <ProUpgradeView onBack={() => {}} />;
+
+      // --- MY PROFILE ---
+      if (activeModule === 'profile') {
+          return (
+              <UserProfileView 
+                authorName="Alex Motion"
+                onBack={() => onModuleSelect?.('home')}
+                onItemSelect={handleProfileItemSelect}
+                onOpenChat={onOpenChat}
+              />
+          );
+      }
 
       // --- HOME FEED MODULE ---
       if (activeModule === 'home') return <FeedView onNavigateToModule={onModuleSelect || (() => {})} onItemSelect={handleItemSelect} contentMode={contentMode} />;
@@ -155,7 +189,7 @@ export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) =>
           return <CoursePlayerView courseId={selectedItemId || undefined} onBack={() => onModuleSelect?.('education')} />;
       }
 
-      // --- USER PROFILE OVERLAY/VIEW ---
+      // --- USER PROFILE OVERLAY/VIEW (Other users) ---
       if (viewingAuthorName) {
           return (
               <UserProfileView 

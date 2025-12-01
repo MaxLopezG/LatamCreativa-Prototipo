@@ -119,12 +119,6 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
                       >
                           Leer Artículos
                       </button>
-                      <button 
-                        onClick={() => onNavigateToModule('community')}
-                        className="px-6 py-3 bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold rounded-xl hover:bg-white/20 transition-colors"
-                      >
-                          Discord
-                      </button>
                   </div>
               </div>
           </div>

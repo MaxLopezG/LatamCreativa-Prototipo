@@ -131,7 +131,10 @@ export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, con
           <Settings className="h-6 w-6" strokeWidth={1.5} />
         </button>
         
-        <div className="h-12 w-12 overflow-hidden rounded-2xl ring-1 ring-slate-200 dark:ring-white/10 transition-transform hover:scale-105 cursor-pointer">
+        <div 
+          onClick={() => onModuleSelect?.('profile')}
+          className="h-12 w-12 overflow-hidden rounded-2xl ring-1 ring-slate-200 dark:ring-white/10 transition-transform hover:scale-105 cursor-pointer"
+        >
           <img 
             src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop" 
             alt="User" 
@@ -339,23 +342,31 @@ export const SecondarySidebar = ({
 
           {/* MOBILE ONLY: User Profile & Settings */}
           <div className="md:hidden border-t border-slate-200 dark:border-white/10 pt-6 mb-6">
-              <div 
-                className="flex items-center gap-3 px-2 mb-4 cursor-pointer" 
-                onClick={() => {
-                    onModuleSelect?.('settings');
-                    onClose?.();
-                }}
-              >
-                  <img 
-                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop" 
-                      alt="User" 
-                      className="h-10 w-10 rounded-full object-cover ring-1 ring-slate-200 dark:ring-white/10" 
-                  />
-                  <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">Alex Motion</h4>
-                      <p className="text-xs text-slate-500">Ver perfil</p>
+              <div className="flex items-center gap-3 px-2 mb-4">
+                  <div 
+                    className="flex-1 flex items-center gap-3 cursor-pointer min-w-0"
+                    onClick={() => {
+                        onModuleSelect?.('profile');
+                        onClose?.();
+                    }}
+                  >
+                      <img 
+                          src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop" 
+                          alt="User" 
+                          className="h-10 w-10 rounded-full object-cover ring-1 ring-slate-200 dark:ring-white/10" 
+                      />
+                      <div className="min-w-0">
+                          <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">Alex Motion</h4>
+                          <p className="text-xs text-slate-500">Ver perfil</p>
+                      </div>
                   </div>
-                  <button className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg">
+                  <button 
+                    className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg"
+                    onClick={() => {
+                        onModuleSelect?.('settings');
+                        onClose?.();
+                    }}
+                  >
                       <Settings className="h-5 w-5" />
                   </button>
               </div>

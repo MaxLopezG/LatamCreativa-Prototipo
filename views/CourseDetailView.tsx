@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { 
   ArrowLeft, Star, Globe, AlertCircle, PlayCircle, Check, 
   Tv, Download, Smartphone, Trophy, ChevronDown, ChevronUp, 
@@ -9,7 +10,7 @@ import { EDUCATION_ITEMS } from '../data/content';
 import { CartItem } from '../types';
 
 interface CourseDetailViewProps {
-  courseId: string;
+  courseId?: string;
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
   onAddToCart?: (item: CartItem) => void;
@@ -17,7 +18,9 @@ interface CourseDetailViewProps {
 }
 
 export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId, onBack, onAuthorClick, onAddToCart, onBuyNow }) => {
-  const course = EDUCATION_ITEMS.find(c => c.id === courseId) || EDUCATION_ITEMS[0];
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = courseId || paramId;
+  const course = EDUCATION_ITEMS.find(c => c.id === id) || EDUCATION_ITEMS[0];
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   const itemPayload: CartItem = {
