@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Store, ArrowUpDown, Filter, Box, Plus } from 'lucide-react';
+import { Store, Filter, Box, Plus, Search, ShoppingBag, Tag } from 'lucide-react';
 import { ASSET_ITEMS } from '../data/content';
 import { AssetCard } from '../components/cards/AssetCard';
 import { Pagination } from '../components/common/Pagination';
@@ -20,35 +20,56 @@ export const AssetsView: React.FC<AssetsViewProps> = ({ activeCategory, onAssetS
   const displayAssets = filteredAssets.length > 0 ? filteredAssets : ASSET_ITEMS;
 
   return (
-    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors">
+    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors animate-fade-in">
       
-      {/* Hero Banner */}
-      <div className="relative rounded-2xl bg-gradient-to-r from-emerald-900 to-teal-900 p-8 mb-10 overflow-hidden shadow-2xl shadow-emerald-900/20">
-         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
-         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-             <div className="max-w-2xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-200 text-xs font-bold uppercase tracking-wider mb-4 border border-emerald-500/20">
-                    <Box className="h-4 w-4" /> Marketplace
-                </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">Recursos Premium</h2>
-                <p className="text-emerald-100 text-lg">Modelos, texturas y herramientas listas para producción.</p>
-             </div>
-             <button 
-                onClick={onCreateClick}
-                className="flex items-center gap-2 px-6 py-3 bg-white text-emerald-900 font-bold rounded-xl hover:bg-emerald-50 transition-colors shadow-lg"
-             >
-                <Plus className="h-5 w-5" /> Vender Asset
-             </button>
-         </div>
+      {/* Cinematic Hero Banner */}
+      <div className="relative rounded-3xl overflow-hidden min-h-[400px] flex items-center mb-12 group shadow-2xl">
+          <img 
+            src="https://images.unsplash.com/photo-1614726365723-49cfae96c69e?q=80&w=2000&auto=format&fit=crop" 
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 saturate-0 group-hover:saturate-100" 
+            alt="Market Hero" 
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/95 via-emerald-900/80 to-emerald-900/30 mix-blend-multiply"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent"></div>
+          
+          <div className="relative z-10 px-8 md:px-16 w-full max-w-5xl py-12">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider mb-6 shadow-lg shadow-emerald-500/20 border border-emerald-400/30 backdrop-blur-md">
+                  <Store className="h-3 w-3" /> Marketplace Oficial
+              </span>
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight font-display drop-shadow-lg">
+                  Assets Premium para <br/><span className="text-emerald-400">Tus Proyectos</span>
+              </h1>
+              <p className="text-lg md:text-xl text-emerald-100 mb-8 max-w-xl leading-relaxed drop-shadow-md">
+                  Modelos 3D, texturas, scripts y plugins listos para producción. Ahorra tiempo y eleva la calidad de tu trabajo.
+              </p>
+              
+              <div className="flex flex-wrap items-center gap-4">
+                  <button 
+                      onClick={onCreateClick}
+                      className="px-8 py-4 bg-emerald-500 text-white font-bold rounded-xl hover:bg-emerald-600 transition-colors shadow-xl shadow-black/20 flex items-center gap-2"
+                  >
+                      <Plus className="h-5 w-5" /> Vender Asset
+                  </button>
+                  <div className="relative flex-1 min-w-[260px] max-w-sm">
+                      <Search className="absolute left-4 top-4 h-5 w-5 text-white/70" />
+                      <input 
+                          type="text" 
+                          placeholder="Buscar modelos, texturas..." 
+                          className="w-full bg-white/10 border border-white/20 rounded-xl py-4 pl-12 pr-4 text-white placeholder-white/70 focus:outline-none focus:bg-black/30 transition-all backdrop-blur-md"
+                      />
+                  </div>
+              </div>
+          </div>
       </div>
 
-      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-200 dark:border-white/10 pb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <Box className="h-6 w-6 text-emerald-500" />
             {activeCategory === 'Home' ? 'Todos los Assets' : activeCategory}
           </h2>
           <p className="text-slate-500 dark:text-slate-400 mt-1">
-            {displayAssets.length} productos disponibles
+            {displayAssets.length} productos de alta calidad disponibles
           </p>
         </div>
         
@@ -63,6 +84,7 @@ export const AssetsView: React.FC<AssetsViewProps> = ({ activeCategory, onAssetS
           <select className="bg-transparent text-slate-900 dark:text-white font-medium focus:outline-none cursor-pointer">
               <option>Más populares</option>
               <option>Recientes</option>
+              <option>Precio: Menor a Mayor</option>
           </select>
         </div>
       </div>

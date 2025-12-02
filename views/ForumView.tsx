@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MessageCircleQuestion, Plus, Search, MessageSquare, Eye, ArrowUp, CheckCircle2 } from 'lucide-react';
+import { MessageCircleQuestion, Plus, Search, CheckCircle2 } from 'lucide-react';
 import { FORUM_ITEMS } from '../data/content';
 import { Pagination } from '../components/common/Pagination';
 
@@ -11,26 +11,41 @@ interface ForumViewProps {
 
 export const ForumView: React.FC<ForumViewProps> = ({ onPostSelect, onCreateClick }) => {
   return (
-    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors">
+    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors animate-fade-in">
       
-      {/* Hero Banner */}
-      <div className="relative rounded-2xl bg-gradient-to-r from-orange-900 to-red-900 p-8 mb-10 overflow-hidden shadow-2xl shadow-orange-900/20">
-         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
-         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-             <div className="max-w-2xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/20 text-orange-200 text-xs font-bold uppercase tracking-wider mb-4 border border-orange-500/20">
-                    <MessageCircleQuestion className="h-4 w-4" /> Foro de Ayuda
-                </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">Pregunta, Responde, Aprende</h2>
-                <p className="text-orange-100 text-lg">La comunidad está aquí para ayudarte con tus dudas técnicas y artísticas.</p>
-             </div>
-             <button 
-                onClick={onCreateClick}
-                className="flex items-center gap-2 px-6 py-3 bg-white text-orange-900 font-bold rounded-xl hover:bg-orange-50 transition-colors shadow-lg"
-             >
-                <Plus className="h-5 w-5" /> Hacer Pregunta
-             </button>
-         </div>
+      {/* Cinematic Hero Banner */}
+      <div className="relative rounded-3xl overflow-hidden min-h-[400px] flex items-center mb-12 group shadow-2xl">
+          <img 
+            src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=2000&auto=format&fit=crop" 
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 saturate-0 group-hover:saturate-100" 
+            alt="Forum Hero" 
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-950/95 via-orange-900/80 to-orange-900/40 mix-blend-multiply"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent"></div>
+          
+          <div className="relative z-10 px-8 md:px-16 w-full max-w-4xl py-12">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500 text-white text-xs font-bold uppercase tracking-wider mb-6 shadow-lg shadow-orange-500/20 border border-orange-400/30 backdrop-blur-md">
+                  <MessageCircleQuestion className="h-3 w-3" /> Foro de Ayuda
+              </span>
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight font-display drop-shadow-lg">
+                  Pregunta, Responde y <br/><span className="text-orange-400">Comparte Conocimiento</span>
+              </h1>
+              <p className="text-lg md:text-xl text-orange-100 mb-8 max-w-xl leading-relaxed drop-shadow-md">
+                  La comunidad de Latam Creativa está aquí para resolver tus dudas técnicas y artísticas. Ninguna pregunta es pequeña.
+              </p>
+              
+              <div className="flex flex-wrap items-center gap-4">
+                  <button 
+                      onClick={onCreateClick}
+                      className="px-8 py-4 bg-orange-500 text-white font-bold rounded-xl hover:bg-orange-600 transition-colors shadow-xl shadow-black/20 flex items-center gap-2"
+                  >
+                      <Plus className="h-5 w-5" /> Hacer Pregunta
+                  </button>
+                  <button className="px-8 py-4 bg-white/10 text-white border border-white/20 font-bold rounded-xl hover:bg-white/20 transition-colors backdrop-blur-md">
+                      Explorar Soluciones
+                  </button>
+              </div>
+          </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-10">

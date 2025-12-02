@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MessageSquare, ArrowUpDown, Plus } from 'lucide-react';
+import { ArrowUpDown, Plus, Newspaper, BookOpen } from 'lucide-react';
 import { BLOG_ITEMS } from '../data/content';
 import { BlogCard } from '../components/cards/BlogCard';
 import { Pagination } from '../components/common/Pagination';
@@ -14,27 +14,52 @@ interface BlogViewProps {
 
 export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSelect, onCreateClick, onSave }) => {
   return (
-    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors">
-      <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors animate-fade-in">
+      
+      {/* Cinematic Hero Banner */}
+      <div className="relative rounded-3xl overflow-hidden min-h-[400px] flex items-center mb-12 group shadow-2xl">
+          <img 
+            src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?q=80&w=2000&auto=format&fit=crop" 
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" 
+            alt="Blog Hero" 
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/60 to-transparent"></div>
+          
+          <div className="relative z-10 px-8 md:px-16 w-full max-w-4xl py-12">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500 text-white text-xs font-bold uppercase tracking-wider mb-6 shadow-lg shadow-blue-500/20 border border-blue-400/30 backdrop-blur-md">
+                  <Newspaper className="h-3 w-3" /> Blog & Noticias
+              </span>
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight font-display drop-shadow-lg">
+                  Historias que <br/><span className="text-blue-400">Inspiran Creación</span>
+              </h1>
+              <p className="text-lg md:text-xl text-slate-300 mb-8 max-w-xl leading-relaxed drop-shadow-md">
+                  Tutoriales en profundidad, entrevistas a expertos y las últimas novedades de la industria creativa y tecnológica.
+              </p>
+              
+              <div className="flex flex-wrap items-center gap-4">
+                  <button 
+                      onClick={onCreateClick}
+                      className="px-8 py-4 bg-white text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors shadow-xl shadow-black/20 flex items-center gap-2"
+                  >
+                      <Plus className="h-5 w-5" /> Escribir Artículo
+                  </button>
+                  <button className="px-8 py-4 bg-white/10 text-white border border-white/20 font-bold rounded-xl hover:bg-white/20 transition-colors backdrop-blur-md flex items-center gap-2">
+                      <BookOpen className="h-5 w-5" /> Leer Destacados
+                  </button>
+              </div>
+          </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 border-b border-slate-200 dark:border-white/10 pb-6">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-            <MessageSquare className="h-8 w-8 text-amber-500" />
-            Blog & Noticias
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+             {activeCategory === 'Home' ? 'Últimos Artículos' : `Artículos de ${activeCategory}`}
           </h2>
-          <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">
-            Artículos destacados sobre {activeCategory === 'Home' ? 'toda la industria' : activeCategory}.
+          <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
+            Descubre {BLOG_ITEMS.length} historias curadas para ti.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button 
-             onClick={onCreateClick}
-             className="flex items-center gap-2 px-5 py-2 bg-slate-900 dark:bg-white text-white dark:text-black font-bold rounded-xl hover:opacity-90 transition-opacity"
-          >
-             <Plus className="h-4 w-4" /> Escribir Artículo
-          </button>
-          
-          <div className="h-8 w-px bg-slate-200 dark:bg-white/10 mx-2 hidden md:block"></div>
-
           <span className="text-base text-slate-500 dark:text-slate-400 hidden sm:inline">Ordenar por:</span>
           <button className="flex items-center gap-1.5 text-base font-medium text-slate-900 dark:text-white hover:text-amber-500 dark:hover:text-amber-400">
             Más recientes <ArrowUpDown className="h-4 w-4" />

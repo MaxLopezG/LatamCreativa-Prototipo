@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Briefcase, Filter, Plus, Search, TrendingUp } from 'lucide-react';
+import { Briefcase, Filter, Plus, Search, TrendingUp, UserCheck, Star } from 'lucide-react';
 import { FREELANCE_SERVICES } from '../data/content';
 import { ServiceCard } from '../components/cards/ServiceCard';
 import { Pagination } from '../components/common/Pagination';
@@ -27,56 +27,66 @@ export const FreelanceView: React.FC<FreelanceViewProps> = ({ activeCategory = '
   ];
 
   return (
-    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors">
+    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors animate-fade-in">
       
-      {/* Hero Banner */}
-      <div className="relative rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 p-8 mb-10 overflow-hidden shadow-2xl shadow-slate-900/20 border border-slate-700">
-         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-             <div className="max-w-2xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-700/50 text-slate-200 text-xs font-bold uppercase tracking-wider mb-4 border border-slate-600">
-                    <Briefcase className="h-4 w-4" /> Freelance Market
-                </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">Contrata Talento Experto</h2>
-                <p className="text-slate-400 text-lg">Encuentra artistas freelance para tu próximo proyecto o vende tus servicios.</p>
-             </div>
-             <button 
-                onClick={onCreateClick}
-                className="flex items-center gap-2 px-6 py-3 bg-white text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors shadow-lg"
-             >
-                <Plus className="h-5 w-5" /> Ofrecer Servicio
-             </button>
-         </div>
-         
-         <div className="relative z-10 mt-8 max-w-xl">
-            <div className="relative">
-                <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
-                <input 
-                    type="text" 
-                    placeholder="¿Qué servicio estás buscando? (ej. Rigging, Concept Art...)" 
-                    className="w-full bg-black/30 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder-slate-400 focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all"
-                />
-            </div>
-            
-            {/* Popular Searches */}
-            <div className="flex items-center gap-3 mt-4 text-xs text-slate-400">
-                <span className="flex items-center gap-1 font-medium"><TrendingUp className="h-3 w-3" /> Popular:</span>
-                <div className="flex flex-wrap gap-2">
-                    {['Rigging', 'Vtuber Model', 'UI Game', 'Pixel Art', 'Low Poly'].map(tag => (
-                        <button key={tag} className="hover:text-white hover:underline transition-colors">{tag}</button>
-                    ))}
-                </div>
-            </div>
-         </div>
+      {/* Cinematic Hero Banner */}
+      <div className="relative rounded-3xl overflow-hidden min-h-[400px] flex items-center mb-12 group shadow-2xl">
+          <img 
+            src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=2000&auto=format&fit=crop" 
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 saturate-0 group-hover:saturate-100" 
+            alt="Freelance Hero" 
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-950/95 via-cyan-900/80 to-cyan-900/30 mix-blend-multiply"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent"></div>
+          
+          <div className="relative z-10 px-8 md:px-16 w-full max-w-5xl py-12">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500 text-white text-xs font-bold uppercase tracking-wider mb-6 shadow-lg shadow-cyan-500/20 border border-cyan-400/30 backdrop-blur-md">
+                  <Briefcase className="h-3 w-3" /> Talent Market
+              </span>
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight font-display drop-shadow-lg">
+                  Contrata Expertos para <br/><span className="text-cyan-300">Tu Próximo Hit</span>
+              </h1>
+              <p className="text-lg md:text-xl text-cyan-100 mb-8 max-w-xl leading-relaxed drop-shadow-md">
+                  Encuentra artistas freelance verificados, desarrolladores y diseñadores listos para llevar tu proyecto al siguiente nivel.
+              </p>
+              
+              <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-2 rounded-2xl flex flex-col md:flex-row gap-2 max-w-2xl">
+                  <div className="relative flex-1">
+                      <Search className="absolute left-4 top-3.5 h-5 w-5 text-cyan-200" />
+                      <input 
+                          type="text" 
+                          placeholder="¿Qué servicio buscas? (ej. Rigging, VFX...)" 
+                          className="w-full bg-transparent border-none py-3 pl-12 pr-4 text-white placeholder-cyan-200/70 focus:outline-none focus:ring-0"
+                      />
+                  </div>
+                  <button 
+                      onClick={onCreateClick}
+                      className="px-6 py-3 bg-cyan-500 text-white font-bold rounded-xl hover:bg-cyan-600 transition-colors shadow-lg flex items-center justify-center gap-2 whitespace-nowrap"
+                  >
+                      <Plus className="h-5 w-5" /> Ofrecer Servicio
+                  </button>
+              </div>
+              
+              {/* Popular Tags */}
+              <div className="flex items-center gap-3 mt-6 text-xs text-cyan-200/80">
+                  <span className="font-bold uppercase tracking-wide flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Popular:</span>
+                  <div className="flex gap-2">
+                      {['Rigging 3D', 'Unreal C++', 'Pixel Art', 'Concept'].map(tag => (
+                          <span key={tag} className="hover:text-white cursor-pointer underline decoration-cyan-500/50 hover:decoration-cyan-500 transition-all">{tag}</span>
+                      ))}
+                  </div>
+              </div>
+          </div>
       </div>
 
-      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-200 dark:border-white/10 pb-6">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <UserCheck className="h-6 w-6 text-cyan-500" />
             {activeCategory === 'Home' ? 'Servicios Destacados' : `Servicios de ${activeCategory}`}
           </h2>
           <p className="text-slate-500 dark:text-slate-400 mt-1">
-            {displayServices.length} gigs disponibles
+            {displayServices.length} gigs disponibles por freelancers verificados
           </p>
         </div>
         

@@ -115,8 +115,38 @@ export const CHALLENGE_ITEMS: ChallengeItem[] = [
     daysLeft: 25,
     participants: 890,
     prizes: ['Wacom Cintiq Pro 24', 'ZBrush License', 'ArtStation Pro'],
-    status: 'Active',
+    status: 'Voting',
     tags: ['Concept Art', 'Creature', 'Organic'],
+    domain: 'creative'
+  },
+  {
+    id: 'ch4',
+    title: 'Speed Sculpt: Mythology',
+    description: 'Escultura rápida de 3 horas sobre mitología griega. Enfoque en anatomía y gesto.',
+    coverImage: 'https://images.unsplash.com/photo-1544531586-fde5298cdd40?q=80&w=800&fit=crop',
+    sponsor: 'Pixologic',
+    sponsorLogo: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&fit=crop',
+    deadline: '01 Nov, 2024',
+    daysLeft: 0,
+    participants: 1200,
+    prizes: ['ZBrush Subscription', '3D Print of Model'],
+    status: 'Closed',
+    tags: ['Sculpting', 'Anatomy', 'Speed'],
+    domain: 'creative'
+  },
+  {
+    id: 'ch5',
+    title: 'Pixel Art Jam: Retro Future',
+    description: 'Crea un escenario isométrico en pixel art con temática retro-futurista.',
+    coverImage: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=800&fit=crop',
+    sponsor: 'Aseprite',
+    sponsorLogo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&fit=crop',
+    deadline: '10 Oct, 2024',
+    daysLeft: 0,
+    participants: 600,
+    prizes: ['Aseprite License', 'Steam Gift Card'],
+    status: 'Closed',
+    tags: ['Pixel Art', '2D', 'Retro'],
     domain: 'creative'
   }
 ];

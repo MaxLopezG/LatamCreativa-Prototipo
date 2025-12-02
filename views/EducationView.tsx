@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { GraduationCap, Filter, Plus } from 'lucide-react';
+import { GraduationCap, Filter, Plus, PlayCircle, BookOpen, Star } from 'lucide-react';
 import { EDUCATION_ITEMS } from '../data/content';
 import { EducationCard } from '../components/cards/EducationCard';
 import { Pagination } from '../components/common/Pagination';
@@ -32,29 +32,64 @@ export const EducationView: React.FC<EducationViewProps> = ({ activeCategory, on
   ];
 
   return (
-    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors">
+    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors animate-fade-in">
       
-      {/* Hero Banner */}
-      <div className="relative rounded-2xl bg-gradient-to-r from-blue-900 to-indigo-900 p-8 mb-10 overflow-hidden shadow-2xl shadow-blue-900/20">
-         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
-         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      {/* Cinematic Hero Banner */}
+      <div className="relative rounded-3xl overflow-hidden min-h-[400px] flex items-center mb-12 group shadow-2xl">
+          <img 
+            src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2000&auto=format&fit=crop" 
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 saturate-0 group-hover:saturate-100" 
+            alt="Education Hero" 
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-950/95 via-blue-900/80 to-blue-900/30 mix-blend-multiply"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent"></div>
+          
+          <div className="relative z-10 px-8 md:px-16 w-full max-w-6xl py-12 flex flex-col md:flex-row gap-12 items-center justify-between">
              <div className="max-w-2xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-200 text-xs font-bold uppercase tracking-wider mb-4 border border-blue-500/20">
-                    <GraduationCap className="h-4 w-4" /> Academia
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500 text-white text-xs font-bold uppercase tracking-wider mb-6 shadow-lg shadow-blue-500/20 border border-blue-400/30 backdrop-blur-md">
+                    <GraduationCap className="h-3 w-3" /> Academia Latam
+                </span>
+                <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight font-display drop-shadow-lg">
+                    Domina las Herramientas <br/><span className="text-blue-400">Del Futuro</span>
+                </h1>
+                <p className="text-lg md:text-xl text-blue-100 mb-8 max-w-xl leading-relaxed drop-shadow-md">
+                    Cursos creados por profesionales de la industria para {mode === 'dev' ? 'desarrolladores' : 'artistas digitales'}. Aprende a tu ritmo.
+                </p>
+                
+                <div className="flex flex-wrap items-center gap-4">
+                    <button 
+                        onClick={onCreateClick}
+                        className="px-8 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-500 transition-colors shadow-xl shadow-black/20 flex items-center gap-2"
+                    >
+                        <Plus className="h-5 w-5" /> Crear Curso
+                    </button>
+                    <button className="px-8 py-4 bg-white/10 text-white border border-white/20 font-bold rounded-xl hover:bg-white/20 transition-colors backdrop-blur-md flex items-center gap-2">
+                        <PlayCircle className="h-5 w-5" /> Empezar a Aprender
+                    </button>
                 </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">Aprende sin límites</h2>
-                <p className="text-blue-100 text-lg">Cursos creados por profesionales de la industria para {mode === 'dev' ? 'desarrolladores' : 'artistas digitales'}.</p>
              </div>
-             <button 
-                onClick={onCreateClick}
-                className="flex items-center gap-2 px-6 py-3 bg-white text-blue-900 font-bold rounded-xl hover:bg-blue-50 transition-colors shadow-lg"
-             >
-                <Plus className="h-5 w-5" /> Crear Curso
-             </button>
-         </div>
+
+             {/* Featured Course Widget */}
+             <div className="hidden lg:block bg-white/10 backdrop-blur-xl p-5 rounded-2xl border border-white/10 max-w-xs transform rotate-2 hover:rotate-0 transition-transform duration-500 shadow-2xl group/card">
+                 <div className="aspect-video rounded-lg overflow-hidden mb-4 relative">
+                    <img src="https://images.unsplash.com/photo-1626785774573-4b799314346d?q=80&w=400&fit=crop" className="w-full h-full object-cover" alt="Course" />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/card:opacity-100 transition-opacity">
+                        <PlayCircle className="h-10 w-10 text-white" />
+                    </div>
+                 </div>
+                 <div className="text-white font-bold text-lg mb-1 leading-tight">Master en Blender 4.0</div>
+                 <div className="flex items-center gap-2 text-blue-200 text-xs mb-3">
+                    <span className="flex items-center gap-1"><Star className="h-3 w-3 fill-current" /> 4.9</span>
+                    <span>• 12h de contenido</span>
+                 </div>
+                 <button className="w-full py-2 bg-white text-blue-900 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors">
+                    Ver Curso
+                 </button>
+             </div>
+          </div>
       </div>
 
-      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-200 dark:border-white/10 pb-6">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
             {activeCategory === 'Home' ? 'Todos los Cursos' : `Cursos de ${activeCategory}`}
