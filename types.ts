@@ -20,6 +20,7 @@ export interface CategoryItem {
   subLabel?: string;
   active?: boolean;
   hasUpdate?: boolean;
+  subItems?: string[]; // Software/Tools list
 }
 
 export interface Subscription {
@@ -266,6 +267,7 @@ export interface ArtistProfile {
   availableForWork?: boolean;
   coverImage: string;
   domain?: 'creative' | 'dev';
+  level?: 'Novice' | 'Pro' | 'Expert' | 'Master'; // New Level System
 }
 
 // --- CHAT INTERFACES ---

@@ -1,8 +1,12 @@
 
 import React, { useState } from 'react';
-import { User, Bell, Shield, CreditCard, Monitor, LogOut, Camera, Save, Mail, Lock, Check, Loader2 } from 'lucide-react';
+import { User, Bell, Shield, CreditCard, LogOut, Camera, Save, Mail, Lock, Check, Loader2, ArrowLeft } from 'lucide-react';
 
-export const SettingsView = () => {
+interface SettingsViewProps {
+  onBack?: () => void;
+}
+
+export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState('profile');
 
   const tabs = [
@@ -14,7 +18,17 @@ export const SettingsView = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-12 animate-fade-in pb-24">
-      <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-8">Configuración</h1>
+      <div className="flex items-center gap-4 mb-8">
+        {onBack && (
+          <button 
+            onClick={onBack}
+            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </button>
+        )}
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Configuración</h1>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Sidebar Navigation */}

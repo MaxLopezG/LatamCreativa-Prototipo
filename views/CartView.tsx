@@ -1,15 +1,16 @@
 
 import React from 'react';
-import { Trash2, ShoppingCart, ArrowRight, ShieldCheck, CreditCard } from 'lucide-react';
+import { Trash2, ShoppingCart, ArrowRight, ShieldCheck, CreditCard, ArrowLeft } from 'lucide-react';
 import { CartItem } from '../types';
 
 interface CartViewProps {
   items: CartItem[];
   onRemove: (id: string) => void;
   onContinueShopping: () => void;
+  onBack?: () => void;
 }
 
-export const CartView: React.FC<CartViewProps> = ({ items, onRemove, onContinueShopping }) => {
+export const CartView: React.FC<CartViewProps> = ({ items, onRemove, onContinueShopping, onBack }) => {
   const subtotal = items.reduce((sum, item) => sum + item.price, 0);
   const tax = subtotal * 0.18; // 18% Mock Tax
   const total = subtotal + tax;
@@ -24,21 +25,41 @@ export const CartView: React.FC<CartViewProps> = ({ items, onRemove, onContinueS
         <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md text-center">
           Parece que aún no has añadido ningún curso o asset. Explora el mercado para encontrar recursos increíbles.
         </p>
-        <button 
-          onClick={onContinueShopping}
-          className="px-8 py-3 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors shadow-lg shadow-amber-500/20"
-        >
-          Explorar Tienda
-        </button>
+        <div className="flex gap-4">
+            {onBack && (
+                <button 
+                    onClick={onBack}
+                    className="px-8 py-3 bg-slate-100 dark:bg-white/5 text-slate-900 dark:text-white font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+                >
+                    Volver
+                </button>
+            )}
+            <button 
+                onClick={onContinueShopping}
+                className="px-8 py-3 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors shadow-lg shadow-amber-500/20"
+            >
+                Explorar Tienda
+            </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-10 animate-fade-in pb-24">
-      <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-8 flex items-center gap-3">
-        <ShoppingCart className="h-8 w-8 text-amber-500" /> Carrito de Compras
-      </h1>
+      <div className="flex items-center gap-4 mb-8">
+        {onBack && (
+            <button 
+                onClick={onBack}
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+                <ArrowLeft className="h-6 w-6" />
+            </button>
+        )}
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+            <ShoppingCart className="h-8 w-8 text-amber-500" /> Carrito de Compras
+        </h1>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         

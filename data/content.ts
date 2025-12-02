@@ -136,7 +136,8 @@ export const ARTIST_DIRECTORY: ArtistProfile[] = [
     isPro: true,
     availableForWork: true,
     coverImage: 'https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=600&fit=crop',
-    domain: 'creative'
+    domain: 'creative',
+    level: 'Expert'
   },
   {
     id: 'dev1',
@@ -151,7 +152,8 @@ export const ARTIST_DIRECTORY: ArtistProfile[] = [
     isPro: true,
     availableForWork: true,
     coverImage: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=600&fit=crop',
-    domain: 'dev'
+    domain: 'dev',
+    level: 'Pro'
   },
   {
     id: 'art2',
@@ -166,7 +168,8 @@ export const ARTIST_DIRECTORY: ArtistProfile[] = [
     isPro: false,
     availableForWork: false,
     coverImage: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=600&fit=crop',
-    domain: 'creative'
+    domain: 'creative',
+    level: 'Novice'
   },
   {
     id: 'art3',
@@ -181,7 +184,8 @@ export const ARTIST_DIRECTORY: ArtistProfile[] = [
     isPro: true,
     availableForWork: true,
     coverImage: 'https://images.unsplash.com/photo-1560419015-7c427e8ae5ba?q=80&w=600&fit=crop',
-    domain: 'creative'
+    domain: 'creative',
+    level: 'Master'
   }
 ];
 

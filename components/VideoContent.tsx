@@ -146,7 +146,14 @@ export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) =>
 
       // --- CART MODULE ---
       if (activeModule === 'cart') {
-          return <CartView items={cartItems} onRemove={onRemoveFromCart || (() => {})} onContinueShopping={() => onModuleSelect?.('market')} />;
+          return (
+            <CartView 
+              items={cartItems} 
+              onRemove={onRemoveFromCart || (() => {})} 
+              onContinueShopping={() => onModuleSelect?.('market')} 
+              onBack={() => onModuleSelect?.('home')}
+            />
+          );
       }
 
       // --- COLLECTIONS MODULE ---
@@ -164,10 +171,10 @@ export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) =>
       }
 
       // --- SETTINGS PAGE ---
-      if (activeModule === 'settings') return <SettingsView />;
+      if (activeModule === 'settings') return <SettingsView onBack={() => onModuleSelect?.('home')} />;
 
       // --- PRO UPGRADE PAGE ---
-      if (activeModule === 'pro') return <ProUpgradeView onBack={() => {}} />;
+      if (activeModule === 'pro') return <ProUpgradeView onBack={() => onModuleSelect?.('home')} />;
 
       // --- MY PROFILE ---
       if (activeModule === 'profile') {

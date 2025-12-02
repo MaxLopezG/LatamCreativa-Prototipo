@@ -11,6 +11,19 @@ interface ArtistCardProps {
 export const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
   const [isFollowing, setIsFollowing] = useState(false);
 
+  // Helper to determine frame style based on level
+  const getLevelFrameClass = (level?: string) => {
+    switch(level) {
+        case 'Master': return 'bg-gradient-to-tr from-cyan-400 via-blue-500 to-purple-600 shadow-lg shadow-cyan-500/20';
+        case 'Expert': return 'bg-gradient-to-tr from-purple-500 to-pink-500 shadow-lg shadow-purple-500/20';
+        case 'Pro': return 'bg-gradient-to-tr from-amber-400 to-orange-600 shadow-lg shadow-amber-500/20';
+        case 'Novice': return 'bg-slate-200 dark:bg-slate-700';
+        default: return 'bg-slate-200 dark:bg-slate-700';
+    }
+  };
+
+  const levelFrameClass = getLevelFrameClass(artist.level);
+
   return (
     <div 
         onClick={onClick}
@@ -22,11 +35,14 @@ export const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
       </div>
 
       <div className="px-5 pb-5 flex flex-col flex-1 relative">
-        {/* Avatar */}
+        {/* Avatar with Dynamic Level Frame */}
         <div className="-mt-10 mb-3 flex justify-between items-end">
-            <div className="h-20 w-20 rounded-2xl border-4 border-white dark:border-[#0A0A0C] overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-lg">
-                <img src={artist.avatar} alt={artist.name} className="w-full h-full object-cover" />
+            <div className={`h-20 w-20 rounded-2xl p-[3px] ${levelFrameClass}`}>
+                <div className="h-full w-full rounded-xl overflow-hidden border-2 border-white dark:border-[#0A0A0C] bg-slate-100 dark:bg-slate-800">
+                    <img src={artist.avatar} alt={artist.name} className="w-full h-full object-cover" />
+                </div>
             </div>
+            
             {artist.availableForWork && (
                 <span className="px-2 py-1 bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 text-[10px] font-bold uppercase rounded-lg mb-1">
                     Open to Work

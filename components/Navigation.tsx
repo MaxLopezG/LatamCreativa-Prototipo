@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Settings, Search, X, Sliders, Code, Palette } from 'lucide-react';
+import React, { useState } from 'react';
+import { Settings, Search, X, Sliders, Code, Palette, ChevronDown, ChevronRight } from 'lucide-react';
 import { PRIMARY_NAV_ITEMS, NAV_SECTIONS, NAV_SECTIONS_DEV, SUBSCRIPTIONS } from '../data/navigation';
 import { ContentMode } from '../hooks/useAppStore';
 
@@ -124,6 +124,9 @@ export const SecondarySidebar = ({
   contentMode,
   onToggleContentMode
 }: SecondarySidebarProps) => {
+  // State for expanded menu items
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
+
   // Switch sections based on mode
   const currentNavSections = contentMode === 'dev' ? NAV_SECTIONS_DEV : NAV_SECTIONS;
 
@@ -134,6 +137,12 @@ export const SecondarySidebar = ({
   const activeIconClass = contentMode === 'dev'
     ? 'text-blue-500 dark:text-blue-400 bg-blue-500/20'
     : 'text-amber-500 dark:text-amber-400 bg-amber-500/20';
+
+  const toggleExpand = (label: string) => {
+    setExpandedItems(prev => 
+      prev.includes(label) ? prev.filter(i => i !== label) : [...prev, label]
+    );
+  };
 
   return (
     <>
@@ -210,35 +219,72 @@ export const SecondarySidebar = ({
                     <div className="space-y-1">
                         {section.items.map((item) => {
                             const isActive = activeCategory === item.label;
+                            const hasSubItems = item.subItems && item.subItems.length > 0;
+                            const isExpanded = expandedItems.includes(item.label);
+
                             return (
-                                <a 
-                                key={item.label}
-                                href="#" 
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    onCategorySelect(item.label);
-                                    onClose?.(); 
-                                }}
-                                className={`group flex items-center gap-3 rounded-xl p-2.5 px-3 transition-all ${
-                                    isActive 
-                                    ? activeItemClass 
-                                    : 'hover:bg-slate-100 dark:hover:bg-white/[0.04] text-slate-600 dark:text-slate-400'
-                                }`}
-                                >
-                                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
-                                    isActive ? activeIconClass : 'text-slate-400 dark:text-slate-500 bg-slate-200 dark:bg-white/5 group-hover:text-slate-600 dark:group-hover:text-slate-300'
-                                }`}>
-                                    <item.icon className="h-4 w-4" strokeWidth={2} />
+                                <div key={item.label}>
+                                    <a 
+                                      href="#" 
+                                      onClick={(e) => {
+                                          e.preventDefault();
+                                          if (hasSubItems) {
+                                              toggleExpand(item.label);
+                                              onCategorySelect(item.label);
+                                          } else {
+                                              onCategorySelect(item.label);
+                                              onClose?.(); 
+                                          }
+                                      }}
+                                      className={`group flex items-center gap-3 rounded-xl p-2.5 px-3 transition-all cursor-pointer ${
+                                          isActive 
+                                          ? activeItemClass 
+                                          : 'hover:bg-slate-100 dark:hover:bg-white/[0.04] text-slate-600 dark:text-slate-400'
+                                      }`}
+                                    >
+                                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                                          isActive ? activeIconClass : 'text-slate-400 dark:text-slate-500 bg-slate-200 dark:bg-white/5 group-hover:text-slate-600 dark:group-hover:text-slate-300'
+                                      }`}>
+                                          <item.icon className="h-4 w-4" strokeWidth={2} />
+                                      </div>
+                                      <div className="flex flex-1 flex-col min-w-0">
+                                          <h4 className={`text-sm font-medium truncate ${isActive ? 'text-slate-900 dark:text-white' : 'group-hover:text-slate-900 dark:group-hover:text-white'}`}>
+                                          {item.label}
+                                          </h4>
+                                          <p className="text-[10px] truncate opacity-60">
+                                          {item.subLabel}
+                                          </p>
+                                      </div>
+                                      {hasSubItems && (
+                                          <div className="text-slate-400">
+                                              {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                                          </div>
+                                      )}
+                                    </a>
+
+                                    {/* Sub Items Menu */}
+                                    {isExpanded && hasSubItems && (
+                                        <div className="ml-11 mt-1 space-y-1 border-l-2 border-slate-100 dark:border-white/5 pl-2 animate-fade-in">
+                                            {item.subItems?.map(sub => (
+                                                <button
+                                                    key={sub}
+                                                    onClick={() => {
+                                                        onCategorySelect(sub);
+                                                        onClose?.(); 
+                                                    }}
+                                                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center gap-2 ${
+                                                        activeCategory === sub 
+                                                        ? (contentMode === 'dev' ? 'text-blue-500 bg-blue-500/10' : 'text-amber-500 bg-amber-500/10')
+                                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+                                                    }`}
+                                                >
+                                                    <span className={`w-1 h-1 rounded-full ${activeCategory === sub ? (contentMode === 'dev' ? 'bg-blue-500' : 'bg-amber-500') : 'bg-slate-400'}`}></span>
+                                                    {sub}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="flex flex-1 flex-col min-w-0">
-                                    <h4 className={`text-sm font-medium truncate ${isActive ? 'text-slate-900 dark:text-white' : 'group-hover:text-slate-900 dark:group-hover:text-white'}`}>
-                                    {item.label}
-                                    </h4>
-                                    <p className="text-[10px] truncate opacity-60">
-                                    {item.subLabel}
-                                    </p>
-                                </div>
-                                </a>
                             );
                         })}
                     </div>

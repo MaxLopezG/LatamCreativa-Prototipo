@@ -45,33 +45,33 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: '3D & CGI',
     items: [
-      { icon: Move3d, label: 'Modelado 3D', subLabel: 'Hard Surface, Organic' },
-      { icon: Cuboid, label: 'Escultura', subLabel: 'ZBrush, Mudbox' },
-      { icon: Brush, label: 'Texturizado', subLabel: 'Substance, Mari' },
-      { icon: Users, label: 'ArchViz', subLabel: 'Interiores, Arquitectura' },
+      { icon: Move3d, label: 'Modelado 3D', subLabel: 'Hard Surface, Organic', subItems: ['Blender', 'Maya', '3ds Max', 'Cinema 4D', 'Houdini'] },
+      { icon: Cuboid, label: 'Escultura', subLabel: 'ZBrush, Mudbox', subItems: ['ZBrush', 'Mudbox', 'Blender Sculpt', '3DCoat'] },
+      { icon: Brush, label: 'Texturizado', subLabel: 'Substance, Mari', subItems: ['Substance Painter', 'Mari', 'Marmoset Toolbag', 'Quixel Mixer'] },
+      { icon: Users, label: 'ArchViz', subLabel: 'Interiores, Arquitectura', subItems: ['V-Ray', 'Corona', 'Lumion', 'Twinmotion', 'D5 Render'] },
     ]
   },
   {
     title: 'Animación & Cine',
     items: [
-      { icon: MonitorPlay, label: 'Animación 3D', subLabel: 'Personajes, Rigging' },
-      { icon: Clapperboard, label: 'Animación 2D', subLabel: 'Tradicional, Cut-out' },
-      { icon: Box, label: 'VFX', subLabel: 'Simulaciones, Comp' },
-      { icon: Camera, label: 'Motion Graphics', subLabel: 'Publicidad, Title Seq' },
+      { icon: MonitorPlay, label: 'Animación 3D', subLabel: 'Personajes, Rigging', subItems: ['Maya', 'Blender', 'iClone', 'Cascadeur'] },
+      { icon: Clapperboard, label: 'Animación 2D', subLabel: 'Tradicional, Cut-out', subItems: ['Toon Boom Harmony', 'TVPaint', 'After Effects', 'Moho'] },
+      { icon: Box, label: 'VFX', subLabel: 'Simulaciones, Comp', subItems: ['Nuke', 'Houdini', 'After Effects', 'Fusion'] },
+      { icon: Camera, label: 'Motion Graphics', subLabel: 'Publicidad, Title Seq', subItems: ['After Effects', 'Cinema 4D', 'Rive', 'Cavalry'] },
     ]
   },
   {
     title: 'Desarrollo de Juegos',
     items: [
-      { icon: Gamepad2, label: 'Game Dev', subLabel: 'Unity, Unreal' },
-      { icon: Lightbulb, label: 'Level Design', subLabel: 'Entornos, Lighting' },
+      { icon: Gamepad2, label: 'Game Dev', subLabel: 'Unity, Unreal', subItems: ['Unreal Engine', 'Unity', 'Godot', 'GameMaker'] },
+      { icon: Lightbulb, label: 'Level Design', subLabel: 'Entornos, Lighting', subItems: ['Unreal Engine', 'Unity', 'Hammer'] },
     ]
   },
   {
     title: 'Arte 2D',
     items: [
-      { icon: Palette, label: 'Concept Art', subLabel: 'Personajes, Fondos' },
-      { icon: PenTool, label: 'Ilustración', subLabel: 'Digital, Vectorial' },
+      { icon: Palette, label: 'Concept Art', subLabel: 'Personajes, Fondos', subItems: ['Photoshop', 'Procreate', 'Clip Studio Paint', 'Krita'] },
+      { icon: PenTool, label: 'Ilustración', subLabel: 'Digital, Vectorial', subItems: ['Illustrator', 'Affinity Designer', 'Inkscape'] },
     ]
   }
 ];
@@ -89,24 +89,24 @@ export const NAV_SECTIONS_DEV: NavSection[] = [
   {
     title: 'Desarrollo Web',
     items: [
-      { icon: Code, label: 'Frontend', subLabel: 'React, Vue, Angular' },
-      { icon: Server, label: 'Backend', subLabel: 'Node, Python, Go' },
-      { icon: Palette, label: 'UI/UX Code', subLabel: 'CSS, Tailwind, Animation' },
+      { icon: Code, label: 'Frontend', subLabel: 'React, Vue, Angular', subItems: ['React', 'Vue', 'Angular', 'Svelte', 'Next.js'] },
+      { icon: Server, label: 'Backend', subLabel: 'Node, Python, Go', subItems: ['Node.js', 'Python', 'Go', 'Java', 'PHP'] },
+      { icon: Palette, label: 'UI/UX Code', subLabel: 'CSS, Tailwind, Animation', subItems: ['Tailwind CSS', 'Framer Motion', 'GSAP', 'Three.js'] },
     ]
   },
   {
     title: 'Infraestructura',
     items: [
-      { icon: Cloud, label: 'DevOps', subLabel: 'AWS, Docker, K8s' },
-      { icon: Database, label: 'Base de Datos', subLabel: 'SQL, NoSQL, Redis' },
+      { icon: Cloud, label: 'DevOps', subLabel: 'AWS, Docker, K8s', subItems: ['Docker', 'Kubernetes', 'AWS', 'Azure', 'Terraform'] },
+      { icon: Database, label: 'Base de Datos', subLabel: 'SQL, NoSQL, Redis', subItems: ['PostgreSQL', 'MongoDB', 'Redis', 'MySQL', 'Supabase'] },
     ]
   },
   {
     title: 'Emergentes',
     items: [
-      { icon: Cpu, label: 'AI & ML', subLabel: 'LLMs, PyTorch, TensorFlow' },
-      { icon: Smartphone, label: 'Mobile Dev', subLabel: 'iOS, Android, React Native' },
-      { icon: Gamepad2, label: 'Game Code', subLabel: 'C++, C#, Shaders' },
+      { icon: Cpu, label: 'AI & ML', subLabel: 'LLMs, PyTorch, TensorFlow', subItems: ['Python', 'PyTorch', 'TensorFlow', 'OpenAI API'] },
+      { icon: Smartphone, label: 'Mobile Dev', subLabel: 'iOS, Android, React Native', subItems: ['React Native', 'Flutter', 'Swift', 'Kotlin'] },
+      { icon: Gamepad2, label: 'Game Code', subLabel: 'C++, C#, Shaders', subItems: ['C++', 'C#', 'HLSL/GLSL', 'Lua'] },
     ]
   }
 ];

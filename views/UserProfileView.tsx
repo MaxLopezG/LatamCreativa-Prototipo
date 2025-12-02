@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, Link as LinkIcon, Calendar, CheckCircle2, UserPlus, Mail, MessageSquare, Layers, Twitter, Instagram, Globe, MoreHorizontal, Briefcase, GraduationCap, UserCheck, Star, Heart, Lock, Check, Award, Zap, Trophy } from 'lucide-react';
-import { PORTFOLIO_ITEMS, BLOG_ITEMS, EDUCATION_ITEMS, ARTIST_TIERS } from '../data/content';
+import { PORTFOLIO_ITEMS, BLOG_ITEMS, EDUCATION_ITEMS, ARTIST_TIERS, ARTIST_DIRECTORY } from '../data/content';
 import { PortfolioCard } from '../components/cards/PortfolioCard';
 import { BlogCard } from '../components/cards/BlogCard';
 import { EducationCard } from '../components/cards/EducationCard';
@@ -66,6 +66,22 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
   const [isFollowing, setIsFollowing] = useState(false);
   const [isFriend, setIsFriend] = useState(false);
 
+  // Attempt to find artist level from directory if exists
+  const directoryArtist = ARTIST_DIRECTORY.find(a => a.name === name);
+  const artistLevel = directoryArtist?.level || 'Pro'; // Default level for demo
+
+  const getLevelFrameClass = (level?: string) => {
+    switch(level) {
+        case 'Master': return 'bg-gradient-to-tr from-cyan-400 via-blue-500 to-purple-600 shadow-2xl shadow-cyan-500/30';
+        case 'Expert': return 'bg-gradient-to-tr from-purple-500 to-pink-500 shadow-2xl shadow-purple-500/30';
+        case 'Pro': return 'bg-gradient-to-tr from-amber-400 to-orange-600 shadow-2xl shadow-amber-500/30';
+        case 'Novice': return 'bg-slate-200 dark:bg-slate-700';
+        default: return 'bg-slate-200 dark:bg-slate-700';
+    }
+  };
+
+  const levelFrameClass = getLevelFrameClass(artistLevel);
+
   // Mock filtering based on name (in a real app, use ID)
   const userPortfolio = PORTFOLIO_ITEMS.filter(p => p.artist === name).length > 0 
     ? PORTFOLIO_ITEMS.filter(p => p.artist === name)
@@ -91,9 +107,10 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
       <div className="fixed top-0 left-0 right-0 z-40 px-6 py-4 pointer-events-none">
         <button 
           onClick={onBack}
-          className="pointer-events-auto flex items-center justify-center w-10 h-10 rounded-full bg-black/50 backdrop-blur-md text-white hover:bg-black/70 transition-colors"
+          className="pointer-events-auto flex items-center gap-2 px-4 py-2.5 rounded-full bg-black/50 backdrop-blur-md text-white hover:bg-black/70 transition-colors font-medium text-sm border border-white/10"
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-4 w-4" />
+          <span>Volver</span>
         </button>
       </div>
 
@@ -112,16 +129,23 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
       <div className="px-6 md:px-12 2xl:px-20 relative -mt-20 md:-mt-24 z-10 mb-16">
         <div className="flex flex-col md:flex-row items-end gap-6 md:gap-8">
             
-            {/* Avatar */}
+            {/* Avatar with Level Frame */}
             <div className="relative group">
-                <div className="h-32 w-32 md:h-40 md:w-40 2xl:h-48 2xl:w-48 rounded-3xl p-1 bg-[#030304] ring-1 ring-white/10 overflow-hidden shadow-2xl">
-                    <img 
-                        src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=400&auto=format&fit=crop" 
-                        alt={name} 
-                        className="w-full h-full object-cover rounded-2xl bg-slate-800"
-                    />
+                <div className={`h-32 w-32 md:h-40 md:w-40 2xl:h-48 2xl:w-48 rounded-3xl p-[4px] ${levelFrameClass}`}>
+                    <div className="h-full w-full rounded-2xl overflow-hidden bg-[#030304] border-4 border-[#030304]">
+                        <img 
+                            src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=400&auto=format&fit=crop" 
+                            alt={name} 
+                            className="w-full h-full object-cover bg-slate-800"
+                        />
+                    </div>
                 </div>
                 <div className="absolute bottom-3 right-3 h-5 w-5 md:h-6 md:w-6 rounded-full bg-green-500 border-4 border-[#030304]" title="Disponible para trabajar"></div>
+                
+                {/* Level Badge Tooltip */}
+                <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 text-white text-xs px-3 py-1 rounded-full whitespace-nowrap pointer-events-none">
+                    Nivel: {artistLevel}
+                </div>
             </div>
 
             {/* Info Text */}
@@ -129,7 +153,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                 <div className="flex flex-wrap items-center gap-2 mb-1">
                     <h1 className="text-3xl md:text-4xl 2xl:text-5xl font-bold text-white tracking-tight">{name}</h1>
                     <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6 2xl:h-8 2xl:w-8 text-amber-500 fill-amber-500/20" />
-                    <span className="px-2 py-0.5 rounded text-[10px] 2xl:text-xs font-bold bg-amber-500/20 text-amber-500 border border-amber-500/20 uppercase tracking-wider ml-2">Pro</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] 2xl:text-xs font-bold bg-amber-500/20 text-amber-500 border border-amber-500/20 uppercase tracking-wider ml-2">{artistLevel}</span>
                 </div>
                 <p className="text-lg md:text-xl 2xl:text-2xl text-slate-300 font-light mb-4">Senior 3D Artist & Concept Designer</p>
                 
@@ -209,30 +233,48 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
         <div className="space-y-10 order-2 lg:order-1">
             
             {/* Gamification Level Box */}
-            <div className="bg-gradient-to-br from-amber-900/40 to-slate-900 border border-amber-500/30 p-6 rounded-2xl relative overflow-hidden">
-                <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-amber-500 font-bold text-sm uppercase tracking-widest flex items-center gap-2">
-                        <Zap className="h-4 w-4" /> Nivel 15
-                    </h3>
-                    <span className="text-white font-bold text-sm">3,450 / 5,000 XP</span>
-                </div>
-                <div className="w-full h-2 bg-slate-800 rounded-full mb-6">
-                    <div className="h-full bg-amber-500 rounded-full" style={{ width: '70%' }}></div>
-                </div>
-                
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Medallas</h4>
-                <div className="flex gap-3">
-                    <div className="h-10 w-10 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center justify-center text-amber-500" title="Top Contributor">
-                        <Award className="h-5 w-5" />
+            <div className={`bg-gradient-to-br from-slate-900 to-slate-950 border border-white/10 p-6 rounded-2xl relative overflow-hidden`}>
+                {/* Dynamic Background Glow based on Level */}
+                <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] -mr-16 -mt-16 opacity-20 ${
+                    artistLevel === 'Master' ? 'bg-cyan-500' : 
+                    artistLevel === 'Expert' ? 'bg-purple-500' : 
+                    artistLevel === 'Pro' ? 'bg-amber-500' : 'bg-slate-500'
+                }`}></div>
+
+                <div className="relative z-10">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-bold text-sm uppercase tracking-widest flex items-center gap-2 text-white">
+                            <Zap className={`h-4 w-4 ${
+                                artistLevel === 'Master' ? 'text-cyan-400' : 
+                                artistLevel === 'Expert' ? 'text-purple-400' : 
+                                artistLevel === 'Pro' ? 'text-amber-400' : 'text-slate-400'
+                            }`} /> 
+                            Nivel {artistLevel === 'Master' ? '50' : artistLevel === 'Expert' ? '35' : '15'}
+                        </h3>
+                        <span className="text-white font-bold text-sm">3,450 / 5,000 XP</span>
                     </div>
-                    <div className="h-10 w-10 bg-purple-500/10 border border-purple-500/30 rounded-lg flex items-center justify-center text-purple-500" title="Challenge Winner">
-                        <Trophy className="h-5 w-5" />
+                    <div className="w-full h-2 bg-slate-800 rounded-full mb-6 overflow-hidden">
+                        <div className={`h-full rounded-full ${
+                             artistLevel === 'Master' ? 'bg-gradient-to-r from-cyan-400 to-blue-500' : 
+                             artistLevel === 'Expert' ? 'bg-gradient-to-r from-purple-400 to-pink-500' : 
+                             'bg-amber-500'
+                        }`} style={{ width: '70%' }}></div>
                     </div>
-                    <div className="h-10 w-10 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-center justify-center text-blue-500" title="Course Creator">
-                        <GraduationCap className="h-5 w-5" />
-                    </div>
-                    <div className="h-10 w-10 bg-slate-800 border border-white/5 rounded-lg flex items-center justify-center text-slate-600 text-xs font-bold">
-                        +5
+                    
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Medallas</h4>
+                    <div className="flex gap-3">
+                        <div className="h-10 w-10 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center justify-center text-amber-500" title="Top Contributor">
+                            <Award className="h-5 w-5" />
+                        </div>
+                        <div className="h-10 w-10 bg-purple-500/10 border border-purple-500/30 rounded-lg flex items-center justify-center text-purple-500" title="Challenge Winner">
+                            <Trophy className="h-5 w-5" />
+                        </div>
+                        <div className="h-10 w-10 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-center justify-center text-blue-500" title="Course Creator">
+                            <GraduationCap className="h-5 w-5" />
+                        </div>
+                        <div className="h-10 w-10 bg-slate-800 border border-white/5 rounded-lg flex items-center justify-center text-slate-600 text-xs font-bold">
+                            +5
+                        </div>
                     </div>
                 </div>
             </div>

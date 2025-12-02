@@ -1,12 +1,18 @@
 
-import React from 'react';
-import { ArrowRight, Layers, GraduationCap, Store, Newspaper, Move3d, MonitorPlay, Palette, Gamepad2, Globe, Users, Code, Server, Database, Cloud } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { 
+  ArrowRight, Layers, GraduationCap, Store, Newspaper, Move3d, MonitorPlay, Palette, Gamepad2, Globe, Users, 
+  Code, Server, Database, Cloud, ChevronLeft, ChevronRight, PenTool, Box, Smartphone, Shield, TestTube, Cpu, 
+  Building2, Terminal, Camera, Layout, Music, Video, Shirt, BookOpen, Aperture, Bitcoin, Wifi, Activity, 
+  Glasses, ServerCog, Bot, PenLine 
+} from 'lucide-react';
 import { PORTFOLIO_ITEMS, EDUCATION_ITEMS, ASSET_ITEMS, BLOG_ITEMS } from '../data/content';
 import { SUBSCRIPTIONS } from '../data/navigation';
 import { PortfolioCard } from '../components/cards/PortfolioCard';
 import { EducationCard } from '../components/cards/EducationCard';
 import { AssetCard } from '../components/cards/AssetCard';
 import { ContentMode } from '../hooks/useAppStore';
+import { StoryViewer, StoryUser } from '../components/modals/StoryViewer';
 
 interface FeedViewProps {
   onNavigateToModule: (moduleId: string) => void;
@@ -15,6 +21,8 @@ interface FeedViewProps {
 }
 
 export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSelect, contentMode }) => {
+  const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null);
+  const categoriesScrollRef = useRef<HTMLDivElement>(null);
   
   // Filter content based on mode (default 'creative')
   const mode = contentMode || 'creative';
@@ -25,11 +33,40 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
   const displayEducation = EDUCATION_ITEMS.filter(i => (i.domain || 'creative') === mode).slice(0, 4);
   const displayAssets = ASSET_ITEMS.filter(i => (i.domain || 'creative') === mode).slice(0, 5);
 
+  // Consolidate all users for the Stories Rail
+  // Merge real subscriptions with generated users for a consistent list
+  const storyUsers: StoryUser[] = [
+    ...SUBSCRIPTIONS.map(s => ({
+        id: s.id,
+        name: s.name,
+        avatar: s.image,
+        isLive: s.isLive
+    })),
+    ...Array.from({ length: 15 }).map((_, i) => ({
+        id: `fake-${i}`,
+        name: `User ${i + 1}`,
+        avatar: `https://ui-avatars.com/api/?name=User+${i}&background=random&color=fff`,
+        isLive: false
+    }))
+  ];
+
+  // Extended Categories for Scrolling
   const creativeCategories = [
       { label: 'Modelado 3D', icon: Move3d, color: 'from-blue-500 to-cyan-500' },
       { label: 'Animación', icon: MonitorPlay, color: 'from-purple-500 to-pink-500' },
       { label: 'Concept Art', icon: Palette, color: 'from-amber-500 to-orange-500' },
       { label: 'Game Dev', icon: Gamepad2, color: 'from-green-500 to-emerald-500' },
+      { label: 'VFX', icon: Box, color: 'from-red-500 to-pink-600' },
+      { label: 'ArchViz', icon: Building2, color: 'from-slate-500 to-gray-600' },
+      { label: 'Ilustración', icon: PenTool, color: 'from-pink-500 to-rose-500' },
+      { label: 'VR / AR', icon: Globe, color: 'from-cyan-500 to-blue-600' },
+      { label: 'Fotografía', icon: Camera, color: 'from-indigo-500 to-blue-600' },
+      { label: 'Diseño Gráfico', icon: Layout, color: 'from-orange-400 to-red-500' },
+      { label: 'Música & SFX', icon: Music, color: 'from-rose-500 to-pink-600' },
+      { label: 'Edición Video', icon: Video, color: 'from-blue-600 to-indigo-600' },
+      { label: 'Moda 3D', icon: Shirt, color: 'from-fuchsia-500 to-purple-600' },
+      { label: 'Escritura', icon: BookOpen, color: 'from-emerald-600 to-teal-500' },
+      { label: 'Motion', icon: Aperture, color: 'from-yellow-500 to-orange-500' },
   ];
 
   const devCategories = [
@@ -37,9 +74,34 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
       { label: 'Backend', icon: Server, color: 'from-green-500 to-emerald-500' },
       { label: 'DevOps', icon: Cloud, color: 'from-orange-500 to-red-500' },
       { label: 'Database', icon: Database, color: 'from-purple-500 to-pink-500' },
+      { label: 'Mobile', icon: Smartphone, color: 'from-teal-500 to-green-400' },
+      { label: 'Seguridad', icon: Shield, color: 'from-red-600 to-red-400' },
+      { label: 'QA Testing', icon: TestTube, color: 'from-yellow-500 to-amber-500' },
+      { label: 'AI & ML', icon: Cpu, color: 'from-indigo-500 to-purple-500' },
+      { label: 'Terminal', icon: Terminal, color: 'from-gray-600 to-gray-400' },
+      { label: 'Blockchain', icon: Bitcoin, color: 'from-orange-400 to-yellow-500' },
+      { label: 'IoT', icon: Wifi, color: 'from-cyan-600 to-blue-600' },
+      { label: 'Data Science', icon: Activity, color: 'from-emerald-500 to-teal-600' },
+      { label: 'XR Dev', icon: Glasses, color: 'from-violet-500 to-fuchsia-500' },
+      { label: 'SysAdmin', icon: ServerCog, color: 'from-slate-600 to-gray-500' },
+      { label: 'Robótica', icon: Bot, color: 'from-red-500 to-orange-600' },
+      { label: 'System Design', icon: PenLine, color: 'from-blue-400 to-indigo-500' },
   ];
 
   const categories = mode === 'dev' ? devCategories : creativeCategories;
+
+  // Scroll Handler
+  const scrollCategories = (direction: 'left' | 'right') => {
+    if (categoriesScrollRef.current) {
+        const { current } = categoriesScrollRef;
+        const scrollAmount = 300; // Adjust scroll distance
+        if (direction === 'left') {
+            current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        } else {
+            current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
+    }
+  };
 
   // Theme colors
   const accentText = mode === 'dev' ? 'text-blue-500' : 'text-amber-500';
@@ -54,32 +116,34 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
   return (
     <div className="animate-fade-in pb-20">
       
+      {/* Story Viewer Overlay */}
+      <StoryViewer 
+        isOpen={activeStoryIndex !== null}
+        onClose={() => setActiveStoryIndex(null)}
+        initialIndex={activeStoryIndex || 0}
+        users={storyUsers}
+      />
+
       {/* Live & Stories Rail */}
       <div className="w-full bg-[#050506] border-b border-white/5 py-4 overflow-x-auto scrollbar-hide">
           <div className="max-w-[2560px] mx-auto px-6 md:px-12 2xl:px-16 flex gap-6">
-              {SUBSCRIPTIONS.map((sub) => (
-                  <div key={sub.id} className="flex flex-col items-center gap-2 cursor-pointer group flex-shrink-0">
-                      <div className={`p-[3px] rounded-full ${sub.isLive ? 'bg-gradient-to-tr from-amber-500 to-purple-600 animate-pulse' : 'bg-white/10 group-hover:bg-white/20'}`}>
-                          <div className="h-16 w-16 rounded-full border-2 border-[#050506] overflow-hidden">
-                              <img src={sub.image} alt={sub.name} className="h-full w-full object-cover transition-transform group-hover:scale-110" />
-                          </div>
-                      </div>
-                      <span className="text-xs text-slate-400 font-medium group-hover:text-white transition-colors w-16 text-center truncate">{sub.name}</span>
-                      {sub.isLive && <span className="text-[9px] bg-red-500 text-white px-1.5 rounded uppercase font-bold tracking-wider">Live</span>}
-                  </div>
-              ))}
-              {Array.from({ length: 15 }).map((_, i) => (
-                  <div key={`fake-${i}`} className="flex flex-col items-center gap-2 cursor-pointer group opacity-50 hover:opacity-100 transition-opacity flex-shrink-0">
-                      <div className="p-[3px] rounded-full bg-white/10">
-                          <div className="h-16 w-16 rounded-full border-2 border-[#050506] overflow-hidden bg-slate-800">
+              {storyUsers.map((user, index) => (
+                  <div 
+                    key={user.id} 
+                    className="flex flex-col items-center gap-2 cursor-pointer group flex-shrink-0"
+                    onClick={() => setActiveStoryIndex(index)}
+                  >
+                      <div className={`p-[3px] rounded-full transition-all ${user.isLive ? 'bg-gradient-to-tr from-amber-500 to-purple-600 animate-pulse' : 'bg-gradient-to-tr from-white/20 to-white/5 group-hover:from-amber-500 group-hover:to-purple-600'}`}>
+                          <div className="h-16 w-16 rounded-full border-2 border-[#050506] overflow-hidden bg-slate-800 relative">
                               <img 
-                                src={`https://ui-avatars.com/api/?name=User+${i}&background=random&color=fff`} 
-                                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all" 
-                                alt="" 
+                                src={user.avatar} 
+                                alt={user.name} 
+                                className="h-full w-full object-cover transition-transform group-hover:scale-110" 
                               />
                           </div>
                       </div>
-                      <span className="text-xs text-slate-500 w-16 text-center truncate">User {i + 1}</span>
+                      <span className="text-xs text-slate-400 font-medium group-hover:text-white transition-colors w-16 text-center truncate">{user.name}</span>
+                      {user.isLive && <span className="text-[9px] bg-red-500 text-white px-1.5 rounded uppercase font-bold tracking-wider absolute -mt-4">Live</span>}
                   </div>
               ))}
           </div>
@@ -132,17 +196,41 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
               {/* Main Content (Feed) - Full Width */}
               <div className="lg:col-span-12 space-y-16">
                   
-                  {/* Quick Categories */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {categories.map((cat, idx) => (
-                          <div key={idx} className="group relative h-20 rounded-xl bg-[#0A0A0C] border border-white/10 overflow-hidden cursor-pointer hover:-translate-y-1 transition-transform shadow-lg">
-                              <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 bg-gradient-to-br ${cat.color} transition-opacity`}></div>
-                              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-4">
-                                  <cat.icon className="h-6 w-6 text-white group-hover:scale-110 transition-transform" />
-                                  <span className="text-xs font-bold text-slate-400 group-hover:text-white transition-colors">{cat.label}</span>
+                  {/* Quick Categories Carousel */}
+                  <div className="relative group">
+                      {/* Left Gradient/Arrow */}
+                      <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-slate-50 dark:from-[#030304] to-transparent z-10 pointer-events-none"></div>
+                      <button 
+                        onClick={() => scrollCategories('left')}
+                        className="absolute left-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 -ml-3"
+                      >
+                          <ChevronLeft className="h-6 w-6" />
+                      </button>
+
+                      {/* Scroll Container */}
+                      <div 
+                        ref={categoriesScrollRef}
+                        className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4 px-1"
+                      >
+                          {categories.map((cat, idx) => (
+                              <div key={idx} className="flex-shrink-0 w-44 group/card relative h-20 rounded-xl bg-[#0A0A0C] border border-white/10 overflow-hidden cursor-pointer hover:-translate-y-1 transition-transform shadow-lg">
+                                  <div className={`absolute inset-0 opacity-0 group-hover/card:opacity-10 bg-gradient-to-br ${cat.color} transition-opacity`}></div>
+                                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-4">
+                                      <cat.icon className="h-6 w-6 text-white group-hover/card:scale-110 transition-transform" />
+                                      <span className="text-xs font-bold text-slate-400 group-hover/card:text-white transition-colors">{cat.label}</span>
+                                  </div>
                               </div>
-                          </div>
-                      ))}
+                          ))}
+                      </div>
+
+                      {/* Right Gradient/Arrow */}
+                      <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-slate-50 dark:from-[#030304] to-transparent z-10 pointer-events-none"></div>
+                      <button 
+                        onClick={() => scrollCategories('right')}
+                        className="absolute right-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 -mr-3"
+                      >
+                          <ChevronRight className="h-6 w-6" />
+                      </button>
                   </div>
 
                   {/* Featured Portfolio */}

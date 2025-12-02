@@ -47,7 +47,7 @@ const App: React.FC = () => {
         onProClick={actions.handleProClick}
         activeModule={state.activeModule}
         onModuleSelect={actions.handleModuleSelect}
-        hiddenOnDesktop={isLearningMode || ['landing', 'home', 'settings', 'pro', 'search', 'collections', 'cart', 'people', 'community', 'events'].includes(state.activeModule) || !!state.viewingAuthorName}
+        hiddenOnDesktop={isLearningMode || ['landing', 'home', 'settings', 'pro', 'search', 'collections', 'cart', 'people', 'community', 'events', 'profile'].includes(state.activeModule) || state.activeModule.startsWith('info-') || !!state.viewingAuthorName}
         contentMode={state.contentMode}
         onToggleContentMode={actions.toggleContentMode}
       />
