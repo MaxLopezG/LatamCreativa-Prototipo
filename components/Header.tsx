@@ -81,11 +81,11 @@ export const Header = ({
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <header className="flex h-20 w-full items-center justify-between border-b border-slate-200 dark:border-white/[0.06] bg-white/80 dark:bg-[#030304]/80 px-6 md:px-8 backdrop-blur-xl absolute top-0 right-0 left-0 z-40 transition-colors">
+    <header className="flex h-20 w-full items-center justify-between border-b border-slate-200 dark:border-white/[0.06] bg-white/80 dark:bg-[#030304]/80 px-4 md:px-8 backdrop-blur-xl absolute top-0 right-0 left-0 z-40 transition-colors">
       
       {/* LEFT: Logo & Mobile Menu */}
-      <div className="flex items-center gap-5 w-1/3">
-        <button onClick={onMenuClick} className="xl:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors p-1">
+      <div className="flex items-center gap-3 md:gap-5 flex-1 md:w-1/3 md:flex-none">
+        <button onClick={onMenuClick} className="xl:hidden text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5">
           <Menu className="h-6 w-6" />
         </button>
         <button onClick={onLogoClick} className="flex flex-col hover:opacity-80 transition-opacity text-left">
@@ -123,7 +123,7 @@ export const Header = ({
       </div>
 
       {/* RIGHT: Actions */}
-      <div className="flex items-center justify-end gap-3 md:gap-4 w-1/3">
+      <div className="flex items-center justify-end gap-2 md:gap-4 flex-1 md:w-1/3 md:flex-none">
         {/* Shopping Cart */}
         <button 
             onClick={onCartClick}

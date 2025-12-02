@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Settings, Search, X, Sun, Moon, Sliders, Code, Palette } from 'lucide-react';
+import React from 'react';
+import { Settings, Search, X, Sliders, Code, Palette } from 'lucide-react';
 import { PRIMARY_NAV_ITEMS, NAV_SECTIONS, NAV_SECTIONS_DEV, SUBSCRIPTIONS } from '../data/navigation';
 import { ContentMode } from '../hooks/useAppStore';
 
@@ -12,43 +12,10 @@ interface PrimarySidebarProps {
 }
 
 export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, contentMode, onToggleContentMode }: PrimarySidebarProps) => {
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isDark, setIsDark] = useState(true);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (document.documentElement.classList.contains('dark')) {
-      setIsDark(true);
-    } else {
-      setIsDark(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsSettingsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const toggleTheme = () => {
-    const newIsDark = !isDark;
-    setIsDark(newIsDark);
-    if (newIsDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    setIsSettingsOpen(false);
-  };
-
   // Active state colors based on mode
   const activeColorClass = contentMode === 'dev' 
     ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' 
-    : 'bg-amber-500 text-white shadow-lg shadow-amber-500/20'; // Changed from slate-900 to amber-500 for Creative Mode
+    : 'bg-amber-500 text-white shadow-lg shadow-amber-500/20';
 
   return (
     <aside className="hidden flex-col border-r border-slate-200 dark:border-white/[0.06] md:flex z-50 bg-white/90 dark:bg-[#050506]/90 w-[88px] pt-8 pb-8 backdrop-blur-xl items-center h-screen sticky top-0 transition-colors">
@@ -79,7 +46,7 @@ export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, con
       </nav>
 
       {/* Bottom Actions */}
-      <div className="flex flex-col mt-auto gap-5 items-center relative" ref={menuRef}>
+      <div className="flex flex-col mt-auto gap-5 items-center relative">
         
         {/* Toggle Mode Button */}
         <div className="relative group flex items-center justify-center">
@@ -98,38 +65,22 @@ export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, con
             </div>
         </div>
 
-        {isSettingsOpen && (
-          <div className="absolute bottom-2 left-16 mb-2 w-64 rounded-xl bg-white dark:bg-[#1A1A1C] border border-slate-200 dark:border-white/10 shadow-xl p-2 z-50 overflow-hidden animate-fade-in origin-bottom-left flex flex-col gap-1">
+        {/* Settings Button - Direct Navigation */}
+        <div className="relative group flex items-center justify-center">
             <button 
-              onClick={() => {
-                onModuleSelect?.('settings');
-                setIsSettingsOpen(false);
-              }} 
-              className="flex items-center gap-3 w-full p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 text-base font-medium transition-colors"
+              onClick={() => onModuleSelect?.('settings')}
+              className={`group flex h-12 w-12 items-center justify-center rounded-2xl transition-all ${
+                activeModule === 'settings'
+                ? 'bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-white' 
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-slate-100'
+              }`}
             >
-              <Sliders className="w-5 h-5 text-slate-500" />
-              Configuración
+              <Settings className="h-6 w-6" strokeWidth={1.5} />
             </button>
-            <button 
-              onClick={toggleTheme} 
-              className="flex items-center gap-3 w-full p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 text-base font-medium transition-colors"
-            >
-              {isDark ? <Sun className="w-5 h-5 text-slate-500" /> : <Moon className="w-5 h-5 text-slate-500" />}
-              {isDark ? 'Modo Claro' : 'Modo Oscuro'}
-            </button>
-          </div>
-        )}
-
-        <button 
-          onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-          className={`group flex h-12 w-12 items-center justify-center rounded-2xl transition-all ${
-            isSettingsOpen || activeModule === 'settings'
-            ? 'bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-white' 
-            : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-slate-100'
-          }`}
-        >
-          <Settings className="h-6 w-6" strokeWidth={1.5} />
-        </button>
+            <div className="absolute left-14 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[60]">
+               Configuración
+            </div>
+        </div>
         
         <div 
           onClick={() => onModuleSelect?.('profile')}
@@ -173,27 +124,8 @@ export const SecondarySidebar = ({
   contentMode,
   onToggleContentMode
 }: SecondarySidebarProps) => {
-  const [isDark, setIsDark] = useState(true);
-
   // Switch sections based on mode
   const currentNavSections = contentMode === 'dev' ? NAV_SECTIONS_DEV : NAV_SECTIONS;
-
-  // Sync theme state
-  useEffect(() => {
-    if (isOpen) {
-      setIsDark(document.documentElement.classList.contains('dark'));
-    }
-  }, [isOpen]);
-
-  const toggleTheme = () => {
-    const newIsDark = !isDark;
-    setIsDark(newIsDark);
-    if (newIsDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  };
 
   const activeItemClass = contentMode === 'dev'
     ? 'bg-blue-500/10 ring-1 ring-inset ring-blue-500/20 text-blue-600 dark:text-blue-400'
@@ -214,9 +146,10 @@ export const SecondarySidebar = ({
       )}
 
       <aside className={`
-        fixed inset-y-0 z-40 flex w-72 flex-col border-r border-slate-200 dark:border-white/[0.06] bg-white dark:bg-[#08080A]
+        fixed inset-y-0 z-40 flex flex-col border-r border-slate-200 dark:border-white/[0.06] bg-white dark:bg-[#08080A]
         transition-transform duration-300 ease-[cubic-bezier(0.2,0,0,1)]
         left-0 md:left-[88px] xl:left-0
+        w-[85vw] max-w-[300px] md:w-72
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         ${hiddenOnDesktop ? 'xl:hidden' : 'xl:static xl:translate-x-0 xl:bg-white/50 dark:xl:bg-[#08080A]/50 xl:backdrop-blur-md xl:h-screen xl:sticky xl:top-0'}
       `}>
@@ -234,13 +167,16 @@ export const SecondarySidebar = ({
           
           {/* MOBILE ONLY: Primary Module Selection */}
           <div className="md:hidden mb-8">
-              <h3 className="uppercase text-xs font-semibold text-slate-500 tracking-widest mb-4 px-2">Navegación</h3>
-              <div className="grid grid-cols-4 gap-2">
+              <h3 className="uppercase text-xs font-semibold text-slate-500 tracking-widest mb-4 px-2">Navegación Principal</h3>
+              <div className="grid grid-cols-3 gap-2">
                   {PRIMARY_NAV_ITEMS.map(item => (
                       <button 
                         key={item.id}
-                        onClick={() => onModuleSelect?.(item.id)}
-                        className={`flex flex-col items-center justify-center gap-1.5 p-2 rounded-xl transition-colors ${
+                        onClick={() => {
+                            onModuleSelect?.(item.id);
+                            onClose?.();
+                        }}
+                        className={`flex flex-col items-center justify-center gap-2 p-3 rounded-xl transition-colors ${
                             activeModule === item.id 
                             ? activeItemClass 
                             : 'bg-slate-50 dark:bg-white/5 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/10'
@@ -379,13 +315,6 @@ export const SecondarySidebar = ({
               >
                   {contentMode === 'dev' ? <Palette className="h-5 w-5" /> : <Code className="h-5 w-5" />}
                   <span className="text-sm font-medium">{contentMode === 'dev' ? 'Modo Creativo' : 'Modo Developer'}</span>
-              </button>
-              <button 
-                  onClick={toggleTheme}
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
-              >
-                  {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                  <span className="text-sm font-medium">{isDark ? 'Modo Claro' : 'Modo Oscuro'}</span>
               </button>
           </div>
 

@@ -2,6 +2,7 @@
 import React from 'react';
 import { PrimarySidebar, SecondarySidebar } from './components/Navigation';
 import { Header } from './components/Header';
+import { Footer } from './components/layout/Footer';
 import { VideoContent } from './components/VideoContent';
 import { ChatWidget } from './components/chat/ChatWidget';
 import { MobileTabBar } from './components/layout/MobileTabBar'; 
@@ -70,10 +71,17 @@ const App: React.FC = () => {
         
         {/* Adjusted padding bottom for mobile tab bar, remove padding in learning mode */}
         <div className={`custom-scrollbar flex-1 overflow-y-auto ${isLearningMode ? 'pt-0' : 'pt-20'} pb-20 md:pb-0`}>
-          <VideoContent 
-            state={state}
-            actions={actions}
-          />
+          <div className="flex flex-col min-h-full">
+            <div className="flex-1">
+              <VideoContent 
+                state={state}
+                actions={actions}
+              />
+            </div>
+            {!isLearningMode && (
+              <Footer onNavigate={actions.handleModuleSelect} />
+            )}
+          </div>
         </div>
       </main>
 
