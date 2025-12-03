@@ -20,27 +20,35 @@ interface UserProfileViewProps {
 const EXPERIENCE = [
   {
     id: 1,
-    role: "Senior 3D Artist",
-    company: "Ubisoft",
+    role: "Lead Environment Artist",
+    company: "Ubisoft Barcelona",
     period: "2021 - Presente",
     location: "Barcelona, España",
-    description: "Liderando el equipo de entornos para proyectos AAA no anunciados. Responsable de la coherencia visual, optimización de assets mediante Nanite/Lumen y mentoría de artistas junior."
+    description: "Dirigiendo el equipo de arte de entornos (15 artistas) para un título AAA no anunciado. Responsable de la calidad visual final, pipelines de Unreal Engine 5 (Nanite/Lumen) y optimización de rendimiento para PS5/Xbox Series X. Implementación de flujos de trabajo procedimentales en Houdini que redujeron el tiempo de producción de ciudades en un 40%."
   },
   {
     id: 2,
-    role: "Environment Artist",
-    company: "Gameloft",
+    role: "Senior 3D Artist",
+    company: "Gameloft Madrid",
     period: "2018 - 2021",
     location: "Madrid, España",
-    description: "Modelado y texturizado de escenarios para juegos móviles de alto rendimiento (Asphalt 9). Colaboración estrecha con Game Designers para asegurar la jugabilidad en circuitos."
+    description: "Desarrollo de assets de alto rendimiento para 'Asphalt 9: Legends'. Especialista en texturizado PBR, baking de mapas complejos y creación de shaders HLSL optimizados para dispositivos móviles. Colaboración estrecha con el equipo de diseño para asegurar la legibilidad del gameplay a altas velocidades."
   },
   {
     id: 3,
-    role: "Freelance 3D Generalist",
-    company: "Varios Clientes",
-    period: "2015 - 2018",
+    role: "3D Generalist",
+    company: "Mediapro",
+    period: "2016 - 2018",
+    location: "Barcelona, España",
+    description: "Creación de gráficos en tiempo real y realidad aumentada para retransmisiones deportivas (LaLiga). Modelado, animación y renderizado de cabeceras de programas utilizando Cinema 4D, Redshift y After Effects. Gestión de plazos ajustados en entornos de producción en vivo."
+  },
+  {
+    id: 4,
+    role: "Freelance Concept Artist",
+    company: "Varios Clientes Indie",
+    period: "2014 - 2016",
     location: "Remoto",
-    description: "Creación de assets 3D para publicidad, visualización arquitectónica y prototipos indie. Clientes incluyen agencias de marketing y estudios pequeños en Latam."
+    description: "Diseño de personajes y props para juegos indie y juegos de mesa. Desarrollo de guías de estilo visual y keyframes narrativos. Clientes incluyen estudios pequeños en Argentina, México y España."
   }
 ];
 
@@ -48,17 +56,31 @@ const EXPERIENCE = [
 const EDUCATION = [
   {
     id: 1,
-    degree: "Máster en Arte para Videojuegos",
+    degree: "Máster en Arte Digital para Videojuegos",
     school: "Voxel School",
     period: "2016 - 2017",
-    description: "Especialización intensiva en escultura digital con ZBrush, texturizado PBR y motores gráficos en tiempo real."
+    description: "Especialización intensiva en escultura orgánica con ZBrush, texturizado avanzado con Substance Suite y motores gráficos. Proyecto final 'Cyberpunk Alley' galardonado con el premio al Mejor Arte de Entorno del año y mención honorífica por optimización técnica."
   },
   {
     id: 2,
     degree: "Grado en Diseño Multimedial",
     school: "Universidad de Palermo",
     period: "2011 - 2015",
-    description: "Formación integral en diseño, teoría del color, composición visual y fundamentos de animación."
+    description: "Formación académica integral cubriendo teoría del color, composición visual, historia del arte y diseño interactivo. Tesis de grado: 'La narrativa ambiental en los videojuegos modernos: Contar historias sin palabras', calificada con 9.8/10."
+  },
+  {
+    id: 3,
+    degree: "Unreal Authorized Instructor",
+    school: "Epic Games",
+    period: "2022",
+    description: "Certificación oficial para la enseñanza de Unreal Engine 5. Especialización validada en iluminación global (Lumen), sistemas de partículas (Niagara) y Blueprints para artistas."
+  },
+  {
+    id: 4,
+    degree: "Anatomía Avanzada para Artistas",
+    school: "Scott Eaton Courses",
+    period: "2015",
+    description: "Estudio profundo de la figura humana, écorché, biomecánica y construcción de la forma aplicado a la escultura digital de personajes."
   }
 ];
 
@@ -366,7 +388,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                 <h3 className="text-base font-bold text-white uppercase tracking-widest mb-4">Sobre mí</h3>
                 <p className="text-base 2xl:text-lg text-slate-400 leading-relaxed mb-6">
                     Apasionado por crear mundos inmersivos y contar historias a través del entorno. 
-                    Especializado en Hard Surface y Diseño de Niveles para videojuegos AAA.
+                    Especializado en Hard Surface y Diseño de Niveles para videojuegos AAA. 
+                    Siempre buscando optimizar flujos de trabajo con herramientas procedimentales.
                 </p>
                 <div className="flex gap-3">
                     <a href="#" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white transition-colors"><Twitter className="h-5 w-5" /></a>
