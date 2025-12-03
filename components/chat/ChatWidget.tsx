@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { FRIENDS_LIST } from '../../data/chat';
 import { Friend, ChatMessage } from '../../types';
-import { ContentMode } from '../../hooks/useAppStore';
+import { ContentMode, useAppStore } from '../../hooks/useAppStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../services/api';
 
@@ -27,6 +27,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   contentMode = 'creative'
 }) => {
   const queryClient = useQueryClient();
+  const { actions } = useAppStore(); // Access global store actions
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [internalActiveFriendId, setInternalActiveFriendId] = useState<string | null>(null);
   const [inputText, setInputText] = useState('');
@@ -73,7 +74,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     onError: (err, newMsgData, context) => {
         // Rollback
         queryClient.setQueryData(['chat', newMsgData.friendId], context?.previousMessages);
-        alert("Error sending message: " + err.message);
+        // Improved Error Handling via Toast
+        actions.showToast(err.message || "Error al enviar mensaje", 'error');
     },
     onSettled: (data, error, variables) => {
         // Refetch to confirm

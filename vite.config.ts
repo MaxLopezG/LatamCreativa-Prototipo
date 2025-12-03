@@ -8,6 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      strategies: 'generateSW',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
         name: 'Latam Creativa',
@@ -16,6 +17,7 @@ export default defineConfig({
         theme_color: '#030304',
         background_color: '#030304',
         display: 'standalone',
+        orientation: 'portrait',
         icons: [
           {
             src: 'pwa-192x192.png',
@@ -26,6 +28,12 @@ export default defineConfig({
             src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
           }
         ]
       },

@@ -1,11 +1,13 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { api } from '../services/api';
 
 export const useFeed = () => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['feed'],
     queryFn: api.getFeed,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
     staleTime: 1000 * 60 * 5, // 5 minutes cache
     refetchOnWindowFocus: false,
   });

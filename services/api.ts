@@ -19,20 +19,31 @@ const delay = (min = 500, max = 1000) => {
 
 export const api = {
   // Feed & Content
-  getFeed: async (): Promise<{
+  getFeed: async ({ pageParam = 0 }: { pageParam?: number } = {}): Promise<{
     portfolio: PortfolioItem[];
     blog: ArticleItem[];
     education: CourseItem[];
     assets: AssetItem[];
     videos: VideoSuggestion[];
+    nextPage: number | undefined;
   }> => {
     await delay(800);
+    
+    // Simulate Pagination
+    const PAGE_SIZE = 5;
+    const start = pageParam * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+
+    // We use Portfolio items count as the driver for pagination logic in this mock
+    const hasMore = end < PORTFOLIO_ITEMS.length;
+
     return {
-      portfolio: PORTFOLIO_ITEMS,
-      blog: BLOG_ITEMS,
-      education: EDUCATION_ITEMS,
-      assets: ASSET_ITEMS,
-      videos: HOME_FEED_VIDEOS
+      portfolio: PORTFOLIO_ITEMS.slice(start, end),
+      blog: BLOG_ITEMS.slice(0, 5), // Keep static features or slice if desired
+      education: EDUCATION_ITEMS.slice(0, 4),
+      assets: ASSET_ITEMS.slice(0, 5),
+      videos: HOME_FEED_VIDEOS,
+      nextPage: hasMore ? pageParam + 1 : undefined
     };
   },
 
