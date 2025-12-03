@@ -33,6 +33,8 @@ import { UserProfileView } from './views/UserProfileView';
 import { CartView } from './views/CartView';
 import { SettingsView } from './views/SettingsView';
 import { ProUpgradeView } from './views/ProUpgradeView';
+import { EarningsView } from './views/EarningsView';
+import { SalesListView } from './views/SalesListView';
 import { MainLandingView } from './views/MainLandingView';
 import { InfoView } from './views/InfoView';
 import { SearchResultsView } from './views/SearchResultsView';
@@ -196,6 +198,8 @@ export const router = createBrowserRouter([
       { path: 'success', element: <SuccessView /> },
       { path: 'settings', element: <SettingsView /> },
       { path: 'pro', element: <ProUpgradeView onBack={() => window.history.back()} /> },
+      { path: 'earnings', element: <EarningsView onBack={() => window.history.back()} /> },
+      { path: 'earnings/sales/:type', element: <SalesListView /> },
       
       // Search
       { path: 'search', element: <SearchResultsView query="" onItemSelect={() => {}} /> },

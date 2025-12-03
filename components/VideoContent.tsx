@@ -17,6 +17,8 @@ import { ProjectDetailView } from '../views/ProjectDetailView';
 import { ProUpgradeView } from '../views/ProUpgradeView';
 import { MainLandingView } from '../views/MainLandingView';
 import { SettingsView } from '../views/SettingsView';
+import { EarningsView } from '../views/EarningsView';
+import { SalesListView } from '../views/SalesListView'; // Added SalesListView
 import { FreelanceView } from '../views/FreelanceView';
 import { ServiceDetailView } from '../views/ServiceDetailView';
 import { FeedView } from '../views/FeedView';
@@ -177,6 +179,28 @@ export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) =>
 
       // --- PRO UPGRADE PAGE ---
       if (activeModule === 'pro') return <ProUpgradeView onBack={() => onModuleSelect?.('home')} />;
+
+      // --- EARNINGS DASHBOARD ---
+      if (activeModule === 'earnings') {
+          return (
+            <EarningsView 
+                onBack={() => onModuleSelect?.('home')} 
+                onNavigate={(path) => onModuleSelect?.(path)} 
+            />
+          );
+      }
+
+      // --- EARNINGS SALES LIST ---
+      if (activeModule.startsWith('earnings/sales/')) {
+          const type = activeModule.split('/').pop() || 'asset';
+          return (
+              <SalesListView 
+                  key={type} // Force remount to regenerate data for new type
+                  type={type} 
+                  onBack={() => onModuleSelect?.('earnings')} 
+              />
+          );
+      }
 
       // --- MY PROFILE ---
       if (activeModule === 'profile') {

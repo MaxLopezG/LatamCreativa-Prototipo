@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Settings, Search, X, Sliders, Code, Palette, ChevronDown, ChevronRight } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Settings, Search, X, Sliders, Code, Palette, ChevronDown, ChevronRight, User, DollarSign, LogOut } from 'lucide-react';
 import { PRIMARY_NAV_ITEMS, NAV_SECTIONS, NAV_SECTIONS_DEV, SUBSCRIPTIONS } from '../data/navigation';
 import { ContentMode } from '../hooks/useAppStore';
 
@@ -16,6 +16,19 @@ export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, con
   const activeColorClass = contentMode === 'dev' 
     ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' 
     : 'bg-amber-500 text-white shadow-lg shadow-amber-500/20';
+
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <aside className="hidden flex-col border-r border-slate-200 dark:border-white/[0.06] md:flex z-50 bg-white/90 dark:bg-[#050506]/90 w-[88px] pt-8 pb-8 backdrop-blur-xl items-center h-screen sticky top-0 transition-colors">
@@ -46,7 +59,7 @@ export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, con
       </nav>
 
       {/* Bottom Actions */}
-      <div className="flex flex-col mt-auto gap-5 items-center relative">
+      <div className="flex flex-col mt-auto gap-5 items-center relative" ref={profileMenuRef}>
         
         {/* Toggle Mode Button */}
         <div className="relative group flex items-center justify-center">
@@ -82,15 +95,64 @@ export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, con
             </div>
         </div>
         
-        <div 
-          onClick={() => onModuleSelect?.('profile')}
-          className="h-12 w-12 overflow-hidden rounded-2xl ring-1 ring-slate-200 dark:ring-white/10 transition-transform hover:scale-105 cursor-pointer"
-        >
-          <img 
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop" 
-            alt="User" 
-            className="h-full w-full object-cover opacity-90 hover:opacity-100" 
-          />
+        {/* Profile Picture & Menu */}
+        <div className="relative">
+            <button 
+              onClick={() => setIsProfileOpen(!isProfileOpen)}
+              className="h-12 w-12 overflow-hidden rounded-2xl ring-1 ring-slate-200 dark:ring-white/10 transition-transform hover:scale-105 cursor-pointer block"
+            >
+              <img 
+                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop" 
+                alt="User" 
+                className="h-full w-full object-cover opacity-90 hover:opacity-100" 
+              />
+            </button>
+
+            {isProfileOpen && (
+                <div className="absolute bottom-0 left-16 w-56 bg-white dark:bg-[#1A1A1C] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl p-1.5 z-50 animate-fade-in origin-bottom-left">
+                    <div className="px-3 py-2 border-b border-slate-100 dark:border-white/5 mb-1 flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-200">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop" alt="" className="h-full w-full object-cover"/>
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                            <p className="text-sm font-bold text-slate-900 dark:text-white truncate">Alex Motion</p>
+                            <p className="text-[10px] text-slate-500 truncate">alex@latam.creativa</p>
+                        </div>
+                    </div>
+                    
+                    <button 
+                        onClick={() => {
+                            onModuleSelect?.('profile');
+                            setIsProfileOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                    >
+                        <User className="h-4 w-4 text-slate-400" />
+                        Mi Perfil
+                    </button>
+                    
+                    <button 
+                        onClick={() => {
+                            onModuleSelect?.('earnings');
+                            setIsProfileOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                    >
+                        <DollarSign className="h-4 w-4 text-slate-400" />
+                        Mis Ganancias
+                    </button>
+
+                    <div className="h-px bg-slate-100 dark:bg-white/5 my-1"></div>
+                    
+                    <button 
+                        onClick={() => setIsProfileOpen(false)}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                    >
+                        <LogOut className="h-4 w-4" />
+                        Cerrar Sesión
+                    </button>
+                </div>
+            )}
         </div>
       </div>
     </aside>

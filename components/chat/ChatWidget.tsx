@@ -1,6 +1,10 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Search, MoreHorizontal, Send, ChevronLeft, Phone, Video, Check, Circle } from 'lucide-react';
+import { 
+  MessageCircle, X, Search, MoreHorizontal, Send, ChevronLeft, 
+  Phone, Video, Check, CheckCheck, Paperclip, Smile, Image as ImageIcon, 
+  Mic, MoreVertical, Circle 
+} from 'lucide-react';
 import { FRIENDS_LIST, MOCK_CHATS } from '../../data/chat';
 import { Friend, ChatMessage } from '../../types';
 import { ContentMode } from '../../hooks/useAppStore';
@@ -23,6 +27,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   // Local state as fallback or for internal interactions
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [internalActiveFriendId, setInternalActiveFriendId] = useState<string | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
   
   // Derived state to handle controlled vs uncontrolled
   const isOpen = propsIsOpen !== undefined ? propsIsOpen : internalIsOpen;
@@ -53,6 +58,12 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   useEffect(() => {
     if (internalActiveFriendId && isOpen) {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        
+        // Simulate typing effect when opening a chat randomly
+        if (Math.random() > 0.7) {
+            setIsTyping(true);
+            setTimeout(() => setIsTyping(false), 3000);
+        }
     }
   }, [internalActiveFriendId, isOpen, messages, currentChat.length]);
 
@@ -71,6 +82,15 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       [internalActiveFriendId]: [...(prev[internalActiveFriendId] || []), newMessage]
     }));
     setInputText('');
+    
+    // Simulate reply
+    setTimeout(() => {
+        setIsTyping(true);
+        setTimeout(() => {
+            setIsTyping(false);
+            // In a real app, we would add a bot response here
+        }, 2000);
+    }, 1000);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -137,7 +157,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
       {/* Widget Container - Higher z-index, adjusted bottom position for mobile */}
       <div 
-        className={`fixed bottom-40 md:bottom-24 right-4 md:right-6 z-[60] w-[calc(100vw-2rem)] md:w-[380px] h-[55vh] md:h-[600px] bg-white dark:bg-[#0A0A0C] rounded-2xl shadow-2xl ring-1 ring-slate-200 dark:ring-white/10 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
+        className={`fixed bottom-40 md:bottom-24 right-4 md:right-6 z-[60] w-[calc(100vw-2rem)] md:w-[380px] h-[60vh] md:h-[650px] bg-white dark:bg-[#0A0A0C] rounded-2xl shadow-2xl ring-1 ring-slate-200 dark:ring-white/10 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
           isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-10 pointer-events-none'
         }`}
       >
@@ -146,9 +166,9 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
           <div className="flex flex-col h-full animate-fade-in">
             <div className="p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-white dark:bg-[#0A0A0C]">
               <h3 className="font-bold text-slate-900 dark:text-white text-xl tracking-tight">Chats</h3>
-              <div className="flex gap-2">
+              <div className="flex gap-1">
                  <button className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors text-slate-500 dark:text-slate-400">
-                    <MoreHorizontal className="h-5 w-5" />
+                    <MoreVertical className="h-5 w-5" />
                  </button>
               </div>
             </div>
@@ -203,90 +223,132 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
           // --- CONVERSATION VIEW ---
           <div className="flex flex-col h-full animate-slide-up">
             {/* Chat Header */}
-            <div className="p-4 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-white dark:bg-[#0A0A0C] z-10">
+            <div className="px-4 py-3 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-white/95 dark:bg-[#0A0A0C]/95 backdrop-blur-md z-10">
               <div className="flex items-center gap-3">
                  <button 
                     onClick={closeActiveChat}
                     className="p-2 -ml-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full text-slate-500 dark:text-slate-400 transition-colors"
                  >
-                    <ChevronLeft className="h-5 w-5" />
+                    <ChevronLeft className="h-6 w-6" />
                  </button>
                  <div className="relative cursor-pointer">
-                     <img src={activeFriend.avatar} alt={activeFriend.name} className="h-10 w-10 rounded-full object-cover" />
+                     <img src={activeFriend.avatar} alt={activeFriend.name} className="h-10 w-10 rounded-full object-cover shadow-sm" />
                      {activeFriend.status === 'online' && (
                         <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white dark:border-[#0A0A0C] bg-green-500"></div>
                      )}
                  </div>
-                 <div>
+                 <div className="flex flex-col">
                      <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-tight hover:underline cursor-pointer">{activeFriend.name}</h4>
                      <p className="text-[10px] text-slate-500 font-medium flex items-center gap-1">
-                        {activeFriend.status === 'online' ? <span className="text-green-500">● En línea</span> : 'Desconectado'}
+                        {activeFriend.status === 'online' ? <span className="text-green-500">En línea</span> : 'Desconectado'}
                      </p>
                  </div>
               </div>
               <div className="flex items-center gap-1">
-                 <button className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
+                 <button className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full text-slate-500 dark:text-slate-400 transition-colors" title="Llamada de voz">
                     <Phone className="h-4 w-4" />
                  </button>
-                 <button className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
+                 <button className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full text-slate-500 dark:text-slate-400 transition-colors" title="Videollamada">
                     <Video className="h-4 w-4" />
+                 </button>
+                 <button className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full text-slate-500 dark:text-slate-400 transition-colors">
+                    <MoreHorizontal className="h-4 w-4" />
                  </button>
               </div>
             </div>
 
             {/* Chat Messages */}
             <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4 bg-slate-50 dark:bg-[#030304] relative">
+               {/* Background Pattern */}
+               <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05] pointer-events-none" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }}></div>
+
                {/* Date Separator Mock */}
-               <div className="flex justify-center my-4">
-                   <span className="text-[10px] font-bold text-slate-400 bg-slate-200 dark:bg-white/10 px-3 py-1 rounded-full">Hoy</span>
+               <div className="flex justify-center my-4 relative z-10">
+                   <span className="text-[10px] font-bold text-slate-500 bg-slate-200/50 dark:bg-white/5 px-3 py-1 rounded-full backdrop-blur-sm border border-white/5">Hoy</span>
                </div>
 
-               {currentChat.map((msg) => {
-                   const isMe = msg.senderId === 'me';
-                   return (
-                       <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
-                           <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm shadow-sm transition-transform ${
-                               isMe 
-                               ? `${userMessageGradient} text-white rounded-br-none` 
-                               : 'bg-white dark:bg-[#1A1A1C] text-slate-700 dark:text-slate-200 rounded-bl-none border border-slate-200 dark:border-white/5'
-                           }`}>
-                               <p className="leading-relaxed">{msg.text}</p>
-                               <div className={`flex items-center justify-end gap-1 mt-1 opacity-70`}>
-                                   <span className="text-[9px]">{msg.timestamp}</span>
-                                   {isMe && <Check className="h-3 w-3" />}
+               {currentChat.length === 0 ? (
+                   <div className="flex flex-col items-center justify-center h-full text-slate-400 relative z-10">
+                       <div className="w-16 h-16 bg-slate-200 dark:bg-white/5 rounded-full flex items-center justify-center mb-4">
+                           <MessageCircle className="h-8 w-8 opacity-50" />
+                       </div>
+                       <p className="text-sm font-medium">Inicia la conversación</p>
+                       <p className="text-xs opacity-70">Envía un mensaje a {activeFriend.name}</p>
+                   </div>
+               ) : (
+                   currentChat.map((msg, index) => {
+                       const isMe = msg.senderId === 'me';
+                       // Logic to show avatar only on the last message of a sequence from the same user could go here
+                       return (
+                           <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group relative z-10 animate-fade-in`}>
+                               <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm shadow-sm transition-transform ${
+                                   isMe 
+                                   ? `${userMessageGradient} text-white rounded-br-none` 
+                                   : 'bg-white dark:bg-[#1A1A1C] text-slate-700 dark:text-slate-200 rounded-bl-none border border-slate-200 dark:border-white/5'
+                               }`}>
+                                   <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                                   <div className={`flex items-center justify-end gap-1 mt-1 opacity-70`}>
+                                       <span className="text-[9px]">{msg.timestamp}</span>
+                                       {isMe && <CheckCheck className="h-3 w-3 text-white/90" />}
+                                   </div>
                                </div>
                            </div>
+                       );
+                   })
+               )}
+               
+               {isTyping && (
+                   <div className="flex justify-start relative z-10 animate-fade-in">
+                       <div className="bg-white dark:bg-[#1A1A1C] border border-slate-200 dark:border-white/5 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm flex items-center gap-1">
+                           <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></div>
+                           <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+                           <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
                        </div>
-                   );
-               })}
+                   </div>
+               )}
                <div ref={messagesEndRef} />
             </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-white dark:bg-[#0A0A0C] border-t border-slate-100 dark:border-white/5">
-                <div className="relative flex items-center gap-2">
-                    <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
-                        <MoreHorizontal className="h-5 w-5" />
-                    </button>
-                    <div className="relative flex-1">
-                        <input 
-                            type="text" 
+            <div className="p-3 bg-white dark:bg-[#0A0A0C] border-t border-slate-100 dark:border-white/5">
+                <div className="flex items-end gap-2">
+                    <div className="flex gap-1 pb-2 text-slate-400">
+                        <button className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors hover:text-slate-600 dark:hover:text-white" title="Adjuntar archivo">
+                            <Paperclip className="h-5 w-5" />
+                        </button>
+                        <button className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition-colors hover:text-slate-600 dark:hover:text-white hidden md:block" title="Enviar imagen">
+                            <ImageIcon className="h-5 w-5" />
+                        </button>
+                    </div>
+                    
+                    <div className="relative flex-1 bg-slate-100 dark:bg-white/5 border border-transparent focus-within:border-amber-500/50 focus-within:ring-1 focus-within:ring-amber-500/50 rounded-2xl transition-all">
+                        <textarea 
                             value={inputText}
                             onChange={(e) => setInputText(e.target.value)}
                             onKeyDown={handleKeyPress}
                             placeholder="Escribe un mensaje..."
-                            className={`w-full bg-slate-100 dark:bg-white/5 border border-transparent focus:ring-1 rounded-full py-2.5 pl-4 pr-12 text-sm text-slate-900 dark:text-white outline-none transition-colors ${focusRing}`}
+                            rows={1}
+                            className="w-full bg-transparent border-none py-3 pl-4 pr-10 text-sm text-slate-900 dark:text-white outline-none resize-none max-h-32 custom-scrollbar"
+                            style={{ minHeight: '44px' }}
                         />
-                        <button 
-                            onClick={handleSendMessage}
-                            className={`absolute right-1 top-1 h-8 w-8 rounded-full flex items-center justify-center transition-all ${
-                                inputText.trim() 
-                                ? `${sendButtonColor} text-white shadow-md transform hover:scale-105` 
-                                : 'bg-slate-200 dark:bg-white/10 text-slate-400 cursor-default'
-                            }`}
-                        >
-                            <Send className="h-4 w-4 ml-0.5" />
+                        <button className="absolute right-2 bottom-2 p-1.5 text-slate-400 hover:text-amber-500 transition-colors">
+                            <Smile className="h-5 w-5" />
                         </button>
+                    </div>
+
+                    <div className="pb-1">
+                        {inputText.trim() ? (
+                            <button 
+                                onClick={handleSendMessage}
+                                className={`h-10 w-10 rounded-full flex items-center justify-center transition-all shadow-md transform hover:scale-105 active:scale-95 ${sendButtonColor} text-white`}
+                            >
+                                <Send className="h-4 w-4 ml-0.5" />
+                            </button>
+                        ) : (
+                            <button className="h-10 w-10 rounded-full flex items-center justify-center bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors">
+                                <Mic className="h-5 w-5" />
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

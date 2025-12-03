@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, UploadCloud, Bell, Plus, FileText, Layers, Video, Box, Users, Search, Command, Briefcase, MessageCircleQuestion, CalendarDays, Heart, UserPlus, Check, ShoppingCart, Building2, Aperture } from 'lucide-react';
+import { Menu, Bell, Plus, FileText, Layers, Video, Box, Users, Search, Command, Briefcase, MessageCircleQuestion, CalendarDays, Heart, UserPlus, Check, ShoppingCart, Building2, Aperture } from 'lucide-react';
 import { Notification } from '../types';
 import { ContentMode } from '../hooks/useAppStore';
 
@@ -137,10 +136,6 @@ export const Header = ({
                 {cartCount}
             </span>
           )}
-        </button>
-
-        <button className="hidden md:flex h-10 w-10 items-center justify-center rounded-full text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white group" title="Subir Rápido">
-          <UploadCloud className="h-5 w-5 group-hover:scale-110 transition-transform" />
         </button>
         
         {/* NOTIFICATIONS DROPDOWN */}
