@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PrimarySidebar, SecondarySidebar } from './components/Navigation';
 import { Header } from './components/Header';
 import { Footer } from './components/layout/Footer';
@@ -8,10 +9,20 @@ import { ChatWidget } from './components/chat/ChatWidget';
 import { MobileTabBar } from './components/layout/MobileTabBar'; 
 import { SaveToCollectionModal } from './components/modals/SaveToCollectionModal';
 import { ShareModal } from './components/modals/ShareModal';
-import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
+import { CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { useAppStore } from './hooks/useAppStore';
 
-const App: React.FC = () => {
+// Initialize Query Client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+const AppContent: React.FC = () => {
   const { state, actions } = useAppStore();
 
   const isLearningMode = state.activeModule === 'learning';
@@ -141,6 +152,14 @@ const App: React.FC = () => {
       )}
 
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppContent />
+    </QueryClientProvider>
   );
 };
 

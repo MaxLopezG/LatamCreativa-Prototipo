@@ -1,8 +1,10 @@
 
-import { useState } from 'react';
+import { create } from 'zustand';
+import { devtools, persist } from 'zustand/middleware';
 import { CartItem, Notification, CollectionItem } from '../types';
 import { USER_COLLECTIONS } from '../data/content';
 
+// --- Types ---
 export type CreateMode = 'none' | 'project' | 'article' | 'portfolio' | 'course' | 'asset' | 'service' | 'forum' | 'event';
 export type ContentMode = 'creative' | 'dev';
 export type ToastType = 'success' | 'error' | 'info';
@@ -12,248 +14,275 @@ export interface ToastState {
   type: ToastType;
 }
 
-export const useAppStore = () => {
-  // Navigation State
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('Home');
-  const [activeModule, setActiveModule] = useState('landing');
-  const [viewingAuthorName, setViewingAuthorName] = useState<string | null>(null);
+// --- Slices Types ---
+
+interface UISlice {
+  isSidebarOpen: boolean;
+  activeCategory: string;
+  activeModule: string;
+  contentMode: ContentMode;
+  createMode: CreateMode;
+  searchQuery: string;
+  toast: ToastState | null;
+  isChatOpen: boolean;
+  chatActiveUser: string | null;
+  isSaveModalOpen: boolean;
+  isShareModalOpen: boolean;
+  itemToSave: {id: string, image: string} | null;
+  viewingAuthorName: string | null;
   
-  // Content Mode State (Creative vs Dev)
-  const [contentMode, setContentMode] = useState<ContentMode>('creative');
+  // Actions
+  setIsSidebarOpen: (isOpen: boolean) => void;
+  setActiveCategory: (category: string) => void;
+  setActiveModule: (module: string) => void;
+  setContentMode: (mode: ContentMode) => void;
+  setCreateMode: (mode: CreateMode) => void;
+  setSearchQuery: (query: string) => void;
+  showToast: (message: string, type?: ToastType) => void;
+  setIsChatOpen: (isOpen: boolean) => void;
+  setChatActiveUser: (userId: string | null) => void;
+  openSaveModal: (id: string, image: string) => void;
+  closeSaveModal: () => void;
+  openShareModal: () => void;
+  closeShareModal: () => void;
+  setViewingAuthorName: (name: string | null) => void;
+}
 
-  // Creation Mode State
-  const [createMode, setCreateMode] = useState<CreateMode>('none');
-
-  // Search State
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Cart State
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+interface AuthSlice {
+  user: any | null; // Placeholder for real user type
+  cartItems: CartItem[];
+  notifications: Notification[];
+  collections: CollectionItem[];
   
-  // Enhanced Toast State
-  const [toast, setToast] = useState<ToastState | null>(null);
+  // Actions
+  addToCart: (item: CartItem) => void;
+  removeFromCart: (itemId: string) => void;
+  markNotificationRead: (id: number) => void;
+  markAllNotificationsRead: () => void;
+  saveToCollection: (collectionId: string) => void;
+  createCollection: (title: string, isPrivate: boolean) => void;
+}
 
-  // Chat State
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatActiveUser, setChatActiveUser] = useState<string | null>(null);
+// --- Combine Store ---
+type AppStore = UISlice & AuthSlice;
 
-  // Collections / Save State
-  const [collections, setCollections] = useState<CollectionItem[]>(USER_COLLECTIONS);
-  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
-  const [itemToSave, setItemToSave] = useState<{id: string, image: string} | null>(null);
+// --- Zustand Implementation ---
+const useZustandStore = create<AppStore>()(
+  devtools(
+    (set, get) => ({
+      // UI Initial State
+      isSidebarOpen: false,
+      activeCategory: 'Home',
+      activeModule: 'landing',
+      contentMode: 'creative',
+      createMode: 'none',
+      searchQuery: '',
+      toast: null,
+      isChatOpen: false,
+      chatActiveUser: null,
+      isSaveModalOpen: false,
+      isShareModalOpen: false,
+      itemToSave: null,
+      viewingAuthorName: null,
 
-  // Share State
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+      // Auth/User Initial State
+      user: { name: 'Alex Motion', id: 'u1' },
+      cartItems: [],
+      notifications: [
+        { id: 1, type: 'comment', user: 'Sarah Jenkins', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&fit=crop', content: 'comentó en tu proyecto "Cyberpunk City"', time: 'Hace 2 min', read: false },
+        { id: 2, type: 'follow', user: 'Alex Motion', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&fit=crop', content: 'comenzó a seguirte', time: 'Hace 1 hora', read: false },
+        { id: 3, type: 'system', user: 'Latam Creativa', avatar: 'https://ui-avatars.com/api/?name=LC&background=F59E0B&color=fff', content: 'Tu curso "Blender 101" ha sido aprobado', time: 'Hace 3 horas', read: true },
+        { id: 4, type: 'like', user: 'Diego Lopez', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&fit=crop', content: 'le gustó tu artículo', time: 'Ayer', read: true },
+      ],
+      collections: USER_COLLECTIONS,
 
-  // Notification State
-  const [notifications, setNotifications] = useState<Notification[]>([
-    { id: 1, type: 'comment', user: 'Sarah Jenkins', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&fit=crop', content: 'comentó en tu proyecto "Cyberpunk City"', time: 'Hace 2 min', read: false },
-    { id: 2, type: 'follow', user: 'Alex Motion', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&fit=crop', content: 'comenzó a seguirte', time: 'Hace 1 hora', read: false },
-    { id: 3, type: 'system', user: 'Latam Creativa', avatar: 'https://ui-avatars.com/api/?name=LC&background=F59E0B&color=fff', content: 'Tu curso "Blender 101" ha sido aprobado', time: 'Hace 3 horas', read: true },
-    { id: 4, type: 'like', user: 'Diego Lopez', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&fit=crop', content: 'le gustó tu artículo', time: 'Ayer', read: true },
-  ]);
-
-  // --- Actions ---
-
-  const handleModuleSelect = (moduleId: string) => {
-    setActiveModule(moduleId);
-    setViewingAuthorName(null);
-    setCreateMode('none');
-    setSearchQuery('');
-    
-    // Close sidebar on mobile when navigating
-    if (window.innerWidth < 1280) {
-        setIsSidebarOpen(false);
-    }
-  };
-
-  const showToast = (message: string, type: ToastType = 'success') => {
-      setToast({ message, type });
-      setTimeout(() => setToast(null), 3000);
-  };
-
-  const toggleContentMode = () => {
-      const newMode = contentMode === 'creative' ? 'dev' : 'creative';
-      setContentMode(newMode);
-      setActiveCategory('Home');
-      showToast(newMode === 'dev' ? 'Modo Desarrollador Activado 👨‍💻' : 'Modo Creativo Activado 🎨', 'info');
-  };
-
-  const handleSubscriptionSelect = (authorName: string) => {
-    setViewingAuthorName(authorName);
-    if (window.innerWidth < 1280) {
-      setIsSidebarOpen(false);
-    }
-  };
-
-  const handleCreateAction = (actionId: string) => {
-    const moduleMap: Record<string, string> = {
-      project: 'community',
-      article: 'blog',
-      portfolio: 'portfolio',
-      course: 'education',
-      asset: 'market',
-      service: 'freelance',
-      forum: 'forum',
-      event: 'events'
-    };
-
-    if (moduleMap[actionId]) {
-      setActiveModule(moduleMap[actionId]);
-      setCreateMode(actionId as CreateMode);
-    }
-    
-    setIsSidebarOpen(false);
-  };
-
-  const handleProClick = () => {
-    setActiveModule('pro');
-    if (window.innerWidth < 1280) {
-      setIsSidebarOpen(false);
-    }
-  };
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setActiveModule('search');
-  };
-
-  const addToCart = (item: CartItem) => {
-    // Prevent duplicates
-    if (!cartItems.find(i => i.id === item.id)) {
-        setCartItems(prev => [...prev, item]);
-        showToast(`Añadido al carrito: ${item.title}`, 'success');
-    } else {
-        showToast(`Este item ya está en tu carrito`, 'info');
-    }
-  };
-
-  const removeFromCart = (itemId: string) => {
-    setCartItems(prev => prev.filter(i => i.id !== itemId));
-  };
-
-  const handleBuyNow = (item: CartItem) => {
-    if (!cartItems.find(i => i.id === item.id)) {
-        setCartItems(prev => [...prev, item]);
-    }
-    setActiveModule('cart');
-  };
-
-  const openChatWithUser = (userName: string) => {
-      setIsChatOpen(true);
-      setChatActiveUser('1'); // Mock ID
-  };
-
-  const markNotificationRead = (id: number) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  };
-
-  const markAllNotificationsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
-  // --- Collection Actions ---
-  const openSaveModal = (id: string, image: string) => {
-      setItemToSave({ id, image });
-      setIsSaveModalOpen(true);
-  };
-
-  const closeSaveModal = () => {
-      setIsSaveModalOpen(false);
-      setItemToSave(null);
-  };
-
-  const saveToCollection = (collectionId: string) => {
-      if (!itemToSave) return;
+      // --- Actions Implementation ---
       
-      // Update collection with new item (mock logic)
-      setCollections(prev => prev.map(col => {
-          if (col.id === collectionId) {
+      setIsSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
+      setActiveCategory: (category) => set({ activeCategory: category }),
+      setActiveModule: (module) => {
+        set({ activeModule: module, viewingAuthorName: null, createMode: 'none', searchQuery: '' });
+        if (window.innerWidth < 1280) set({ isSidebarOpen: false });
+      },
+      setContentMode: (mode) => {
+        set({ contentMode: mode, activeCategory: 'Home' });
+        get().showToast(mode === 'dev' ? 'Modo Desarrollador Activado 👨‍💻' : 'Modo Creativo Activado 🎨', 'info');
+      },
+      setCreateMode: (mode) => set({ createMode: mode }),
+      setSearchQuery: (query) => set({ searchQuery: query }),
+      
+      showToast: (message, type = 'success') => {
+        set({ toast: { message, type } });
+        setTimeout(() => set({ toast: null }), 3000);
+      },
+
+      setIsChatOpen: (isOpen) => set({ isChatOpen: isOpen }),
+      setChatActiveUser: (userId) => set({ chatActiveUser: userId }),
+      
+      openSaveModal: (id, image) => set({ isSaveModalOpen: true, itemToSave: { id, image } }),
+      closeSaveModal: () => set({ isSaveModalOpen: false, itemToSave: null }),
+      
+      openShareModal: () => set({ isShareModalOpen: true }),
+      closeShareModal: () => set({ isShareModalOpen: false }),
+      
+      setViewingAuthorName: (name) => {
+        set({ viewingAuthorName: name });
+        if (window.innerWidth < 1280 && name) set({ isSidebarOpen: false });
+      },
+
+      // Auth/User Actions
+      addToCart: (item) => {
+        const { cartItems, showToast } = get();
+        if (!cartItems.find(i => i.id === item.id)) {
+          set({ cartItems: [...cartItems, item] });
+          showToast(`Añadido al carrito: ${item.title}`, 'success');
+        } else {
+          showToast(`Este item ya está en tu carrito`, 'info');
+        }
+      },
+      
+      removeFromCart: (itemId) => set((state) => ({ 
+        cartItems: state.cartItems.filter(i => i.id !== itemId) 
+      })),
+
+      markNotificationRead: (id) => set((state) => ({
+        notifications: state.notifications.map(n => n.id === id ? { ...n, read: true } : n)
+      })),
+
+      markAllNotificationsRead: () => set((state) => ({
+        notifications: state.notifications.map(n => ({ ...n, read: true }))
+      })),
+
+      saveToCollection: (collectionId) => {
+        const { itemToSave, showToast, closeSaveModal } = get();
+        if (!itemToSave) return;
+
+        set((state) => ({
+          collections: state.collections.map(col => {
+            if (col.id === collectionId) {
               return {
-                  ...col,
-                  itemCount: col.itemCount + 1,
-                  thumbnails: [itemToSave.image, ...col.thumbnails.slice(0, 3)]
+                ...col,
+                itemCount: col.itemCount + 1,
+                thumbnails: [itemToSave.image, ...col.thumbnails.slice(0, 3)]
               };
-          }
-          return col;
-      }));
+            }
+            return col;
+          })
+        }));
+        showToast("Guardado en colección", 'success');
+        closeSaveModal();
+      },
 
-      showToast("Guardado en colección", 'success');
-      closeSaveModal();
-  };
+      createCollection: (title, isPrivate) => {
+        const { itemToSave, showToast, closeSaveModal } = get();
+        if (!itemToSave) return;
 
-  const createCollection = (title: string, isPrivate: boolean) => {
-      if (!itemToSave) return;
-
-      const newCol: CollectionItem = {
+        const newCol: CollectionItem = {
           id: Date.now().toString(),
           title,
           isPrivate,
           itemCount: 1,
           thumbnails: [itemToSave.image]
-      };
+        };
 
-      setCollections(prev => [newCol, ...prev]);
-      showToast("Nueva colección creada y guardada", 'success');
-      closeSaveModal();
-  };
+        set((state) => ({ collections: [newCol, ...state.collections] }));
+        showToast("Nueva colección creada y guardada", 'success');
+        closeSaveModal();
+      }
+    })
+  )
+);
 
-  // --- Share Actions ---
-  const openShareModal = () => {
-    setIsShareModalOpen(true);
-  };
-
-  const closeShareModal = () => {
-    setIsShareModalOpen(false);
-  };
+// --- Adapter Hook (Facade Pattern) ---
+// This hook maintains the original API signature { state, actions }
+// to avoid breaking changes in the 30+ view components.
+export const useAppStore = () => {
+  const store = useZustandStore();
 
   return {
     state: {
-      isSidebarOpen,
-      activeCategory,
-      activeModule,
-      viewingAuthorName,
-      contentMode,
-      createMode,
-      searchQuery,
-      cartItems,
-      toastMessage: toast?.message, // Backward compatibility
-      toast,
-      isChatOpen,
-      chatActiveUser,
-      notifications,
-      collections,
-      isSaveModalOpen,
-      itemToSave,
-      isShareModalOpen
+      isSidebarOpen: store.isSidebarOpen,
+      activeCategory: store.activeCategory,
+      activeModule: store.activeModule,
+      viewingAuthorName: store.viewingAuthorName,
+      contentMode: store.contentMode,
+      createMode: store.createMode,
+      searchQuery: store.searchQuery,
+      cartItems: store.cartItems,
+      toastMessage: store.toast?.message,
+      toast: store.toast,
+      isChatOpen: store.isChatOpen,
+      chatActiveUser: store.chatActiveUser,
+      notifications: store.notifications,
+      collections: store.collections,
+      isSaveModalOpen: store.isSaveModalOpen,
+      itemToSave: store.itemToSave,
+      isShareModalOpen: store.isShareModalOpen
     },
     actions: {
-      setIsSidebarOpen,
-      setActiveCategory,
-      setViewingAuthorName,
-      toggleContentMode,
-      setCreateMode,
-      setChatActiveUser,
-      setIsChatOpen,
-      handleModuleSelect,
-      handleSubscriptionSelect,
-      handleCreateAction,
-      handleProClick,
-      handleSearch,
-      addToCart,
-      removeFromCart,
-      handleBuyNow,
-      openChatWithUser,
-      markNotificationRead,
-      markAllNotificationsRead,
-      openSaveModal,
-      closeSaveModal,
-      saveToCollection,
-      createCollection,
-      openShareModal,
-      closeShareModal,
-      showToast
+      setIsSidebarOpen: store.setIsSidebarOpen,
+      setActiveCategory: store.setActiveCategory,
+      setViewingAuthorName: store.setViewingAuthorName,
+      toggleContentMode: () => store.setContentMode(store.contentMode === 'creative' ? 'dev' : 'creative'),
+      setCreateMode: store.setCreateMode,
+      setChatActiveUser: store.setChatActiveUser,
+      setIsChatOpen: store.setIsChatOpen,
+      handleModuleSelect: store.setActiveModule,
+      handleSubscriptionSelect: store.setViewingAuthorName,
+      
+      // Complex Logic Mapped
+      handleCreateAction: (actionId: string) => {
+        const moduleMap: Record<string, string> = {
+          project: 'community',
+          article: 'blog',
+          portfolio: 'portfolio',
+          course: 'education',
+          asset: 'market',
+          service: 'freelance',
+          forum: 'forum',
+          event: 'events'
+        };
+        if (moduleMap[actionId]) {
+          store.setActiveModule(moduleMap[actionId]);
+          store.setCreateMode(actionId as CreateMode);
+        }
+        store.setIsSidebarOpen(false);
+      },
+      
+      handleProClick: () => {
+        store.setActiveModule('pro');
+        if (window.innerWidth < 1280) store.setIsSidebarOpen(false);
+      },
+      
+      handleSearch: (query: string) => {
+        store.setSearchQuery(query);
+        store.setActiveModule('search');
+      },
+      
+      addToCart: store.addToCart,
+      removeFromCart: store.removeFromCart,
+      
+      handleBuyNow: (item: CartItem) => {
+        if (!store.cartItems.find(i => i.id === item.id)) {
+            store.addToCart(item); // Note: addToCart handles toast, here we just want logic
+        }
+        store.setActiveModule('cart');
+      },
+      
+      openChatWithUser: (userName: string) => {
+        store.setIsChatOpen(true);
+        store.setChatActiveUser('1'); // Mock ID
+      },
+      
+      markNotificationRead: store.markNotificationRead,
+      markAllNotificationsRead: store.markAllNotificationsRead,
+      openSaveModal: store.openSaveModal,
+      closeSaveModal: store.closeSaveModal,
+      saveToCollection: store.saveToCollection,
+      createCollection: store.createCollection,
+      openShareModal: store.openShareModal,
+      closeShareModal: store.closeShareModal,
+      showToast: store.showToast
     }
   };
 };
