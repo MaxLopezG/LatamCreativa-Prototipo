@@ -2,6 +2,7 @@
 import React from 'react';
 import { Trash2, ShoppingCart, ArrowRight, ShieldCheck, CreditCard, ArrowLeft } from 'lucide-react';
 import { CartItem } from '../types';
+import { useAppStore } from '../hooks/useAppStore';
 
 interface CartViewProps {
   items: CartItem[];
@@ -11,9 +12,14 @@ interface CartViewProps {
 }
 
 export const CartView: React.FC<CartViewProps> = ({ items, onRemove, onContinueShopping, onBack }) => {
+  const { actions } = useAppStore();
   const subtotal = items.reduce((sum, item) => sum + item.price, 0);
   const tax = subtotal * 0.18; // 18% Mock Tax
   const total = subtotal + tax;
+
+  const handleCheckout = () => {
+      actions.handleModuleSelect('success');
+  };
 
   if (items.length === 0) {
     return (
@@ -116,7 +122,10 @@ export const CartView: React.FC<CartViewProps> = ({ items, onRemove, onContinueS
               <span className="text-2xl font-bold text-amber-500">${total.toFixed(2)}</span>
             </div>
 
-            <button className="w-full py-4 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors shadow-lg shadow-amber-500/20 mb-4 flex items-center justify-center gap-2">
+            <button 
+              onClick={handleCheckout}
+              className="w-full py-4 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors shadow-lg shadow-amber-500/20 mb-4 flex items-center justify-center gap-2"
+            >
               <CreditCard className="h-5 w-5" /> Proceder al Pago
             </button>
 

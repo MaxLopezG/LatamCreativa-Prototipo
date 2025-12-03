@@ -82,7 +82,7 @@ const AppContent: React.FC = () => {
         )}
         
         {/* Adjusted padding bottom for mobile tab bar, remove padding in learning mode */}
-        <div className={`custom-scrollbar flex-1 overflow-y-auto ${isLearningMode ? 'pt-0' : 'pt-20'} pb-20 md:pb-0`}>
+        <div className={`custom-scrollbar flex-1 overflow-y-auto ${isLearningMode ? 'pt-0' : 'pt-20'} pb-32 md:pb-0`}>
           <div className="flex flex-col min-h-full">
             <div className="flex-1">
               <VideoContent 

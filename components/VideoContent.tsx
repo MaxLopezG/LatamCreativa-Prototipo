@@ -36,6 +36,7 @@ import { CartView } from '../views/CartView';
 import { InfoView } from '../views/InfoView';
 import { CollectionsView } from '../views/CollectionsView'; 
 import { CollectionDetailView } from '../views/CollectionDetailView';
+import { SuccessView } from '../views/SuccessView';
 
 // Creation Views
 import { CreateProjectView } from '../views/CreateProjectView';
@@ -157,6 +158,11 @@ export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) =>
               onBack={() => onModuleSelect?.('home')}
             />
           );
+      }
+
+      // --- SUCCESS MODULE (CHECKOUT) ---
+      if (activeModule === 'success') {
+          return <SuccessView />;
       }
 
       // --- COLLECTIONS MODULE ---

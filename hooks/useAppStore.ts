@@ -51,12 +51,15 @@ interface UISlice {
 interface AuthSlice {
   user: any | null; // Placeholder for real user type
   cartItems: CartItem[];
+  likedItems: string[];
   notifications: Notification[];
   collections: CollectionItem[];
   
   // Actions
   addToCart: (item: CartItem) => void;
   removeFromCart: (itemId: string) => void;
+  clearCart: () => void;
+  toggleLike: (itemId: string) => void;
   markNotificationRead: (id: number) => void;
   markAllNotificationsRead: () => void;
   saveToCollection: (collectionId: string) => void;
@@ -88,6 +91,7 @@ const useZustandStore = create<AppStore>()(
       // Auth/User Initial State
       user: { name: 'Alex Motion', id: 'u1' },
       cartItems: [],
+      likedItems: [],
       notifications: [
         { id: 1, type: 'comment', user: 'Sarah Jenkins', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&fit=crop', content: 'comentó en tu proyecto "Cyberpunk City"', time: 'Hace 2 min', read: false },
         { id: 2, type: 'follow', user: 'Alex Motion', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&fit=crop', content: 'comenzó a seguirte', time: 'Hace 1 hora', read: false },
@@ -145,6 +149,19 @@ const useZustandStore = create<AppStore>()(
         cartItems: state.cartItems.filter(i => i.id !== itemId) 
       })),
 
+      clearCart: () => set({ cartItems: [] }),
+
+      toggleLike: (itemId) => set((state) => {
+        const isLiked = state.likedItems.includes(itemId);
+        // Optional toast
+        // get().showToast(isLiked ? 'Removed from likes' : 'Added to likes', 'info');
+        return {
+          likedItems: isLiked 
+            ? state.likedItems.filter(id => id !== itemId)
+            : [...state.likedItems, itemId]
+        };
+      }),
+
       markNotificationRead: (id) => set((state) => ({
         notifications: state.notifications.map(n => n.id === id ? { ...n, read: true } : n)
       })),
@@ -194,8 +211,6 @@ const useZustandStore = create<AppStore>()(
 );
 
 // --- Adapter Hook (Facade Pattern) ---
-// This hook maintains the original API signature { state, actions }
-// to avoid breaking changes in the 30+ view components.
 export const useAppStore = () => {
   const store = useZustandStore();
 
@@ -209,6 +224,7 @@ export const useAppStore = () => {
       createMode: store.createMode,
       searchQuery: store.searchQuery,
       cartItems: store.cartItems,
+      likedItems: store.likedItems,
       toastMessage: store.toast?.message,
       toast: store.toast,
       isChatOpen: store.isChatOpen,
@@ -261,10 +277,12 @@ export const useAppStore = () => {
       
       addToCart: store.addToCart,
       removeFromCart: store.removeFromCart,
+      clearCart: store.clearCart,
+      toggleLike: store.toggleLike,
       
       handleBuyNow: (item: CartItem) => {
         if (!store.cartItems.find(i => i.id === item.id)) {
-            store.addToCart(item); // Note: addToCart handles toast, here we just want logic
+            store.addToCart(item);
         }
         store.setActiveModule('cart');
       },

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Eye, Heart, CheckCircle2, Lock, Bookmark } from 'lucide-react';
 import { PortfolioItem } from '../../types';
+import { useAppStore } from '../../hooks/useAppStore';
 
 interface PortfolioCardProps {
   item: PortfolioItem;
@@ -10,6 +11,23 @@ interface PortfolioCardProps {
 }
 
 export const PortfolioCard: React.FC<PortfolioCardProps> = ({ item, onClick, onSave }) => {
+  const { state, actions } = useAppStore();
+  const isLiked = state.likedItems.includes(item.id);
+
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    actions.toggleLike(item.id);
+  };
+
+  // Helper to display likes count
+  const getDisplayLikes = () => {
+    // If it's a "k" string, we don't increment visually for now to avoid parsing complexity unless we parse it
+    // Simple parse logic for demo
+    if (item.likes.includes('k')) return item.likes; // Keep as is if formatted
+    const baseLikes = parseInt(item.likes, 10) || 0;
+    return isLiked ? baseLikes + 1 : baseLikes;
+  };
+
   return (
     <div 
         onClick={onClick}
@@ -74,9 +92,13 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({ item, onClick, onS
 
                     {/* Stats */}
                     <div className="flex items-center gap-3 text-xs font-semibold text-white/80">
-                        <div className="flex items-center gap-1">
-                            <Heart className="h-3.5 w-3.5 text-amber-500 fill-amber-500" /> {item.likes}
-                        </div>
+                        <button 
+                            onClick={handleLike}
+                            className="flex items-center gap-1 hover:text-white transition-colors group/like"
+                        >
+                            <Heart className={`h-3.5 w-3.5 transition-colors ${isLiked ? 'fill-red-500 text-red-500' : 'text-amber-500 group-hover/like:text-red-500'}`} /> 
+                            {getDisplayLikes()}
+                        </button>
                         <div className="flex items-center gap-1">
                             <Eye className="h-3.5 w-3.5" /> {item.views}
                         </div>
