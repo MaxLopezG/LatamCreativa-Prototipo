@@ -53,7 +53,7 @@ const CreateForumPostView = lazy(() => import('./views/CreateForumPostView').the
 const CreateEventView = lazy(() => import('./views/CreateEventView').then(module => ({ default: module.CreateEventView })));
 
 // Helper to wrap components in Suspense
-const Suspended = ({ children }: { children: React.ReactNode }) => (
+const Suspended = ({ children }: { children?: React.ReactNode }) => (
   <Suspense fallback={<Loader />}>{children}</Suspense>
 );
 

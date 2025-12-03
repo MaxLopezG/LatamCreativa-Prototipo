@@ -1,4 +1,3 @@
-
 import { 
   PORTFOLIO_ITEMS, 
   BLOG_ITEMS, 
@@ -34,12 +33,14 @@ export const api = {
     const start = pageParam * PAGE_SIZE;
     const end = start + PAGE_SIZE;
 
-    // We use Portfolio items count as the driver for pagination logic in this mock
+    // Use Portfolio items as the driver for "infinite" scroll simulation
     const hasMore = end < PORTFOLIO_ITEMS.length;
 
     return {
+      // Slicing the main content array to simulate pages
       portfolio: PORTFOLIO_ITEMS.slice(start, end),
-      blog: BLOG_ITEMS.slice(0, 5), // Keep static features or slice if desired
+      // Static or rotated content for other sections
+      blog: BLOG_ITEMS.slice(0, 5), 
       education: EDUCATION_ITEMS.slice(0, 4),
       assets: ASSET_ITEMS.slice(0, 5),
       videos: HOME_FEED_VIDEOS,
@@ -71,7 +72,7 @@ export const api = {
     
     // Simulate failure randomly
     if (Math.random() > 0.95) {
-        throw new Error('Failed to send message');
+        throw new Error('No se pudo enviar el mensaje. Intente nuevamente.');
     }
 
     return {
