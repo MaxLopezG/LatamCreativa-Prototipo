@@ -7,7 +7,7 @@ export const useFeed = () => {
     queryFn: api.getFeed,
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    staleTime: 1000 * 60 * 5, // 5 minutos
     refetchOnWindowFocus: false,
   });
 };

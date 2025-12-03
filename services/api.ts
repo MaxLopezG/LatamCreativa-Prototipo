@@ -1,80 +1,49 @@
 import { 
-  PORTFOLIO_ITEMS, 
-  BLOG_ITEMS, 
-  EDUCATION_ITEMS, 
-  ASSET_ITEMS, 
-  HOME_FEED_VIDEOS,
-  ARTIST_DIRECTORY,
-  USER_COLLECTIONS
+  PORTFOLIO_ITEMS, BLOG_ITEMS, EDUCATION_ITEMS, ASSET_ITEMS, HOME_FEED_VIDEOS, 
+  ARTIST_DIRECTORY, USER_COLLECTIONS 
 } from '../data/content';
 import { MOCK_CHATS } from '../data/chat';
-import { ChatMessage, PortfolioItem, ArticleItem, CourseItem, AssetItem, VideoSuggestion, ArtistProfile } from '../types';
+import { ChatMessage, ArtistProfile } from '../types';
 
-// Generic Delay Helper to simulate network latency
-const delay = (min = 500, max = 1000) => {
-  const ms = Math.floor(Math.random() * (max - min + 1) + min);
-  return new Promise(resolve => setTimeout(resolve, ms));
-};
+const delay = (ms = 800) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const api = {
-  // Feed & Content
-  getFeed: async ({ pageParam = 0 }: { pageParam?: number } = {}): Promise<{
-    portfolio: PortfolioItem[];
-    blog: ArticleItem[];
-    education: CourseItem[];
-    assets: AssetItem[];
-    videos: VideoSuggestion[];
-    nextPage: number | undefined;
-  }> => {
-    await delay(800);
+  // 1. Feed con Paginación
+  getFeed: async ({ pageParam = 0 }: { pageParam?: number }) => {
+    await delay();
     
-    // Simulate Pagination
-    const PAGE_SIZE = 5;
-    const start = pageParam * PAGE_SIZE;
-    const end = start + PAGE_SIZE;
-
-    // Use Portfolio items as the driver for "infinite" scroll simulation
-    const hasMore = end < PORTFOLIO_ITEMS.length;
+    const ITEMS_PER_PAGE = 6;
+    const start = pageParam * ITEMS_PER_PAGE;
+    const end = start + ITEMS_PER_PAGE;
+    
+    // Simulamos fin de datos
+    const hasNextPage = end < PORTFOLIO_ITEMS.length;
 
     return {
-      // Slicing the main content array to simulate pages
+      // El portafolio se pagina
       portfolio: PORTFOLIO_ITEMS.slice(start, end),
-      // Static or rotated content for other sections
-      blog: BLOG_ITEMS.slice(0, 5), 
+      // Los otros se mantienen fijos (o podrías paginarlos también)
+      blog: BLOG_ITEMS.slice(0, 4),
       education: EDUCATION_ITEMS.slice(0, 4),
       assets: ASSET_ITEMS.slice(0, 5),
       videos: HOME_FEED_VIDEOS,
-      nextPage: hasMore ? pageParam + 1 : undefined
+      nextPage: hasNextPage ? pageParam + 1 : undefined,
     };
   },
 
-  // User Profile
+  // ... Resto de métodos igual (getUserProfile, etc.)
   getUserProfile: async (username: string): Promise<ArtistProfile | undefined> => {
     await delay(600);
-    // Simulate finding a user, or return a default/mock for demo purposes
     const user = ARTIST_DIRECTORY.find(u => u.handle.includes(username) || u.name.includes(username));
     return user || ARTIST_DIRECTORY[0];
   },
 
-  getArtistDirectory: async (): Promise<ArtistProfile[]> => {
-    await delay(1000);
-    return ARTIST_DIRECTORY;
-  },
-
-  // Chat Service
-  getChatMessages: async (friendId: string): Promise<ChatMessage[]> => {
-    await delay(300);
-    return MOCK_CHATS[friendId] || [];
-  },
-
-  sendMessage: async ({ friendId, text }: { friendId: string; text: string }): Promise<ChatMessage> => {
-    await delay(600); // Simulate network sending
-    
-    // Simulate failure randomly
-    if (Math.random() > 0.95) {
-        throw new Error('No se pudo enviar el mensaje. Intente nuevamente.');
-    }
-
+  getArtistDirectory: async () => { await delay(); return ARTIST_DIRECTORY; },
+  getChatMessages: async (friendId: string) => { await delay(300); return MOCK_CHATS[friendId] || []; },
+  
+  sendMessage: async ({ friendId, text }: { friendId: string; text: string }) => {
+    await delay(600);
+    if (Math.random() > 0.95) throw new Error('Error de red simulado');
     return {
       id: Date.now().toString(),
       senderId: 'me',
@@ -83,9 +52,5 @@ export const api = {
     };
   },
 
-  // Collections
-  getUserCollections: async () => {
-    await delay(500);
-    return USER_COLLECTIONS;
-  }
+  getUserCollections: async () => { await delay(500); return USER_COLLECTIONS; }
 };
