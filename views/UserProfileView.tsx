@@ -1,20 +1,22 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, Link as LinkIcon, Calendar, CheckCircle2, UserPlus, Mail, MessageSquare, Layers, Twitter, Instagram, Globe, MoreHorizontal, Briefcase, GraduationCap, UserCheck, Star, Heart, Lock, Check, Award, Zap, Trophy } from 'lucide-react';
-import { PORTFOLIO_ITEMS, BLOG_ITEMS, EDUCATION_ITEMS, ARTIST_TIERS, ARTIST_DIRECTORY } from '../data/content';
+import { ArrowLeft, MapPin, Link as LinkIcon, Calendar, CheckCircle2, UserPlus, Mail, MessageSquare, Layers, Twitter, Instagram, Globe, MoreHorizontal, Briefcase, GraduationCap, UserCheck, Zap, Award, Trophy, Bookmark, Heart, Lock, Plus, Image as ImageIcon, Video, Box, Newspaper, Download, PlayCircle, FileText } from 'lucide-react';
+import { PORTFOLIO_ITEMS, BLOG_ITEMS, EDUCATION_ITEMS, ASSET_ITEMS, ARTIST_TIERS, ARTIST_DIRECTORY } from '../data/content';
 import { PortfolioCard } from '../components/cards/PortfolioCard';
 import { BlogCard } from '../components/cards/BlogCard';
 import { EducationCard } from '../components/cards/EducationCard';
+import { AssetCard } from '../components/cards/AssetCard';
+import { useAppStore } from '../hooks/useAppStore';
 
 interface UserProfileViewProps {
   authorName?: string;
   onBack: () => void;
-  onItemSelect: (id: string, type: 'portfolio' | 'blog' | 'course') => void;
+  onItemSelect: (id: string, type: 'portfolio' | 'blog' | 'course' | 'asset') => void;
   onOpenChat?: (authorName: string) => void;
 }
 
-// Mock Resume Data
+// Extended Experience Data
 const EXPERIENCE = [
   {
     id: 1,
@@ -22,7 +24,7 @@ const EXPERIENCE = [
     company: "Ubisoft",
     period: "2021 - Presente",
     location: "Barcelona, España",
-    description: "Liderando el equipo de entornos para proyectos AAA. Dirección artística y mentoría."
+    description: "Liderando el equipo de entornos para proyectos AAA no anunciados. Responsable de la coherencia visual, optimización de assets mediante Nanite/Lumen y mentoría de artistas junior."
   },
   {
     id: 2,
@@ -30,45 +32,88 @@ const EXPERIENCE = [
     company: "Gameloft",
     period: "2018 - 2021",
     location: "Madrid, España",
-    description: "Modelado y texturizado de escenarios para juegos móviles de alto rendimiento."
+    description: "Modelado y texturizado de escenarios para juegos móviles de alto rendimiento (Asphalt 9). Colaboración estrecha con Game Designers para asegurar la jugabilidad en circuitos."
   },
   {
     id: 3,
-    role: "Junior 3D Generalist",
-    company: "Indie Studio X",
-    period: "2016 - 2018",
+    role: "Freelance 3D Generalist",
+    company: "Varios Clientes",
+    period: "2015 - 2018",
     location: "Remoto",
-    description: "Creación de props, personajes low-poly y animaciones básicas."
+    description: "Creación de assets 3D para publicidad, visualización arquitectónica y prototipos indie. Clientes incluyen agencias de marketing y estudios pequeños en Latam."
   }
 ];
 
+// New Education Data
 const EDUCATION = [
   {
     id: 1,
-    degree: "Máster en Arte Digital",
+    degree: "Máster en Arte para Videojuegos",
     school: "Voxel School",
-    period: "2017 - 2018",
-    description: "Especialización en escultura digital."
+    period: "2016 - 2017",
+    description: "Especialización intensiva en escultura digital con ZBrush, texturizado PBR y motores gráficos en tiempo real."
   },
   {
     id: 2,
-    degree: "Grado en Diseño",
-    school: "U. Complutense",
-    period: "2013 - 2017",
-    description: "Fundamentos de diseño visual."
+    degree: "Grado en Diseño Multimedial",
+    school: "Universidad de Palermo",
+    period: "2011 - 2015",
+    description: "Formación integral en diseño, teoría del color, composición visual y fundamentos de animación."
   }
 ];
 
-export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, onBack, onItemSelect, onOpenChat }) => {
-  const { username } = useParams<{ username: string }>();
-  const name = authorName || username || 'Unknown User';
-  const [activeTab, setActiveTab] = useState<'portfolio' | 'blog' | 'courses' | 'membership'>('portfolio');
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [isFriend, setIsFriend] = useState(false);
+// Mock Locked Content for Membership Tab
+const LOCKED_POSTS = [
+    {
+        id: 'l1',
+        title: 'Archivos Fuente: Cyberpunk Scene',
+        type: 'Download',
+        date: 'Hace 2 días',
+        image: 'https://images.unsplash.com/photo-1515630278258-407f66498911?q=80&w=600&auto=format&fit=crop',
+        tier: 'Estudiante Pro'
+    },
+    {
+        id: 'l2',
+        title: 'Tutorial Exclusivo: Shaders Avanzados',
+        type: 'Video',
+        date: 'Hace 5 días',
+        image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&auto=format&fit=crop',
+        tier: 'Supporter'
+    },
+    {
+        id: 'l3',
+        title: 'Brush Pack V2 - Early Access',
+        type: 'Asset',
+        date: 'Hace 1 semana',
+        image: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=600&auto=format&fit=crop',
+        tier: 'Estudiante Pro'
+    }
+];
 
-  // Attempt to find artist level from directory if exists
+export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, onBack, onItemSelect, onOpenChat }) => {
+  const { state, actions } = useAppStore();
+  const { username } = useParams<{ username: string }>();
+  
+  // Determine if viewing own profile or public profile
+  const isOwnProfile = !authorName && (!username || username === 'me');
+  
+  // Fallback to "Alex Motion" if no specific user is passed and it's own profile, otherwise use the param
+  const displayUser = isOwnProfile ? state.user : {
+      name: authorName || username || 'Unknown User',
+      id: 'unknown',
+      avatar: 'https://ui-avatars.com/api/?background=random',
+      role: 'Digital Artist',
+      location: 'Latam'
+  };
+
+  const name = displayUser.name;
+  
+  const [activeTab, setActiveTab] = useState<'portfolio' | 'courses' | 'assets' | 'blog' | 'saved' | 'collections' | 'membership'>('portfolio');
+  const [isFollowing, setIsFollowing] = useState(false);
+
+  // Attempt to find artist level from directory if exists (Mock logic)
   const directoryArtist = ARTIST_DIRECTORY.find(a => a.name === name);
-  const artistLevel = directoryArtist?.level || 'Pro'; // Default level for demo
+  const artistLevel = directoryArtist?.level || 'Pro'; 
 
   const getLevelFrameClass = (level?: string) => {
     switch(level) {
@@ -82,23 +127,79 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
 
   const levelFrameClass = getLevelFrameClass(artistLevel);
 
-  // Mock filtering based on name (in a real app, use ID)
-  const userPortfolio = PORTFOLIO_ITEMS.filter(p => p.artist === name).length > 0 
-    ? PORTFOLIO_ITEMS.filter(p => p.artist === name)
-    : PORTFOLIO_ITEMS.slice(0, 6); // Fallback data
-  
-  const userBlog = BLOG_ITEMS.slice(0, 3); // Fallback data for demo
+  // --- Dynamic Content Logic ---
 
-  // Filter courses by instructor
-  const userCourses = EDUCATION_ITEMS.filter(c => c.instructor === name);
-  // Fallback for demo if no courses found matching exact name, show a couple random ones
-  const displayCourses = userCourses.length > 0 ? userCourses : EDUCATION_ITEMS.slice(0, 2);
+  // 1. Portfolio / Creations
+  const userPortfolio = useMemo(() => {
+      if (isOwnProfile) return state.createdItems;
+      return PORTFOLIO_ITEMS.filter(p => p.artist === name);
+  }, [isOwnProfile, state.createdItems, name]);
 
-  // Locked/Exclusive Content for Membership Tab
-  const exclusiveItems = [
-      ...userPortfolio.map(i => ({...i, isExclusive: true})).slice(0,2),
-      ...userBlog.map(i => ({...i, isExclusive: true})).slice(0,1)
-  ];
+  // 2. Courses
+  const userCourses = useMemo(() => {
+      const courses = EDUCATION_ITEMS.filter(c => c.instructor === name);
+      // Mock content for demo if empty and own profile
+      if (isOwnProfile && courses.length === 0) {
+          return EDUCATION_ITEMS.slice(0, 2).map((c, i) => ({
+              ...c,
+              id: `my-course-${i}`,
+              instructor: name,
+              instructorAvatar: displayUser.avatar,
+              title: i === 0 ? "Master en Blender 4.0" : "Iluminación Cinemática"
+          }));
+      }
+      return courses;
+  }, [name, isOwnProfile, displayUser.avatar]);
+
+  // 3. Assets
+  const userAssets = useMemo(() => {
+      const assets = ASSET_ITEMS.filter(a => a.creator === name);
+      // Mock content for demo if empty and own profile
+      if (isOwnProfile && assets.length === 0) {
+          return ASSET_ITEMS.slice(0, 2).map((a, i) => ({
+              ...a,
+              id: `my-asset-${i}`,
+              creator: name,
+              creatorAvatar: displayUser.avatar,
+              title: i === 0 ? "Sci-Fi Kitbash Vol. 1" : "Texturas Procedurales"
+          }));
+      }
+      return assets;
+  }, [name, isOwnProfile, displayUser.avatar]);
+
+  // 4. Blog
+  const userArticles = useMemo(() => {
+      const articles = BLOG_ITEMS.filter(b => b.author === name);
+      // Mock content for demo if empty and own profile
+      if (isOwnProfile && articles.length === 0) {
+          return BLOG_ITEMS.slice(0, 2).map((b, i) => ({
+              ...b,
+              id: `my-blog-${i}`,
+              author: name,
+              authorAvatar: displayUser.avatar,
+              title: i === 0 ? "Mi flujo de trabajo en 2024" : "Consejos para Juniors"
+          }));
+      }
+      return articles;
+  }, [name, isOwnProfile, displayUser.avatar]);
+
+  // 5. Saved Items (Likes)
+  const savedItems = useMemo(() => {
+      if (!isOwnProfile) return []; 
+      
+      const portfolioLikes = PORTFOLIO_ITEMS.filter(i => state.likedItems.includes(i.id));
+      const educationLikes = EDUCATION_ITEMS.filter(i => state.likedItems.includes(i.id));
+      const assetLikes = ASSET_ITEMS.filter(i => state.likedItems.includes(i.id));
+      const blogLikes = BLOG_ITEMS.filter(i => state.likedItems.includes(i.id));
+
+      return [...portfolioLikes, ...educationLikes, ...assetLikes, ...blogLikes];
+  }, [isOwnProfile, state.likedItems]);
+
+  // 6. Collections
+  const userCollections = useMemo(() => {
+      if (isOwnProfile) return state.collections;
+      return []; 
+  }, [isOwnProfile, state.collections]);
 
   return (
     <div className="w-full max-w-[2560px] mx-auto animate-fade-in pb-20">
@@ -121,7 +222,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
           alt="Cover" 
           className="w-full h-full object-cover"
         />
-        {/* Stronger gradient for text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#030304] via-[#030304]/40 to-transparent"></div>
       </div>
 
@@ -134,18 +234,14 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                 <div className={`h-32 w-32 md:h-40 md:w-40 2xl:h-48 2xl:w-48 rounded-3xl p-[4px] ${levelFrameClass}`}>
                     <div className="h-full w-full rounded-2xl overflow-hidden bg-[#030304] border-4 border-[#030304]">
                         <img 
-                            src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=400&auto=format&fit=crop" 
+                            src={displayUser.avatar} 
                             alt={name} 
                             className="w-full h-full object-cover bg-slate-800"
                         />
                     </div>
                 </div>
+                {/* Status Indicator */}
                 <div className="absolute bottom-3 right-3 h-5 w-5 md:h-6 md:w-6 rounded-full bg-green-500 border-4 border-[#030304]" title="Disponible para trabajar"></div>
-                
-                {/* Level Badge Tooltip */}
-                <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 text-white text-xs px-3 py-1 rounded-full whitespace-nowrap pointer-events-none">
-                    Nivel: {artistLevel}
-                </div>
             </div>
 
             {/* Info Text */}
@@ -155,12 +251,12 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                     <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6 2xl:h-8 2xl:w-8 text-amber-500 fill-amber-500/20" />
                     <span className="px-2 py-0.5 rounded text-[10px] 2xl:text-xs font-bold bg-amber-500/20 text-amber-500 border border-amber-500/20 uppercase tracking-wider ml-2">{artistLevel}</span>
                 </div>
-                <p className="text-lg md:text-xl 2xl:text-2xl text-slate-300 font-light mb-4">Senior 3D Artist & Concept Designer</p>
+                <p className="text-lg md:text-xl 2xl:text-2xl text-slate-300 font-light mb-4">{displayUser.role}</p>
                 
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm 2xl:text-base text-slate-400">
                     <div className="flex items-center gap-1.5">
                         <MapPin className="h-4 w-4 text-slate-500" />
-                        Barcelona, España
+                        {displayUser.location}
                     </div>
                     <div className="flex items-center gap-1.5">
                         <LinkIcon className="h-4 w-4 text-slate-500" />
@@ -175,49 +271,35 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
 
             {/* Actions */}
             <div className="flex flex-wrap items-center gap-3 pb-2 w-full md:w-auto mt-2 md:mt-0">
-                {/* Membership Button */}
-                <button 
-                    onClick={() => setActiveTab('membership')}
-                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white text-black font-bold hover:bg-slate-200 transition-colors shadow-lg"
-                >
-                    <Heart className="h-4 w-4 fill-red-500 text-red-500" />
-                    Unirse
-                </button>
+                {!isOwnProfile && (
+                    <>
+                        <button 
+                            onClick={() => setIsFollowing(!isFollowing)}
+                            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${
+                                isFollowing 
+                                ? 'bg-white/10 text-white hover:bg-white/20' 
+                                : 'bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-500/20'
+                            }`}
+                        >
+                            {isFollowing ? <CheckCircle2 className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                            {isFollowing ? 'Siguiendo' : 'Seguir'}
+                        </button>
 
-                {/* Follow Button */}
-                <button 
-                    onClick={() => setIsFollowing(!isFollowing)}
-                    className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${
-                        isFollowing 
-                        ? 'bg-white/10 text-white hover:bg-white/20' 
-                        : 'bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-500/20'
-                    }`}
-                >
-                    {isFollowing ? <CheckCircle2 className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-                    {isFollowing ? 'Siguiendo' : 'Seguir'}
-                </button>
-
-                {/* Friend Button - NEW */}
-                <button 
-                    onClick={() => setIsFriend(!isFriend)}
-                    className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all border ${
-                        isFriend 
-                        ? 'bg-green-500/10 border-green-500/20 text-green-500 hover:bg-green-500/20' 
-                        : 'bg-transparent border-white/20 text-white hover:bg-white/10'
-                    }`}
-                >
-                    {isFriend ? <UserCheck className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-                    {isFriend ? 'Amigo' : 'Agregar'}
-                </button>
-
-                {/* Message Button */}
-                <button 
-                    onClick={() => onOpenChat?.(name)}
-                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all border bg-transparent border-white/20 text-white hover:bg-white/10"
-                >
-                    <MessageSquare className="h-4 w-4" />
-                    Mensaje
-                </button>
+                        <button 
+                            onClick={() => onOpenChat?.(name)}
+                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all border bg-transparent border-white/20 text-white hover:bg-white/10"
+                        >
+                            <MessageSquare className="h-4 w-4" />
+                            Mensaje
+                        </button>
+                    </>
+                )}
+                
+                {isOwnProfile && (
+                    <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/10 text-white hover:bg-white/20 font-semibold border border-white/10">
+                        Editar Perfil
+                    </button>
+                )}
 
                 <button className="p-3 rounded-xl bg-white/5 text-white hover:bg-white/10 border border-white/10">
                     <MoreHorizontal className="h-5 w-5" />
@@ -234,31 +316,18 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
             
             {/* Gamification Level Box */}
             <div className={`bg-gradient-to-br from-slate-900 to-slate-950 border border-white/10 p-6 rounded-2xl relative overflow-hidden`}>
-                {/* Dynamic Background Glow based on Level */}
-                <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] -mr-16 -mt-16 opacity-20 ${
-                    artistLevel === 'Master' ? 'bg-cyan-500' : 
-                    artistLevel === 'Expert' ? 'bg-purple-500' : 
-                    artistLevel === 'Pro' ? 'bg-amber-500' : 'bg-slate-500'
-                }`}></div>
+                <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] -mr-16 -mt-16 opacity-20 bg-amber-500`}></div>
 
                 <div className="relative z-10">
                     <div className="flex justify-between items-center mb-2">
                         <h3 className="font-bold text-sm uppercase tracking-widest flex items-center gap-2 text-white">
-                            <Zap className={`h-4 w-4 ${
-                                artistLevel === 'Master' ? 'text-cyan-400' : 
-                                artistLevel === 'Expert' ? 'text-purple-400' : 
-                                artistLevel === 'Pro' ? 'text-amber-400' : 'text-slate-400'
-                            }`} /> 
+                            <Zap className="h-4 w-4 text-amber-400" /> 
                             Nivel {artistLevel === 'Master' ? '50' : artistLevel === 'Expert' ? '35' : '15'}
                         </h3>
                         <span className="text-white font-bold text-sm">3,450 / 5,000 XP</span>
                     </div>
                     <div className="w-full h-2 bg-slate-800 rounded-full mb-6 overflow-hidden">
-                        <div className={`h-full rounded-full ${
-                             artistLevel === 'Master' ? 'bg-gradient-to-r from-cyan-400 to-blue-500' : 
-                             artistLevel === 'Expert' ? 'bg-gradient-to-r from-purple-400 to-pink-500' : 
-                             'bg-amber-500'
-                        }`} style={{ width: '70%' }}></div>
+                        <div className="h-full rounded-full bg-amber-500" style={{ width: '70%' }}></div>
                     </div>
                     
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Medallas</h4>
@@ -268,9 +337,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                         </div>
                         <div className="h-10 w-10 bg-purple-500/10 border border-purple-500/30 rounded-lg flex items-center justify-center text-purple-500" title="Challenge Winner">
                             <Trophy className="h-5 w-5" />
-                        </div>
-                        <div className="h-10 w-10 bg-blue-500/10 border border-blue-500/30 rounded-lg flex items-center justify-center text-blue-500" title="Course Creator">
-                            <GraduationCap className="h-5 w-5" />
                         </div>
                         <div className="h-10 w-10 bg-slate-800 border border-white/5 rounded-lg flex items-center justify-center text-slate-600 text-xs font-bold">
                             +5
@@ -301,24 +367,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                 <p className="text-base 2xl:text-lg text-slate-400 leading-relaxed mb-6">
                     Apasionado por crear mundos inmersivos y contar historias a través del entorno. 
                     Especializado en Hard Surface y Diseño de Niveles para videojuegos AAA.
-                    Siempre buscando nuevos retos y colaboraciones.
                 </p>
                 <div className="flex gap-3">
-                    <a href="#" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white hover:bg-[#1DA1F2]/20 hover:text-[#1DA1F2] transition-colors"><Twitter className="h-5 w-5" /></a>
-                    <a href="#" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white hover:bg-[#E1306C]/20 hover:text-[#E1306C] transition-colors"><Instagram className="h-5 w-5" /></a>
-                    <a href="#" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white hover:bg-amber-500/20 hover:text-amber-500 transition-colors"><Globe className="h-5 w-5" /></a>
-                </div>
-            </div>
-
-            {/* Skills */}
-            <div>
-                <h3 className="text-base font-bold text-white uppercase tracking-widest mb-4">Habilidades</h3>
-                <div className="flex flex-wrap gap-2">
-                    {['Blender', 'Unreal Engine 5', 'ZBrush', 'Substance', 'Photoshop', 'Marmoset'].map(skill => (
-                        <span key={skill} className="px-4 py-2 rounded-lg bg-white/5 border border-white/5 text-sm text-slate-300">
-                            {skill}
-                        </span>
-                    ))}
+                    <a href="#" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white transition-colors"><Twitter className="h-5 w-5" /></a>
+                    <a href="#" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white transition-colors"><Instagram className="h-5 w-5" /></a>
+                    <a href="#" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white transition-colors"><Globe className="h-5 w-5" /></a>
                 </div>
             </div>
 
@@ -334,7 +387,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                             
                             <h4 className="text-lg 2xl:text-xl font-bold text-white leading-tight mb-1">{job.role}</h4>
                             <div className="text-sm 2xl:text-base text-amber-500 font-medium mb-1">{job.company}</div>
-                            <div className="text-xs text-slate-500 mb-3 uppercase tracking-wide">{job.period}</div>
+                            <div className="text-xs text-slate-500 mb-3 uppercase tracking-wide">{job.period} • {job.location}</div>
                             
                             <p className="text-sm 2xl:text-base text-slate-400 leading-relaxed">
                                 {job.description}
@@ -345,16 +398,21 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
             </div>
 
             {/* Education Section */}
-            <div className="pt-8 border-t border-white/5">
+            <div className="pt-8 border-t border-white/5 mt-8">
                 <h3 className="text-base font-bold text-white uppercase tracking-widest mb-8 flex items-center gap-2">
-                        <GraduationCap className="h-5 w-5 text-blue-500" /> Educación
+                    <GraduationCap className="h-5 w-5 text-blue-500" /> Educación
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-10 relative border-l border-white/10 ml-2 pl-8">
                     {EDUCATION.map((edu) => (
-                        <div key={edu.id} className="bg-white/5 border border-white/5 p-5 rounded-2xl">
-                            <h4 className="text-base 2xl:text-lg font-bold text-white">{edu.school}</h4>
-                            <div className="text-sm 2xl:text-base text-slate-300 mb-1">{edu.degree}</div>
-                            <div className="text-xs text-slate-500">{edu.period}</div>
+                        <div key={edu.id} className="relative">
+                            <div className="absolute -left-[37px] top-1.5 h-3 w-3 rounded-full bg-[#030304] border-2 border-blue-500"></div>
+                            
+                            <h4 className="text-lg 2xl:text-xl font-bold text-white leading-tight mb-1">{edu.degree}</h4>
+                            <div className="text-sm 2xl:text-base text-blue-400 font-medium mb-1">{edu.school}</div>
+                            <div className="text-xs text-slate-500 mb-2 uppercase tracking-wide">{edu.period}</div>
+                            <p className="text-sm 2xl:text-base text-slate-400 leading-relaxed">
+                                {edu.description}
+                            </p>
                         </div>
                     ))}
                 </div>
@@ -375,6 +433,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                 >
                     <Layers className="h-4 w-4" /> Portafolio <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userPortfolio.length}</span>
                 </button>
+
                 <button 
                     onClick={() => setActiveTab('courses')}
                     className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
@@ -383,8 +442,20 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                         : 'text-slate-500 border-transparent hover:text-white'
                     }`}
                 >
-                    <GraduationCap className="h-4 w-4" /> Cursos <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{displayCourses.length}</span>
+                    <Video className="h-4 w-4" /> Cursos <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userCourses.length}</span>
                 </button>
+
+                <button 
+                    onClick={() => setActiveTab('assets')}
+                    className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+                        activeTab === 'assets' 
+                        ? 'text-amber-500 border-amber-500' 
+                        : 'text-slate-500 border-transparent hover:text-white'
+                    }`}
+                >
+                    <Box className="h-4 w-4" /> Assets <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userAssets.length}</span>
+                </button>
+
                 <button 
                     onClick={() => setActiveTab('blog')}
                     className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
@@ -393,8 +464,34 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                         : 'text-slate-500 border-transparent hover:text-white'
                     }`}
                 >
-                    <MessageSquare className="h-4 w-4" /> Blog <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userBlog.length}</span>
+                    <Newspaper className="h-4 w-4" /> Blog <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userArticles.length}</span>
                 </button>
+                
+                {isOwnProfile && (
+                    <>
+                        <button 
+                            onClick={() => setActiveTab('saved')}
+                            className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+                                activeTab === 'saved' 
+                                ? 'text-amber-500 border-amber-500' 
+                                : 'text-slate-500 border-transparent hover:text-white'
+                            }`}
+                        >
+                            <Bookmark className="h-4 w-4" /> Guardados <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{savedItems.length}</span>
+                        </button>
+                        <button 
+                            onClick={() => setActiveTab('collections')}
+                            className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
+                                activeTab === 'collections' 
+                                ? 'text-amber-500 border-amber-500' 
+                                : 'text-slate-500 border-transparent hover:text-white'
+                            }`}
+                        >
+                            <Layers className="h-4 w-4" /> Colecciones <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userCollections.length}</span>
+                        </button>
+                    </>
+                )}
+
                 <button 
                     onClick={() => setActiveTab('membership')}
                     className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${
@@ -403,50 +500,195 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                         : 'text-slate-500 border-transparent hover:text-white'
                     }`}
                 >
-                    <Star className="h-4 w-4" /> Membresía
+                    <Heart className="h-4 w-4" /> Membresía
                 </button>
             </div>
 
-            {/* Grid Content - Aligned with main Portfolio View */}
+            {/* TAB: PORTFOLIO */}
             {activeTab === 'portfolio' && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 md:gap-5 animate-slide-up">
-                    {userPortfolio.map(item => (
-                        <PortfolioCard 
-                            key={item.id} 
-                            item={item} 
-                            onClick={() => onItemSelect(item.id, 'portfolio')} 
-                        />
-                    ))}
-                </div>
+                <>
+                    {userPortfolio.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5 animate-slide-up">
+                            {userPortfolio.map((item: any) => (
+                                <PortfolioCard 
+                                    key={item.id} 
+                                    item={item} 
+                                    onClick={() => onItemSelect(item.id, 'portfolio')} 
+                                    onSave={actions.openSaveModal}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-2xl border border-white/5 text-center animate-fade-in">
+                            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                                <Layers className="h-8 w-8 text-slate-500" />
+                            </div>
+                            <h3 className="text-lg font-bold text-white mb-2">Sin proyectos publicados</h3>
+                            <p className="text-slate-400 max-w-md mb-6">Comparte tus creaciones con la comunidad.</p>
+                            {isOwnProfile && (
+                                <button onClick={() => actions.handleCreateAction('portfolio')} className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2">
+                                    <Plus className="h-4 w-4" /> Crear Proyecto
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </>
             )}
 
+            {/* TAB: COURSES */}
             {activeTab === 'courses' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 animate-slide-up">
-                    {displayCourses.map(item => (
-                        <EducationCard 
-                            key={item.id} 
-                            course={item} 
-                            onClick={() => onItemSelect(item.id, 'course')} 
-                        />
-                    ))}
-                </div>
+                <>
+                    {userCourses.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-slide-up">
+                            {userCourses.map((item) => (
+                                <EducationCard 
+                                    key={item.id} 
+                                    course={item} 
+                                    onClick={() => onItemSelect(item.id, 'course')} 
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-2xl border border-white/5 text-center animate-fade-in">
+                            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                                <GraduationCap className="h-8 w-8 text-slate-500" />
+                            </div>
+                            <h3 className="text-lg font-bold text-white mb-2">Sin cursos publicados</h3>
+                            <p className="text-slate-400 max-w-md mb-6">Enseña lo que sabes y gana dinero.</p>
+                            {isOwnProfile && (
+                                <button onClick={() => actions.handleCreateAction('course')} className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2">
+                                    <Plus className="h-4 w-4" /> Crear Curso
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </>
             )}
 
+            {/* TAB: ASSETS */}
+            {activeTab === 'assets' && (
+                <>
+                    {userAssets.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 animate-slide-up">
+                            {userAssets.map((item) => (
+                                <AssetCard 
+                                    key={item.id} 
+                                    asset={item} 
+                                    onClick={() => onItemSelect(item.id, 'asset')} 
+                                    onSave={actions.openSaveModal}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-2xl border border-white/5 text-center animate-fade-in">
+                            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                                <Box className="h-8 w-8 text-slate-500" />
+                            </div>
+                            <h3 className="text-lg font-bold text-white mb-2">Sin assets publicados</h3>
+                            <p className="text-slate-400 max-w-md mb-6">Vende tus modelos, texturas y herramientas.</p>
+                            {isOwnProfile && (
+                                <button onClick={() => actions.handleCreateAction('asset')} className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2">
+                                    <Plus className="h-4 w-4" /> Vender Asset
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </>
+            )}
+
+            {/* TAB: BLOG */}
             {activeTab === 'blog' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-slide-up">
-                    {userBlog.map(item => (
-                        <BlogCard 
-                            key={item.id} 
-                            article={item} 
-                            onClick={() => onItemSelect(item.id, 'blog')} 
-                        />
+                <>
+                    {userArticles.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-slide-up">
+                            {userArticles.map((item) => (
+                                <BlogCard 
+                                    key={item.id} 
+                                    article={item} 
+                                    onClick={() => onItemSelect(item.id, 'blog')} 
+                                    onSave={actions.openSaveModal}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-2xl border border-white/5 text-center animate-fade-in">
+                            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                                <Newspaper className="h-8 w-8 text-slate-500" />
+                            </div>
+                            <h3 className="text-lg font-bold text-white mb-2">Sin artículos publicados</h3>
+                            <p className="text-slate-400 max-w-md mb-6">Escribe sobre tus experiencias y tutoriales.</p>
+                            {isOwnProfile && (
+                                <button onClick={() => actions.handleCreateAction('article')} className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2">
+                                    <Plus className="h-4 w-4" /> Escribir Artículo
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </>
+            )}
+
+            {/* TAB: SAVED (LIKES) */}
+            {activeTab === 'saved' && (
+                <>
+                    {savedItems.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5 animate-slide-up">
+                            {savedItems.map((item: any) => {
+                                // Simple type guard or rendering logic
+                                if ('price' in item && 'fileSize' in item) { // Asset
+                                    return <AssetCard key={item.id} asset={item} onClick={() => onItemSelect(item.id, 'asset')} onSave={actions.openSaveModal} />;
+                                } else if ('instructor' in item) { // Course
+                                    return <EducationCard key={item.id} course={item} onClick={() => onItemSelect(item.id, 'course')} />;
+                                } else if ('readTime' in item) { // Blog
+                                    return <BlogCard key={item.id} article={item} onClick={() => onItemSelect(item.id, 'blog')} onSave={actions.openSaveModal} />;
+                                } else { // Portfolio
+                                    return <PortfolioCard key={item.id} item={item} onClick={() => onItemSelect(item.id, 'portfolio')} onSave={actions.openSaveModal} />;
+                                }
+                            })}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-20 text-center text-slate-500">
+                            <Bookmark className="h-12 w-12 mb-4 opacity-20" />
+                            <p>No tienes elementos guardados.</p>
+                        </div>
+                    )}
+                </>
+            )}
+
+            {/* TAB: COLLECTIONS */}
+            {activeTab === 'collections' && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 animate-slide-up">
+                    {userCollections.map((col) => (
+                        <div key={col.id} className="group cursor-pointer">
+                            <div className="aspect-square bg-slate-100 dark:bg-white/5 rounded-2xl overflow-hidden mb-4 grid grid-cols-2 gap-1 p-1 hover:ring-2 ring-amber-500/50 transition-all shadow-sm hover:shadow-lg relative">
+                                {col.thumbnails.slice(0, 4).map((thumb, i) => (
+                                    <div key={i} className="relative overflow-hidden bg-slate-200 dark:bg-slate-800 rounded-lg">
+                                        <img src={thumb} alt="" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                    </div>
+                                ))}
+                                {Array.from({ length: Math.max(0, 4 - col.thumbnails.length) }).map((_, i) => (
+                                    <div key={`empty-${i}`} className="bg-slate-200 dark:bg-white/5 rounded-lg flex items-center justify-center">
+                                        <ImageIcon className="h-6 w-6 text-slate-300 dark:text-slate-600" />
+                                    </div>
+                                ))}
+                            </div>
+                            <h4 className="font-bold text-white text-sm mb-1">{col.title}</h4>
+                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                                <span>{col.itemCount} items</span>
+                                {col.isPrivate && <Lock className="h-3 w-3" />}
+                            </div>
+                        </div>
                     ))}
+                    {userCollections.length === 0 && (
+                        <div className="col-span-full py-20 text-center text-slate-500">
+                            <p>No tienes colecciones aún.</p>
+                        </div>
+                    )}
                 </div>
             )}
 
+            {/* TAB: MEMBERSHIP */}
             {activeTab === 'membership' && (
                 <div className="animate-slide-up space-y-12">
-                    
                     {/* Intro */}
                     <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-8 border border-white/10 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
@@ -475,42 +717,44 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                                 <button className={`w-full py-3 rounded-xl font-bold mb-6 transition-colors ${tier.recommended ? 'bg-amber-500 text-black hover:bg-amber-400' : 'bg-white text-black hover:bg-slate-200'}`}>
                                     Unirse
                                 </button>
-                                <ul className="space-y-3 mt-auto">
-                                    {tier.perks.map((perk, i) => (
-                                        <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
-                                            <Check className={`h-4 w-4 shrink-0 mt-0.5 ${tier.recommended ? 'text-amber-500' : 'text-slate-500'}`} />
-                                            <span>{perk}</span>
-                                        </li>
-                                    ))}
-                                </ul>
                             </div>
                         ))}
                     </div>
 
-                    {/* Exclusive Content Preview */}
-                    <div>
+                    {/* Locked Exclusive Content Section */}
+                    <div className="pt-8 border-t border-white/10">
                         <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                            <Lock className="h-5 w-5 text-amber-500" /> Contenido Exclusivo para Miembros
+                            <Lock className="h-5 w-5 text-amber-500" />
+                            Contenido Exclusivo para Miembros
                         </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {exclusiveItems.map((item, idx) => (
-                                item.category ? (
-                                    <PortfolioCard 
-                                        key={`exc-${idx}`} 
-                                        item={item as any} 
-                                        onClick={() => {}} 
-                                    />
-                                ) : (
-                                    <BlogCard
-                                        key={`exc-b-${idx}`}
-                                        article={item as any}
-                                        onClick={() => {}}
-                                    />
-                                )
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {LOCKED_POSTS.map((post, idx) => (
+                                <div key={post.id} className="relative group rounded-2xl overflow-hidden bg-slate-900 border border-white/5 aspect-video hover:border-amber-500/30 transition-colors">
+                                    {/* Blurred Image Background */}
+                                    <img src={post.image} alt={post.title} className="w-full h-full object-cover blur-md opacity-40 transform scale-110" />
+
+                                    {/* Content & Lock Overlay */}
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-6 text-center bg-black/40 backdrop-blur-sm">
+                                        <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mb-3 border border-white/10 shadow-lg group-hover:scale-110 transition-transform">
+                                            {post.type === 'Download' ? <Download className="h-6 w-6 text-amber-500" /> : 
+                                             post.type === 'Video' ? <PlayCircle className="h-6 w-6 text-amber-500" /> :
+                                             post.type === 'Asset' ? <Box className="h-6 w-6 text-amber-500" /> :
+                                             <FileText className="h-6 w-6 text-amber-500" />}
+                                        </div>
+                                        <h4 className="text-white font-bold text-lg mb-1 line-clamp-1">{post.title}</h4>
+                                        <p className="text-amber-400/80 text-xs font-bold uppercase tracking-wider mb-4 border border-amber-500/20 px-2 py-0.5 rounded bg-amber-500/10">
+                                            Requiere: {post.tier}
+                                        </p>
+                                        <p className="text-slate-400 text-xs mb-4">Publicado {post.date}</p>
+                                        <button className="px-5 py-2 bg-white text-black text-xs font-bold rounded-lg hover:bg-slate-200 shadow-lg flex items-center gap-2">
+                                            <Lock className="h-3 w-3" /> Desbloquear
+                                        </button>
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     </div>
-
                 </div>
             )}
 

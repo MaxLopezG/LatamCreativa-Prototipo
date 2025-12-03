@@ -1,8 +1,8 @@
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { CartItem, Notification, CollectionItem } from '../types';
-import { USER_COLLECTIONS } from '../data/content';
+import { CartItem, Notification, CollectionItem, PortfolioItem } from '../types';
+import { USER_COLLECTIONS, PORTFOLIO_ITEMS } from '../data/content';
 
 // --- Types ---
 export type CreateMode = 'none' | 'project' | 'article' | 'portfolio' | 'course' | 'asset' | 'service' | 'forum' | 'event';
@@ -49,9 +49,10 @@ interface UISlice {
 }
 
 interface AuthSlice {
-  user: any | null; // Placeholder for real user type
+  user: { name: string; id: string; avatar: string; role: string; location: string };
   cartItems: CartItem[];
   likedItems: string[];
+  createdItems: PortfolioItem[];
   notifications: Notification[];
   collections: CollectionItem[];
   
@@ -60,6 +61,7 @@ interface AuthSlice {
   removeFromCart: (itemId: string) => void;
   clearCart: () => void;
   toggleLike: (itemId: string) => void;
+  addCreatedItem: (item: PortfolioItem) => void;
   markNotificationRead: (id: number) => void;
   markAllNotificationsRead: () => void;
   saveToCollection: (collectionId: string) => void;
@@ -89,9 +91,22 @@ const useZustandStore = create<AppStore>()(
       viewingAuthorName: null,
 
       // Auth/User Initial State
-      user: { name: 'Alex Motion', id: 'u1' },
+      user: { 
+        name: 'Alex Motion', 
+        id: 'u1',
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
+        role: 'Senior 3D Artist',
+        location: 'Barcelona, España'
+      },
       cartItems: [],
       likedItems: [],
+      // Initialize with some dummy created items based on existing portfolio items
+      createdItems: PORTFOLIO_ITEMS.slice(0, 2).map(item => ({
+        ...item,
+        id: `created-${item.id}`,
+        artist: 'Alex Motion',
+        artistAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop'
+      })),
       notifications: [
         { id: 1, type: 'comment', user: 'Sarah Jenkins', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&fit=crop', content: 'comentó en tu proyecto "Cyberpunk City"', time: 'Hace 2 min', read: false },
         { id: 2, type: 'follow', user: 'Alex Motion', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&fit=crop', content: 'comenzó a seguirte', time: 'Hace 1 hora', read: false },
@@ -162,6 +177,10 @@ const useZustandStore = create<AppStore>()(
         };
       }),
 
+      addCreatedItem: (item) => set((state) => ({
+        createdItems: [item, ...state.createdItems]
+      })),
+
       markNotificationRead: (id) => set((state) => ({
         notifications: state.notifications.map(n => n.id === id ? { ...n, read: true } : n)
       })),
@@ -223,14 +242,20 @@ export const useAppStore = () => {
       contentMode: store.contentMode,
       createMode: store.createMode,
       searchQuery: store.searchQuery,
+      
+      // User Data
+      user: store.user,
       cartItems: store.cartItems,
       likedItems: store.likedItems,
+      createdItems: store.createdItems,
+      collections: store.collections,
+      notifications: store.notifications,
+      
       toastMessage: store.toast?.message,
       toast: store.toast,
       isChatOpen: store.isChatOpen,
       chatActiveUser: store.chatActiveUser,
-      notifications: store.notifications,
-      collections: store.collections,
+      
       isSaveModalOpen: store.isSaveModalOpen,
       itemToSave: store.itemToSave,
       isShareModalOpen: store.isShareModalOpen
@@ -279,6 +304,7 @@ export const useAppStore = () => {
       removeFromCart: store.removeFromCart,
       clearCart: store.clearCart,
       toggleLike: store.toggleLike,
+      addCreatedItem: store.addCreatedItem,
       
       handleBuyNow: (item: CartItem) => {
         if (!store.cartItems.find(i => i.id === item.id)) {
