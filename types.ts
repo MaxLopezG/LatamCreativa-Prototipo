@@ -348,3 +348,25 @@ export interface CollectionItem {
   thumbnails: string[];
   isPrivate: boolean;
 }
+
+// --- SALES & EARNINGS INTERFACE ---
+export type SaleStatus = 'Active' | 'Paused' | 'Draft';
+
+export interface SaleItem {
+  id: string;
+  title: string;
+  image: string;
+  dateCreated: string;
+  price: number;
+  salesCount: number;
+  totalRevenue: number;
+  status: SaleStatus;
+  rating: number;
+}
+
+export type SortDirection = 'asc' | 'desc';
+
+export interface SortConfig {
+  key: keyof SaleItem;
+  direction: SortDirection;
+}
