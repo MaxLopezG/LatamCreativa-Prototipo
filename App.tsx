@@ -8,7 +8,7 @@ import { ChatWidget } from './components/chat/ChatWidget';
 import { MobileTabBar } from './components/layout/MobileTabBar'; 
 import { SaveToCollectionModal } from './components/modals/SaveToCollectionModal';
 import { ShareModal } from './components/modals/ShareModal';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 import { useAppStore } from './hooks/useAppStore';
 
 const App: React.FC = () => {
@@ -120,12 +120,22 @@ const App: React.FC = () => {
         onClose={actions.closeShareModal}
       />
 
-      {/* Toast Notification */}
-      {state.toastMessage && (
-        <div className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-[110] animate-slide-up w-auto max-w-[90%] text-center">
-          <div className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-3 rounded-full shadow-2xl flex items-center justify-center gap-3 font-medium">
-            <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
-            {state.toastMessage}
+      {/* Enhanced Toast Notification */}
+      {state.toast && (
+        <div className="fixed bottom-24 md:bottom-8 left-1/2 -translate-x-1/2 z-[110] animate-enter-up w-auto max-w-[90%] text-center">
+          <div className={`
+            px-6 py-3 rounded-full shadow-2xl flex items-center justify-center gap-3 font-medium backdrop-blur-md border
+            ${state.toast.type === 'success' 
+              ? 'bg-slate-900/90 dark:bg-white/90 text-white dark:text-slate-900 border-green-500/30' 
+              : state.toast.type === 'error'
+              ? 'bg-red-500/90 text-white border-red-400/30'
+              : 'bg-blue-500/90 text-white border-blue-400/30'
+            }
+          `}>
+            {state.toast.type === 'success' && <CheckCircle className="h-5 w-5 text-green-400 dark:text-green-600 shrink-0" />}
+            {state.toast.type === 'error' && <AlertCircle className="h-5 w-5 text-white shrink-0" />}
+            {state.toast.type === 'info' && <Info className="h-5 w-5 text-white shrink-0" />}
+            {state.toast.message}
           </div>
         </div>
       )}

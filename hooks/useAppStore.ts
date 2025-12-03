@@ -5,6 +5,12 @@ import { USER_COLLECTIONS } from '../data/content';
 
 export type CreateMode = 'none' | 'project' | 'article' | 'portfolio' | 'course' | 'asset' | 'service' | 'forum' | 'event';
 export type ContentMode = 'creative' | 'dev';
+export type ToastType = 'success' | 'error' | 'info';
+
+export interface ToastState {
+  message: string;
+  type: ToastType;
+}
 
 export const useAppStore = () => {
   // Navigation State
@@ -24,7 +30,9 @@ export const useAppStore = () => {
 
   // Cart State
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  
+  // Enhanced Toast State
+  const [toast, setToast] = useState<ToastState | null>(null);
 
   // Chat State
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -60,12 +68,16 @@ export const useAppStore = () => {
     }
   };
 
+  const showToast = (message: string, type: ToastType = 'success') => {
+      setToast({ message, type });
+      setTimeout(() => setToast(null), 3000);
+  };
+
   const toggleContentMode = () => {
       const newMode = contentMode === 'creative' ? 'dev' : 'creative';
       setContentMode(newMode);
       setActiveCategory('Home');
-      setToastMessage(newMode === 'dev' ? 'Modo Desarrollador Activado 👨‍💻' : 'Modo Creativo Activado 🎨');
-      setTimeout(() => setToastMessage(null), 2000);
+      showToast(newMode === 'dev' ? 'Modo Desarrollador Activado 👨‍💻' : 'Modo Creativo Activado 🎨', 'info');
   };
 
   const handleSubscriptionSelect = (authorName: string) => {
@@ -111,11 +123,9 @@ export const useAppStore = () => {
     // Prevent duplicates
     if (!cartItems.find(i => i.id === item.id)) {
         setCartItems(prev => [...prev, item]);
-        setToastMessage(`Añadido al carrito: ${item.title}`);
-        setTimeout(() => setToastMessage(null), 3000);
+        showToast(`Añadido al carrito: ${item.title}`, 'success');
     } else {
-        setToastMessage(`Este item ya está en tu carrito`);
-        setTimeout(() => setToastMessage(null), 3000);
+        showToast(`Este item ya está en tu carrito`, 'info');
     }
   };
 
@@ -169,8 +179,7 @@ export const useAppStore = () => {
           return col;
       }));
 
-      setToastMessage("Guardado en colección");
-      setTimeout(() => setToastMessage(null), 3000);
+      showToast("Guardado en colección", 'success');
       closeSaveModal();
   };
 
@@ -186,8 +195,7 @@ export const useAppStore = () => {
       };
 
       setCollections(prev => [newCol, ...prev]);
-      setToastMessage("Nueva colección creada y guardada");
-      setTimeout(() => setToastMessage(null), 3000);
+      showToast("Nueva colección creada y guardada", 'success');
       closeSaveModal();
   };
 
@@ -210,7 +218,8 @@ export const useAppStore = () => {
       createMode,
       searchQuery,
       cartItems,
-      toastMessage,
+      toastMessage: toast?.message, // Backward compatibility
+      toast,
       isChatOpen,
       chatActiveUser,
       notifications,
@@ -243,7 +252,8 @@ export const useAppStore = () => {
       saveToCollection,
       createCollection,
       openShareModal,
-      closeShareModal
+      closeShareModal,
+      showToast
     }
   };
 };

@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UsersRound, Filter, Search, Globe, Briefcase } from 'lucide-react';
 import { ARTIST_DIRECTORY } from '../data/content';
 import { ArtistCard } from '../components/cards/ArtistCard';
 import { Pagination } from '../components/common/Pagination';
 import { FilterPanel } from '../components/common/FilterPanel';
+import { Loader } from '../components/common/Loader';
 
 interface PeopleViewProps {
   onProfileSelect?: (id: string) => void;
@@ -12,6 +13,13 @@ interface PeopleViewProps {
 
 export const PeopleView: React.FC<PeopleViewProps> = ({ onProfileSelect }) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Simulate loading effect
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
 
   const professions = [
     "Character Artist", "Environment Artist", "Animator 3D", "Animator 2D", 
@@ -22,7 +30,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ onProfileSelect }) => {
     <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors">
       
       {/* Hero Banner */}
-      <div className="relative rounded-2xl bg-gradient-to-r from-teal-900 to-cyan-900 p-8 mb-10 overflow-hidden shadow-2xl shadow-teal-900/20">
+      <div className="relative rounded-2xl bg-gradient-to-r from-teal-900 to-cyan-900 p-8 mb-10 overflow-hidden shadow-2xl shadow-teal-900/20 animate-fade-in">
          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
          <div className="relative z-10 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-200 text-xs font-bold uppercase tracking-wider mb-4 border border-teal-500/20">
@@ -44,7 +52,7 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ onProfileSelect }) => {
          </div>
       </div>
 
-      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 animate-fade-in">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
             Artistas Destacados
@@ -84,17 +92,26 @@ export const PeopleView: React.FC<PeopleViewProps> = ({ onProfileSelect }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 mb-16">
-        {ARTIST_DIRECTORY.map((artist) => (
-          <ArtistCard 
-             key={artist.id} 
-             artist={artist} 
-             onClick={() => onProfileSelect?.(artist.name)}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <Loader />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 mb-16">
+          {ARTIST_DIRECTORY.map((artist, index) => (
+            <div 
+                key={artist.id} 
+                className="stagger-enter" 
+                style={{ animationDelay: `${index * 100}ms` }}
+            >
+                <ArtistCard 
+                   artist={artist} 
+                   onClick={() => onProfileSelect?.(artist.name)}
+                />
+            </div>
+          ))}
+        </div>
+      )}
 
-      <Pagination currentPage={1} onPageChange={() => {}} />
+      {!loading && <Pagination currentPage={1} onPageChange={() => {}} />}
     </div>
   );
 };

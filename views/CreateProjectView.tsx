@@ -1,18 +1,24 @@
 
 import React, { useState } from 'react';
-import { UploadCloud, Plus, X, Image as ImageIcon, Target, Users, Type } from 'lucide-react';
+import { UploadCloud, Plus, X, Image as ImageIcon, Target, Users, Type, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { CreatePageLayout } from '../components/layout/CreatePageLayout';
+import { useAppStore } from '../hooks/useAppStore';
 
 interface CreateProjectViewProps {
   onBack: () => void;
 }
 
 export const CreateProjectView: React.FC<CreateProjectViewProps> = ({ onBack }) => {
+  const { actions } = useAppStore();
   const [roles, setRoles] = useState<string[]>([]);
   const [currentRole, setCurrentRole] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  
+  // Form States
+  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [projectName, setProjectName] = useState('');
 
   const handleAddRole = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,32 +55,74 @@ export const CreateProjectView: React.FC<CreateProjectViewProps> = ({ onBack }) 
     }
   };
 
+  const handleSubmit = () => {
+      if (!projectName.trim()) {
+          setFormStatus('error');
+          actions.showToast('El nombre del proyecto es obligatorio', 'error');
+          setTimeout(() => setFormStatus('idle'), 2000);
+          return;
+      }
+
+      setFormStatus('submitting');
+      
+      // Simulate API
+      setTimeout(() => {
+          setFormStatus('success');
+          actions.showToast('Proyecto publicado con éxito', 'success');
+          
+          setTimeout(() => {
+              onBack();
+          }, 1500);
+      }, 2000);
+  };
+
+  if (formStatus === 'success') {
+      return (
+          <div className="fixed inset-0 z-50 bg-[#030304] flex flex-col items-center justify-center animate-fade-in">
+              <div className="w-24 h-24 rounded-full bg-green-500/20 flex items-center justify-center mb-6 animate-scale-in">
+                  <CheckCircle2 className="h-12 w-12 text-green-500" />
+              </div>
+              <h2 className="text-3xl font-bold text-white mb-2">¡Proyecto Publicado!</h2>
+              <p className="text-slate-400">Redirigiendo a la comunidad...</p>
+          </div>
+      );
+  }
+
   return (
     <CreatePageLayout 
       title="Publicar Nuevo Proyecto" 
       onBack={onBack}
-      actionColorClass="bg-purple-600 hover:bg-purple-700 text-white"
+      actionColorClass="bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+      actionLabel={formStatus === 'submitting' ? 'Publicando...' : 'Publicar'}
+      onAction={handleSubmit}
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+      <div className={`grid grid-cols-1 lg:grid-cols-3 gap-10 ${formStatus === 'submitting' ? 'opacity-50 pointer-events-none' : ''} transition-opacity`}>
         
         {/* Main Form */}
         <div className="lg:col-span-2 space-y-8">
           
           {/* Basic Info */}
-          <div className="bg-white dark:bg-white/[0.02] p-6 rounded-2xl border border-slate-200 dark:border-white/10 space-y-6">
+          <div className={`bg-white dark:bg-white/[0.02] p-6 rounded-2xl border transition-colors space-y-6 ${formStatus === 'error' && !projectName ? 'border-red-500/50' : 'border-slate-200 dark:border-white/10'}`}>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Type className="h-5 w-5 text-purple-500" /> Detalles Básicos
             </h2>
             
             <div>
               <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-                Nombre del Proyecto
+                Nombre del Proyecto <span className="text-red-500">*</span>
               </label>
-              <input 
-                type="text" 
-                placeholder="Ej: Chronos RPG, Cortometraje 'El Viaje'..."
-                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 transition-colors"
-              />
+              <div className="relative">
+                  <input 
+                    type="text" 
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    placeholder="Ej: Chronos RPG, Cortometraje 'El Viaje'..."
+                    className={`w-full bg-slate-50 dark:bg-white/5 border rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none transition-all ${formStatus === 'error' && !projectName ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 dark:border-white/10 focus:border-purple-500'}`}
+                  />
+                  {formStatus === 'error' && !projectName && (
+                      <AlertCircle className="absolute right-4 top-3.5 h-5 w-5 text-red-500 animate-pulse" />
+                  )}
+              </div>
             </div>
 
             <div>
@@ -96,7 +144,7 @@ export const CreateProjectView: React.FC<CreateProjectViewProps> = ({ onBack }) 
                 <ImageIcon className="h-5 w-5 text-purple-500" /> Portada del Proyecto
               </h2>
               
-              <div className="border-2 border-dashed border-slate-300 dark:border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center bg-slate-50 dark:bg-white/[0.01] hover:bg-slate-100 dark:hover:bg-white/[0.03] transition-colors relative overflow-hidden group">
+              <div className="border-2 border-dashed border-slate-300 dark:border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center bg-slate-50 dark:bg-white/[0.01] hover:bg-slate-100 dark:hover:bg-white/[0.03] transition-colors relative overflow-hidden group cursor-pointer">
                 {previewImage ? (
                   <>
                     <img src={previewImage} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-40 transition-opacity" />
@@ -107,7 +155,7 @@ export const CreateProjectView: React.FC<CreateProjectViewProps> = ({ onBack }) 
                   </>
                 ) : (
                   <>
-                    <div className="h-16 w-16 bg-purple-500/10 rounded-full flex items-center justify-center mb-4">
+                    <div className="h-16 w-16 bg-purple-500/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                         <UploadCloud className="h-8 w-8 text-purple-500" />
                     </div>
                     <p className="text-slate-900 dark:text-white font-bold mb-1">Haz clic para subir o arrastra aquí</p>
@@ -152,7 +200,7 @@ export const CreateProjectView: React.FC<CreateProjectViewProps> = ({ onBack }) 
                 
                 <div className="flex flex-wrap gap-2">
                     {roles.map((role, idx) => (
-                      <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 text-sm font-bold border border-purple-500/20 animate-fade-in">
+                      <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 text-sm font-bold border border-purple-500/20 animate-scale-in">
                           {role}
                           <button onClick={() => removeRole(role)} className="hover:text-purple-700 dark:hover:text-white">
                             <X className="h-3 w-3" />
@@ -193,7 +241,7 @@ export const CreateProjectView: React.FC<CreateProjectViewProps> = ({ onBack }) 
               
               <div className="flex flex-wrap gap-2">
                   {tags.map((tag, idx) => (
-                    <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-white/5">
+                    <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-white/5 animate-scale-in">
                         #{tag}
                         <button onClick={() => removeTag(tag)} className="hover:text-red-500 ml-1">
                           <X className="h-3 w-3" />
@@ -210,8 +258,12 @@ export const CreateProjectView: React.FC<CreateProjectViewProps> = ({ onBack }) 
                   Tu proyecto pasará a estado "Reclutando" inmediatamente. Podrás editarlo más tarde.
               </p>
               <div className="space-y-3">
-                  <button className="w-full py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors shadow-lg shadow-purple-600/20">
-                    Publicar Proyecto
+                  <button 
+                    onClick={handleSubmit}
+                    disabled={formStatus === 'submitting'}
+                    className="w-full py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait"
+                  >
+                    {formStatus === 'submitting' ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Publicar Proyecto'}
                   </button>
                   <button className="w-full py-3 bg-transparent border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
                     Guardar Borrador
