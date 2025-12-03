@@ -8,9 +8,10 @@ import { PortfolioCard } from '../components/cards/PortfolioCard';
 interface ChallengeDetailViewProps {
   challengeId?: string;
   onBack: () => void;
+  onShare?: () => void;
 }
 
-export const ChallengeDetailView: React.FC<ChallengeDetailViewProps> = ({ challengeId, onBack }) => {
+export const ChallengeDetailView: React.FC<ChallengeDetailViewProps> = ({ challengeId, onBack, onShare }) => {
   const { id: paramId } = useParams<{ id: string }>();
   const id = challengeId || paramId;
   const challenge = CHALLENGE_ITEMS.find(c => c.id === id) || CHALLENGE_ITEMS[0];
@@ -31,7 +32,10 @@ export const ChallengeDetailView: React.FC<ChallengeDetailViewProps> = ({ challe
           <ArrowLeft className="h-4 w-4" />
           Volver a Retos
         </button>
-        <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors">
+        <button 
+          onClick={onShare}
+          className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors"
+        >
              <Share2 className="h-5 w-5" />
         </button>
       </div>

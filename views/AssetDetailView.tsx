@@ -12,9 +12,10 @@ interface AssetDetailViewProps {
   onAddToCart?: (item: CartItem) => void;
   onBuyNow?: (item: CartItem) => void;
   onSave?: (id: string, image: string) => void;
+  onShare?: () => void;
 }
 
-export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBack, onAuthorClick, onAddToCart, onBuyNow, onSave }) => {
+export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBack, onAuthorClick, onAddToCart, onBuyNow, onSave, onShare }) => {
   const { id: paramId } = useParams<{ id: string }>();
   const id = assetId || paramId;
   const asset = ASSET_ITEMS.find(a => a.id === id) || ASSET_ITEMS[0];
@@ -60,7 +61,10 @@ export const AssetDetailView: React.FC<AssetDetailViewProps> = ({ assetId, onBac
            <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors">
              <Heart className="h-5 w-5" />
            </button>
-           <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors">
+           <button 
+             onClick={onShare}
+             className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors"
+           >
              <Share2 className="h-5 w-5" />
            </button>
         </div>

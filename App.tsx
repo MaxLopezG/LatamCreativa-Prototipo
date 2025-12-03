@@ -7,6 +7,7 @@ import { VideoContent } from './components/VideoContent';
 import { ChatWidget } from './components/chat/ChatWidget';
 import { MobileTabBar } from './components/layout/MobileTabBar'; 
 import { SaveToCollectionModal } from './components/modals/SaveToCollectionModal';
+import { ShareModal } from './components/modals/ShareModal';
 import { CheckCircle } from 'lucide-react';
 import { useAppStore } from './hooks/useAppStore';
 
@@ -112,6 +113,11 @@ const App: React.FC = () => {
         onSave={actions.saveToCollection}
         onCreate={actions.createCollection}
         itemImage={state.itemToSave?.image}
+      />
+
+      <ShareModal 
+        isOpen={state.isShareModalOpen}
+        onClose={actions.closeShareModal}
       />
 
       {/* Toast Notification */}

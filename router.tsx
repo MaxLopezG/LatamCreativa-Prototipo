@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, useNavigate } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { useAppStore } from './hooks/useAppStore';
 
@@ -55,6 +55,11 @@ function PortfolioWrapper() {
     return <PortfolioView activeCategory={state.activeCategory} onItemSelect={() => {}} onCreateClick={() => {}} onSave={actions.openSaveModal} contentMode={state.contentMode} />;
 }
 
+function PortfolioPostWrapper() {
+    const { actions } = useAppStore();
+    return <PortfolioPostView onBack={() => window.history.back()} onShare={actions.openShareModal} onSave={actions.openSaveModal} />;
+}
+
 function FeedWrapper() {
     const { state, actions } = useAppStore();
     return <FeedView onNavigateToModule={() => {}} onItemSelect={() => {}} contentMode={state.contentMode} />;
@@ -72,12 +77,31 @@ function CartViewWrapper() {
 
 function AssetDetailWrapper() {
     const { actions } = useAppStore();
-    return <AssetDetailView onBack={() => window.history.back()} onAddToCart={actions.addToCart} onBuyNow={actions.handleBuyNow} onSave={actions.openSaveModal} />;
+    return <AssetDetailView onBack={() => window.history.back()} onAddToCart={actions.addToCart} onBuyNow={actions.handleBuyNow} onSave={actions.openSaveModal} onShare={actions.openShareModal} />;
 }
 
 function CourseDetailWrapper() {
     const { actions } = useAppStore();
-    return <CourseDetailView onBack={() => window.history.back()} onAddToCart={actions.addToCart} onBuyNow={actions.handleBuyNow} />;
+    const navigate = useNavigate();
+    return (
+        <CourseDetailView 
+            onBack={() => window.history.back()} 
+            onAddToCart={actions.addToCart} 
+            onBuyNow={actions.handleBuyNow}
+            onStartCourse={(id) => navigate(`/learning/${id}`)}
+            onShare={actions.openShareModal}
+        />
+    );
+}
+
+function ProjectDetailWrapper() {
+    const { actions } = useAppStore();
+    return <ProjectDetailView onBack={() => window.history.back()} onShare={actions.openShareModal} />;
+}
+
+function EventDetailWrapper() {
+    const { actions } = useAppStore();
+    return <EventDetailView onBack={() => window.history.back()} onShare={actions.openShareModal} />;
 }
 
 function MainLandingWrapper() {
@@ -96,6 +120,11 @@ function UserProfileWrapper() {
     );
 }
 
+function BlogPostWrapper() {
+    const { actions } = useAppStore();
+    return <BlogPostView onBack={() => window.history.back()} onArticleSelect={() => {}} onShare={actions.openShareModal} onSave={actions.openSaveModal} />;
+}
+
 function CreateWrapper({ Component }: { Component: React.FC<{ onBack: () => void }> }) {
     return <Component onBack={() => window.history.back()} />;
 }
@@ -110,12 +139,12 @@ export const router = createBrowserRouter([
       
       // Portfolio
       { path: 'portfolio', element: <PortfolioWrapper /> },
-      { path: 'portfolio/:id', element: <PortfolioPostView onBack={() => window.history.back()} /> },
+      { path: 'portfolio/:id', element: <PortfolioPostWrapper /> },
       { path: 'create/portfolio', element: <CreateWrapper Component={CreatePortfolioView} /> },
 
       // Blog
       { path: 'blog', element: <BlogView activeCategory="Home" /> },
-      { path: 'blog/:id', element: <BlogPostView onBack={() => window.history.back()} onArticleSelect={() => {}} /> },
+      { path: 'blog/:id', element: <BlogPostWrapper /> },
       { path: 'create/article', element: <CreateWrapper Component={CreateArticleView} /> },
 
       // Education
@@ -139,7 +168,7 @@ export const router = createBrowserRouter([
       
       // Community
       { path: 'community', element: <CommunityView /> }, 
-      { path: 'community/:id', element: <ProjectDetailView onBack={() => window.history.back()} /> },
+      { path: 'community/:id', element: <ProjectDetailWrapper /> },
       { path: 'create/project', element: <CreateWrapper Component={CreateProjectView} /> },
       
       // Challenges
@@ -148,7 +177,7 @@ export const router = createBrowserRouter([
 
       // Events
       { path: 'events', element: <EventsView /> },
-      { path: 'events/:id', element: <EventDetailView onBack={() => window.history.back()} /> },
+      { path: 'events/:id', element: <EventDetailWrapper /> },
       { path: 'create/event', element: <CreateWrapper Component={CreateEventView} /> },
 
       // Forum

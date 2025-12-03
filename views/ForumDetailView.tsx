@@ -8,9 +8,10 @@ interface ForumDetailViewProps {
   postId?: string;
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
+  onShare?: () => void;
 }
 
-export const ForumDetailView: React.FC<ForumDetailViewProps> = ({ postId, onBack, onAuthorClick }) => {
+export const ForumDetailView: React.FC<ForumDetailViewProps> = ({ postId, onBack, onAuthorClick, onShare }) => {
   const { id: paramId } = useParams<{ id: string }>();
   const id = postId || paramId;
   const post = FORUM_ITEMS.find(p => p.id === id) || FORUM_ITEMS[0];
@@ -63,7 +64,7 @@ export const ForumDetailView: React.FC<ForumDetailViewProps> = ({ postId, onBack
 
                       <div className="flex items-center justify-between">
                           <div className="flex gap-4">
-                              <button className="text-slate-500 text-sm font-medium hover:text-slate-900 dark:hover:text-white transition-colors">Compartir</button>
+                              <button onClick={onShare} className="text-slate-500 text-sm font-medium hover:text-slate-900 dark:hover:text-white transition-colors">Compartir</button>
                               <button className="text-slate-500 text-sm font-medium hover:text-slate-900 dark:hover:text-white transition-colors">Reportar</button>
                           </div>
                           

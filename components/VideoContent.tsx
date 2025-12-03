@@ -72,7 +72,8 @@ export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) =>
     removeFromCart: onRemoveFromCart, 
     handleBuyNow: onBuyNow, 
     openChatWithUser: onOpenChat, 
-    openSaveModal: onOpenSaveModal 
+    openSaveModal: onOpenSaveModal,
+    openShareModal: onOpenShareModal 
   } = actions;
 
   // Reset selection if module or category changes
@@ -122,9 +123,9 @@ export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) =>
   };
 
   // Custom handler to go to course player
-  const handleStartLearning = (item: CartItem) => {
+  const handleStartLearning = (id: string) => {
       onModuleSelect?.('learning');
-      setSelectedItemId(item.id);
+      setSelectedItemId(id);
   };
 
   // Render container with padding for mobile navbar
@@ -164,6 +165,7 @@ export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) =>
                       collectionId={selectedCollectionId} 
                       onBack={() => setSelectedCollectionId(null)}
                       onItemSelect={(id) => handleItemSelect(id, 'portfolio')} 
+                      onShare={onOpenShareModal}
                   />
               );
           }
@@ -212,14 +214,14 @@ export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) =>
       
       // CHALLENGES
       if (activeModule === 'challenges') {
-          if (selectedItemId) return <ChallengeDetailView challengeId={selectedItemId} onBack={() => setSelectedItemId(null)} />;
+          if (selectedItemId) return <ChallengeDetailView challengeId={selectedItemId} onBack={() => setSelectedItemId(null)} onShare={onOpenShareModal} />;
           return <ChallengesView onChallengeSelect={setSelectedItemId} />;
       }
 
       // JOBS
       if (activeModule === 'jobs') {
           if (createMode === 'service') return <CreateServiceView onBack={() => setCreateMode('none')} />;
-          if (selectedItemId) return <JobDetailView jobId={selectedItemId} onBack={() => setSelectedItemId(null)} />;
+          if (selectedItemId) return <JobDetailView jobId={selectedItemId} onBack={() => setSelectedItemId(null)} onShare={onOpenShareModal} />;
           return <JobsView onCreateClick={() => setCreateMode('service')} onJobSelect={setSelectedItemId} />;
       }
 
@@ -229,56 +231,66 @@ export const VideoContent: React.FC<VideoContentProps> = ({ state, actions }) =>
       // EVENTS
       if (activeModule === 'events') {
         if (createMode === 'event') return <CreateEventView onBack={() => setCreateMode('none')} />;
-        if (selectedItemId) return <EventDetailView eventId={selectedItemId} onBack={() => setSelectedItemId(null)} onAuthorClick={handleAuthorClick} />;
+        if (selectedItemId) return <EventDetailView eventId={selectedItemId} onBack={() => setSelectedItemId(null)} onAuthorClick={handleAuthorClick} onShare={onOpenShareModal} />;
         return <EventsView onEventSelect={setSelectedItemId} onCreateClick={() => setCreateMode('event')} />;
       }
 
       // FORUM
       if (activeModule === 'forum') {
         if (createMode === 'forum') return <CreateForumPostView onBack={() => setCreateMode('none')} />;
-        if (selectedItemId) return <ForumDetailView postId={selectedItemId} onBack={() => setSelectedItemId(null)} onAuthorClick={handleAuthorClick} />;
+        if (selectedItemId) return <ForumDetailView postId={selectedItemId} onBack={() => setSelectedItemId(null)} onAuthorClick={handleAuthorClick} onShare={onOpenShareModal} />;
         return <ForumView onPostSelect={setSelectedItemId} onCreateClick={() => setCreateMode('forum')} />;
       }
 
       // FREELANCE
       if (activeModule === 'freelance') {
         if (createMode === 'service') return <CreateServiceView onBack={() => setCreateMode('none')} />;
-        if (selectedItemId) return <ServiceDetailView serviceId={selectedItemId} onBack={() => setSelectedItemId(null)} onAuthorClick={handleAuthorClick} />;
+        if (selectedItemId) return <ServiceDetailView serviceId={selectedItemId} onBack={() => setSelectedItemId(null)} onAuthorClick={handleAuthorClick} onShare={onOpenShareModal} />;
         return <FreelanceView activeCategory={activeCategory} onCreateClick={() => setCreateMode('service')} onServiceSelect={setSelectedItemId} />;
       }
 
       // ASSETS (MARKET)
       if (activeModule === 'market') {
         if (createMode === 'asset') return <CreateAssetView onBack={() => setCreateMode('none')} />;
-        if (selectedItemId) return <AssetDetailView assetId={selectedItemId} onBack={() => setSelectedItemId(null)} onAuthorClick={handleAuthorClick} onAddToCart={onAddToCart} onBuyNow={onBuyNow} onSave={onOpenSaveModal} />;
+        if (selectedItemId) return <AssetDetailView assetId={selectedItemId} onBack={() => setSelectedItemId(null)} onAuthorClick={handleAuthorClick} onAddToCart={onAddToCart} onBuyNow={onBuyNow} onSave={onOpenSaveModal} onShare={onOpenShareModal} />;
         return <AssetsView activeCategory={activeCategory} onAssetSelect={setSelectedItemId} onCreateClick={() => setCreateMode('asset')} onSave={onOpenSaveModal} />;
       }
 
       // EDUCATION
       if (activeModule === 'education') {
         if (createMode === 'course') return <CreateCourseView onBack={() => setCreateMode('none')} />;
-        if (selectedItemId) return <CourseDetailView courseId={selectedItemId} onBack={() => setSelectedItemId(null)} onAuthorClick={handleAuthorClick} onAddToCart={onAddToCart} onBuyNow={handleStartLearning} />;
+        if (selectedItemId) return (
+            <CourseDetailView 
+                courseId={selectedItemId} 
+                onBack={() => setSelectedItemId(null)} 
+                onAuthorClick={handleAuthorClick} 
+                onAddToCart={onAddToCart} 
+                onBuyNow={onBuyNow} 
+                onStartCourse={handleStartLearning}
+                onShare={onOpenShareModal}
+            />
+        );
         return <EducationView activeCategory={activeCategory} onCourseSelect={setSelectedItemId} onCreateClick={() => setCreateMode('course')} contentMode={contentMode} />;
       }
 
       // BLOG
       if (activeModule === 'blog') {
         if (createMode === 'article') return <CreateArticleView onBack={() => setCreateMode('none')} />;
-        if (selectedItemId) return <BlogPostView articleId={selectedItemId} onBack={() => setSelectedItemId(null)} onArticleSelect={setSelectedItemId} onAuthorClick={handleAuthorClick} onSave={onOpenSaveModal} />;
+        if (selectedItemId) return <BlogPostView articleId={selectedItemId} onBack={() => setSelectedItemId(null)} onArticleSelect={setSelectedItemId} onAuthorClick={handleAuthorClick} onSave={onOpenSaveModal} onShare={onOpenShareModal} />;
         return <BlogView activeCategory={activeCategory} onArticleSelect={setSelectedItemId} onCreateClick={() => setCreateMode('article')} onSave={onOpenSaveModal} />;
       }
 
       // PORTFOLIO
       if (activeModule === 'portfolio') {
         if (createMode === 'portfolio') return <CreatePortfolioView onBack={() => setCreateMode('none')} />;
-        if (selectedItemId) return <PortfolioPostView itemId={selectedItemId} onBack={() => setSelectedItemId(null)} onAuthorClick={handleAuthorClick} onSave={onOpenSaveModal} />;
+        if (selectedItemId) return <PortfolioPostView itemId={selectedItemId} onBack={() => setSelectedItemId(null)} onAuthorClick={handleAuthorClick} onSave={onOpenSaveModal} onShare={onOpenShareModal} />;
         return <PortfolioView activeCategory={activeCategory} onItemSelect={setSelectedItemId} onCreateClick={() => setCreateMode('portfolio')} onSave={onOpenSaveModal} contentMode={contentMode} />;
       }
 
       // COMMUNITY (PROJECTS)
       if (activeModule === 'community') {
         if (createMode === 'project') return <CreateProjectView onBack={() => setCreateMode('none')} />;
-        if (selectedItemId) return <ProjectDetailView projectId={selectedItemId} onBack={() => setSelectedItemId(null)} onAuthorClick={handleAuthorClick} />;
+        if (selectedItemId) return <ProjectDetailView projectId={selectedItemId} onBack={() => setSelectedItemId(null)} onAuthorClick={handleAuthorClick} onShare={onOpenShareModal} />;
         return <CommunityView onProjectSelect={setSelectedItemId} onCreateProjectClick={() => setCreateMode('project')} />;
       }
 

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { GraduationCap, Filter, Plus, PlayCircle, BookOpen, Star } from 'lucide-react';
+import { GraduationCap, Filter, Plus, PlayCircle, BookOpen, Star, Library, Compass } from 'lucide-react';
 import { EDUCATION_ITEMS } from '../data/content';
 import { EducationCard } from '../components/cards/EducationCard';
 import { Pagination } from '../components/common/Pagination';
@@ -16,15 +16,22 @@ interface EducationViewProps {
 
 export const EducationView: React.FC<EducationViewProps> = ({ activeCategory, onCourseSelect, onCreateClick, contentMode }) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'explore' | 'library'>('explore');
 
   // Filter by mode
   const mode = contentMode || 'creative';
   const modeFilteredCourses = EDUCATION_ITEMS.filter(c => (c.domain || 'creative') === mode);
 
-  // Filter by category
-  const displayCourses = activeCategory === 'Home' 
+  // Filter by category (Only applies to explore mode)
+  const exploreCourses = activeCategory === 'Home' 
     ? modeFilteredCourses 
     : modeFilteredCourses.filter(c => c.category === activeCategory || activeCategory === 'Educación');
+
+  // Mock Purchased Courses (Simulating user owns a few specific courses)
+  // In a real app, this would come from user profile/purchases
+  const purchasedCourses = EDUCATION_ITEMS.slice(0, 3); 
+
+  const displayCourses = viewMode === 'explore' ? exploreCourses : purchasedCourses;
 
   const educationTopics = [
     "Blender", "Maya", "ZBrush", "Unreal Engine", "Unity", 
@@ -35,7 +42,7 @@ export const EducationView: React.FC<EducationViewProps> = ({ activeCategory, on
     <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors animate-fade-in">
       
       {/* Cinematic Hero Banner */}
-      <div className="relative rounded-3xl overflow-hidden min-h-[400px] flex items-center mb-12 group shadow-2xl">
+      <div className="relative rounded-3xl overflow-hidden min-h-[400px] flex items-center mb-10 group shadow-2xl">
           <img 
             src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2000&auto=format&fit=crop" 
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 saturate-0 group-hover:saturate-100" 
@@ -63,7 +70,10 @@ export const EducationView: React.FC<EducationViewProps> = ({ activeCategory, on
                     >
                         <Plus className="h-5 w-5" /> Crear Curso
                     </button>
-                    <button className="px-8 py-4 bg-white/10 text-white border border-white/20 font-bold rounded-xl hover:bg-white/20 transition-colors backdrop-blur-md flex items-center gap-2">
+                    <button 
+                        onClick={() => setViewMode('library')}
+                        className="px-8 py-4 bg-white/10 text-white border border-white/20 font-bold rounded-xl hover:bg-white/20 transition-colors backdrop-blur-md flex items-center gap-2"
+                    >
                         <PlayCircle className="h-5 w-5" /> Empezar a Aprender
                     </button>
                 </div>
@@ -89,44 +99,77 @@ export const EducationView: React.FC<EducationViewProps> = ({ activeCategory, on
           </div>
       </div>
 
-      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-200 dark:border-white/10 pb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-            {activeCategory === 'Home' ? 'Todos los Cursos' : `Cursos de ${activeCategory}`}
-          </h2>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">
-            {displayCourses.length} resultados encontrados
-          </p>
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-3 relative">
-          <div className="relative">
+      {/* Tabs & Navigation */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 border-b border-slate-200 dark:border-white/10 pb-1">
+        <div className="flex items-center gap-8">
             <button 
-                onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-colors ${
-                    isFilterOpen 
-                    ? 'bg-amber-500 text-white border-amber-500' 
-                    : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'
+                onClick={() => setViewMode('explore')}
+                className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 ${
+                    viewMode === 'explore' 
+                    ? 'text-blue-500 border-blue-500' 
+                    : 'text-slate-500 border-transparent hover:text-slate-900 dark:hover:text-white'
                 }`}
             >
-                <Filter className="h-4 w-4" /> Filtros
+                <Compass className="h-4 w-4" /> Explorar
             </button>
-            <FilterPanel 
-                isOpen={isFilterOpen} 
-                onClose={() => setIsFilterOpen(false)} 
-                topics={educationTopics}
-            />
-          </div>
-          
-          <div className="h-6 w-px bg-slate-200 dark:bg-white/10 hidden md:block"></div>
-
-          <span className="text-sm text-slate-500 dark:text-slate-400 hidden md:block">Ordenar por:</span>
-          <select className="bg-transparent text-slate-900 dark:text-white font-medium focus:outline-none cursor-pointer">
-              <option>Más vendidos</option>
-              <option>Mejor valorados</option>
-              <option>Nuevos</option>
-          </select>
+            <button 
+                onClick={() => setViewMode('library')}
+                className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 ${
+                    viewMode === 'library' 
+                    ? 'text-blue-500 border-blue-500' 
+                    : 'text-slate-500 border-transparent hover:text-slate-900 dark:hover:text-white'
+                }`}
+            >
+                <Library className="h-4 w-4" /> Cursos Adquiridos
+            </button>
         </div>
+
+        {/* Filters - Only show in Explore mode */}
+        {viewMode === 'explore' && (
+            <div className="flex flex-wrap items-center gap-3 relative pb-4">
+                <div className="relative">
+                    <button 
+                        onClick={() => setIsFilterOpen(!isFilterOpen)}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-colors ${
+                            isFilterOpen 
+                            ? 'bg-blue-500 text-white border-blue-500' 
+                            : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5'
+                        }`}
+                    >
+                        <Filter className="h-4 w-4" /> Filtros
+                    </button>
+                    <FilterPanel 
+                        isOpen={isFilterOpen} 
+                        onClose={() => setIsFilterOpen(false)} 
+                        topics={educationTopics}
+                    />
+                </div>
+                
+                <div className="h-6 w-px bg-slate-200 dark:bg-white/10 hidden md:block"></div>
+
+                <span className="text-sm text-slate-500 dark:text-slate-400 hidden md:block">Ordenar por:</span>
+                <select className="bg-transparent text-slate-900 dark:text-white font-medium focus:outline-none cursor-pointer">
+                    <option>Más vendidos</option>
+                    <option>Mejor valorados</option>
+                    <option>Nuevos</option>
+                </select>
+            </div>
+        )}
+      </div>
+
+      {/* Header Info for Tab */}
+      <div className="mb-6">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+            {viewMode === 'explore' 
+                ? (activeCategory === 'Home' ? 'Todos los Cursos' : `Cursos de ${activeCategory}`) 
+                : 'Mis Cursos'}
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">
+            {viewMode === 'explore' 
+                ? `${displayCourses.length} cursos disponibles` 
+                : `${displayCourses.length} cursos listos para ver`
+            }
+          </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-6 mb-16">
@@ -138,8 +181,18 @@ export const EducationView: React.FC<EducationViewProps> = ({ activeCategory, on
           />
         ))}
         {displayCourses.length === 0 && (
-            <div className="col-span-full py-20 text-center text-slate-500">
-                No hay cursos disponibles para este modo.
+            <div className="col-span-full py-20 text-center text-slate-500 dark:text-slate-400">
+                {viewMode === 'library' ? (
+                    <div className="flex flex-col items-center">
+                        <Library className="h-16 w-16 mb-4 opacity-20" />
+                        <p className="text-lg">Aún no has adquirido ningún curso.</p>
+                        <button onClick={() => setViewMode('explore')} className="mt-4 text-blue-500 hover:underline">
+                            Explorar catálogo
+                        </button>
+                    </div>
+                ) : (
+                    <p>No hay cursos disponibles para este filtro.</p>
+                )}
             </div>
         )}
       </div>

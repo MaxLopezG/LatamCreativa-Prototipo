@@ -7,9 +7,10 @@ import { JOB_ITEMS } from '../data/content';
 interface JobDetailViewProps {
   jobId?: string;
   onBack: () => void;
+  onShare?: () => void;
 }
 
-export const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onBack }) => {
+export const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onBack, onShare }) => {
   const { id: paramId } = useParams<{ id: string }>();
   const id = jobId || paramId;
   const job = JOB_ITEMS.find(j => j.id === id) || JOB_ITEMS[0];
@@ -25,7 +26,10 @@ export const JobDetailView: React.FC<JobDetailViewProps> = ({ jobId, onBack }) =
           <ArrowLeft className="h-4 w-4" />
           Volver a Empleos
         </button>
-        <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors">
+        <button 
+          onClick={onShare}
+          className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors"
+        >
              <Share2 className="h-5 w-5" />
         </button>
       </div>

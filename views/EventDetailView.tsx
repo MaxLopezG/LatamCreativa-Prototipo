@@ -8,9 +8,10 @@ interface EventDetailViewProps {
   eventId?: string;
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
+  onShare?: () => void;
 }
 
-export const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, onAuthorClick }) => {
+export const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, onAuthorClick, onShare }) => {
   const { id: paramId } = useParams<{ id: string }>();
   const id = eventId || paramId;
   const event = EVENT_ITEMS.find(e => e.id === id) || EVENT_ITEMS[0];
@@ -22,7 +23,10 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBac
         <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
           <ArrowLeft className="h-4 w-4" /> Volver a Eventos
         </button>
-        <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors">
+        <button 
+          onClick={onShare}
+          className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors"
+        >
              <Share2 className="h-5 w-5" />
         </button>
       </div>

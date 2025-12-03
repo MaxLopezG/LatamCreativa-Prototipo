@@ -8,9 +8,10 @@ interface CollectionDetailViewProps {
   collectionId: string;
   onBack: () => void;
   onItemSelect: (id: string) => void;
+  onShare?: () => void;
 }
 
-export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({ collectionId, onBack, onItemSelect }) => {
+export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({ collectionId, onBack, onItemSelect, onShare }) => {
   const collection = USER_COLLECTIONS.find(c => c.id === collectionId) || USER_COLLECTIONS[0];
   
   // Simulation: We take a slice of portfolio items to represent the "saved" items in this collection
@@ -45,7 +46,10 @@ export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({ coll
             </div>
 
             <div className="flex items-center gap-3">
-                <button className="p-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                <button 
+                    onClick={onShare}
+                    className="p-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors"
+                >
                     <Share2 className="h-5 w-5" />
                 </button>
                 <button className="p-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">

@@ -8,6 +8,7 @@ interface ProjectDetailViewProps {
   projectId?: string;
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
+  onShare?: () => void;
 }
 
 // Mock Data for Project Updates
@@ -43,7 +44,7 @@ const PROJECT_UPDATES = [
   }
 ];
 
-export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onBack, onAuthorClick }) => {
+export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId, onBack, onAuthorClick, onShare }) => {
   const { id: paramId } = useParams<{ id: string }>();
   const project = COMMUNITY_GROUPS.find(g => g.id === (projectId || paramId)) || COMMUNITY_GROUPS[0];
   const [activeTab, setActiveTab] = useState<'info' | 'updates'>('info');
@@ -76,7 +77,10 @@ export const ProjectDetailView: React.FC<ProjectDetailViewProps> = ({ projectId,
              {project.status}
            </button>
            <div className="w-px h-6 bg-slate-200 dark:bg-white/10 mx-1"></div>
-           <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors">
+           <button 
+             onClick={onShare}
+             className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors"
+           >
              <Share2 className="h-5 w-5" />
            </button>
            <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors">

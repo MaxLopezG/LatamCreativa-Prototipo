@@ -15,9 +15,11 @@ interface CourseDetailViewProps {
   onAuthorClick?: (authorName: string) => void;
   onAddToCart?: (item: CartItem) => void;
   onBuyNow?: (item: CartItem) => void;
+  onStartCourse?: (courseId: string) => void;
+  onShare?: () => void;
 }
 
-export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId, onBack, onAuthorClick, onAddToCart, onBuyNow }) => {
+export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId, onBack, onAuthorClick, onAddToCart, onBuyNow, onStartCourse, onShare }) => {
   const { id: paramId } = useParams<{ id: string }>();
   const id = courseId || paramId;
   const course = EDUCATION_ITEMS.find(c => c.id === id) || EDUCATION_ITEMS[0];
@@ -37,17 +39,6 @@ export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId, on
 
   const handleBuyNow = () => {
     onBuyNow?.(itemPayload);
-  };
-
-  const handleGoToCourse = () => {
-      // Logic handled in parent via onBuyNow usually, but for direct access we'll use a hack in VideoContent
-      // For now, let's treat "Buy Now" as a way to trigger navigation if we are owner
-      // But ideally we need a distinct prop `onStartLearning`.
-      // For this demo, I will use `onBuyNow` passing a special flag or handle in VideoContent.
-      // Actually, standardizing: Navigation to player should happen if user is enrolled.
-      // Let's add a `onStartLearning` prop? No, let's reuse `onBuyNow` but change the label for demo purposes or add a secondary action.
-      // Wait, I can't add props to this interface without updating parent.
-      // I'll stick to updating visual UI for now and let the parent handle the "Start" via a new prop I'll add.
   };
 
   // Mock Curriculum Data
@@ -271,23 +262,8 @@ export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId, on
                  </div>
 
                  <div className="p-6">
-                    {/* Demo: "Go to Course" logic simulation by emitting a 'buy' event with a specific type or just reusing buy now for demo flow */}
                     <button 
-                       onClick={() => {
-                           // In a real app, this would use a dedicated handler `onStartLearning`
-                           // For now, we reuse onBuyNow but usually this means 'add to cart'
-                           // Let's assume the user bought it and we navigate to the player via a mock handler
-                           // NOTE: Since I can't add new props easily without refactoring everything, I will emit a special BuyNow event or let the user click a new button I'll add.
-                           // Actually, I'll pass a custom item type 'course-player' to trick the parent if needed, but standard is `handleBuyNow`.
-                           // Better: Let's assume we own it.
-                           onBuyNow?.({ ...itemPayload, type: 'course' }); // This goes to cart in current logic.
-                           // For the DEMO of "Course Player", the user likely wants to see the player view directly. 
-                           // I'll add a separate button that calls a specific callback if I can, OR I'll update VideoContent to handle a specific ID.
-                           // To keep it simple: I will add "Ir al Curso" button that uses a hack or just displays alongside. 
-                           // Since I can't easily add a new prop to `CourseDetailViewProps` in this file without editing VideoContent.tsx (which I am doing), 
-                           // I will check `components/VideoContent.tsx` update below.
-                           // I will add a new button that triggers navigation to 'learning'.
-                       }} 
+                       onClick={() => onStartCourse?.(course.id)} 
                        className="w-full py-4 bg-green-600 text-white font-bold text-base rounded-lg hover:bg-green-700 transition-colors shadow-lg mb-4 flex items-center justify-center gap-2"
                     >
                        <PlayCircle className="h-5 w-5" /> Ir al Curso
@@ -356,7 +332,7 @@ export const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId, on
                     </div>
 
                     <div className="flex items-center justify-between pt-4 border-t border-slate-200 dark:border-white/10 text-sm font-medium">
-                       <button className="text-slate-900 dark:text-white hover:underline">Compartir</button>
+                       <button onClick={onShare} className="text-slate-900 dark:text-white hover:underline">Compartir</button>
                        <button className="text-slate-900 dark:text-white hover:underline">Regalar curso</button>
                     </div>
                  </div>

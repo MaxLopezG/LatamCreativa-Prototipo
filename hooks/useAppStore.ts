@@ -35,6 +35,9 @@ export const useAppStore = () => {
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [itemToSave, setItemToSave] = useState<{id: string, image: string} | null>(null);
 
+  // Share State
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
   // Notification State
   const [notifications, setNotifications] = useState<Notification[]>([
     { id: 1, type: 'comment', user: 'Sarah Jenkins', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&fit=crop', content: 'comentó en tu proyecto "Cyberpunk City"', time: 'Hace 2 min', read: false },
@@ -188,13 +191,22 @@ export const useAppStore = () => {
       closeSaveModal();
   };
 
+  // --- Share Actions ---
+  const openShareModal = () => {
+    setIsShareModalOpen(true);
+  };
+
+  const closeShareModal = () => {
+    setIsShareModalOpen(false);
+  };
+
   return {
     state: {
       isSidebarOpen,
       activeCategory,
       activeModule,
       viewingAuthorName,
-      contentMode, // Exported
+      contentMode,
       createMode,
       searchQuery,
       cartItems,
@@ -204,13 +216,14 @@ export const useAppStore = () => {
       notifications,
       collections,
       isSaveModalOpen,
-      itemToSave
+      itemToSave,
+      isShareModalOpen
     },
     actions: {
       setIsSidebarOpen,
       setActiveCategory,
       setViewingAuthorName,
-      toggleContentMode, // Exported
+      toggleContentMode,
       setCreateMode,
       setChatActiveUser,
       setIsChatOpen,
@@ -228,7 +241,9 @@ export const useAppStore = () => {
       openSaveModal,
       closeSaveModal,
       saveToCollection,
-      createCollection
+      createCollection,
+      openShareModal,
+      closeShareModal
     }
   };
 };

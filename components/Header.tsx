@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, UploadCloud, Bell, Plus, FileText, Layers, Video, Box, Users, Search, Command, Briefcase, MessageCircleQuestion, CalendarDays, Heart, UserPlus, Check, ShoppingCart, Building2 } from 'lucide-react';
+import { Menu, UploadCloud, Bell, Plus, FileText, Layers, Video, Box, Users, Search, Command, Briefcase, MessageCircleQuestion, CalendarDays, Heart, UserPlus, Check, ShoppingCart, Building2, Aperture } from 'lucide-react';
 import { Notification } from '../types';
 import { ContentMode } from '../hooks/useAppStore';
 
@@ -67,6 +67,7 @@ export const Header = ({
   const shadowColor = contentMode === 'dev' ? 'shadow-blue-500/20' : 'shadow-amber-500/20';
 
   const createOptions = [
+    { id: 'story', icon: Aperture, label: 'Subir Historia', desc: 'Stories', color: 'text-pink-500', bg: 'bg-pink-500/10' },
     { id: 'article', icon: FileText, label: 'Escribir Artículo', desc: 'Blog', color: 'text-blue-500', bg: 'bg-blue-500/10' },
     { id: 'portfolio', icon: Layers, label: 'Subir Proyecto', desc: 'Portafolio', color: 'text-amber-500', bg: 'bg-amber-500/10' },
     { id: 'course', icon: Video, label: 'Crear Curso', desc: 'Educación', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },

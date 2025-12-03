@@ -1,16 +1,17 @@
 
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { ArrowLeft, Star, Clock, Check, MessageSquare, Zap } from 'lucide-react';
+import { ArrowLeft, Star, Clock, Check, MessageSquare, Zap, Share2 } from 'lucide-react';
 import { FREELANCE_SERVICES } from '../data/content';
 
 interface ServiceDetailViewProps {
   serviceId?: string;
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
+  onShare?: () => void;
 }
 
-export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ serviceId, onBack, onAuthorClick }) => {
+export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ serviceId, onBack, onAuthorClick, onShare }) => {
   const { id: paramId } = useParams<{ id: string }>();
   const id = serviceId || paramId;
   const service = FREELANCE_SERVICES.find(s => s.id === id) || FREELANCE_SERVICES[0];
@@ -28,6 +29,12 @@ export const ServiceDetailView: React.FC<ServiceDetailViewProps> = ({ serviceId,
         >
           <ArrowLeft className="h-4 w-4" />
           Volver a Freelance
+        </button>
+        <button 
+          onClick={onShare}
+          className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors"
+        >
+             <Share2 className="h-5 w-5" />
         </button>
       </div>
 

@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Store, Filter, Box, Plus, Search, ShoppingBag, Tag } from 'lucide-react';
+import React, { useState } from 'react';
+import { Store, Filter, Box, Plus, Search, ShoppingBag, Tag, Compass, Library } from 'lucide-react';
 import { ASSET_ITEMS } from '../data/content';
 import { AssetCard } from '../components/cards/AssetCard';
 import { Pagination } from '../components/common/Pagination';
@@ -13,17 +13,25 @@ interface AssetsViewProps {
 }
 
 export const AssetsView: React.FC<AssetsViewProps> = ({ activeCategory, onAssetSelect, onCreateClick, onSave }) => {
+  const [viewMode, setViewMode] = useState<'explore' | 'library'>('explore');
+
+  // Filter logic
   const filteredAssets = activeCategory === 'Home' 
     ? ASSET_ITEMS 
     : ASSET_ITEMS.filter(a => a.category === activeCategory || activeCategory.includes(a.category));
 
-  const displayAssets = filteredAssets.length > 0 ? filteredAssets : ASSET_ITEMS;
+  // Mock Purchased Assets
+  const purchasedAssets = ASSET_ITEMS.slice(0, 4);
+
+  const displayAssets = viewMode === 'explore' 
+    ? (filteredAssets.length > 0 ? filteredAssets : ASSET_ITEMS) 
+    : purchasedAssets;
 
   return (
     <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors animate-fade-in">
       
       {/* Cinematic Hero Banner */}
-      <div className="relative rounded-3xl overflow-hidden min-h-[400px] flex items-center mb-12 group shadow-2xl">
+      <div className="relative rounded-3xl overflow-hidden min-h-[400px] flex items-center mb-10 group shadow-2xl">
           <img 
             src="https://images.unsplash.com/photo-1614726365723-49cfae96c69e?q=80&w=2000&auto=format&fit=crop" 
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 saturate-0 group-hover:saturate-100" 
@@ -62,31 +70,64 @@ export const AssetsView: React.FC<AssetsViewProps> = ({ activeCategory, onAssetS
           </div>
       </div>
 
-      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-slate-200 dark:border-white/10 pb-6">
-        <div>
+      {/* Tabs & Navigation */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 border-b border-slate-200 dark:border-white/10 pb-1">
+        <div className="flex items-center gap-8">
+            <button 
+                onClick={() => setViewMode('explore')}
+                className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 ${
+                    viewMode === 'explore' 
+                    ? 'text-emerald-500 border-emerald-500' 
+                    : 'text-slate-500 border-transparent hover:text-slate-900 dark:hover:text-white'
+                }`}
+            >
+                <Compass className="h-4 w-4" /> Explorar
+            </button>
+            <button 
+                onClick={() => setViewMode('library')}
+                className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 ${
+                    viewMode === 'library' 
+                    ? 'text-emerald-500 border-emerald-500' 
+                    : 'text-slate-500 border-transparent hover:text-slate-900 dark:hover:text-white'
+                }`}
+            >
+                <Library className="h-4 w-4" /> Mis Assets
+            </button>
+        </div>
+
+        {/* Filters - Only show in Explore mode */}
+        {viewMode === 'explore' && (
+            <div className="flex flex-wrap items-center gap-3 pb-4">
+              <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                <Filter className="h-4 w-4" /> Filtros
+              </button>
+              
+              <div className="h-6 w-px bg-slate-200 dark:bg-white/10 hidden md:block"></div>
+
+              <span className="text-sm text-slate-500 dark:text-slate-400 hidden md:block">Ordenar por:</span>
+              <select className="bg-transparent text-slate-900 dark:text-white font-medium focus:outline-none cursor-pointer">
+                  <option>Más populares</option>
+                  <option>Recientes</option>
+                  <option>Precio: Menor a Mayor</option>
+              </select>
+            </div>
+        )}
+      </div>
+
+      {/* Header Info */}
+      <div className="mb-6">
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Box className="h-6 w-6 text-emerald-500" />
-            {activeCategory === 'Home' ? 'Todos los Assets' : activeCategory}
+            {viewMode === 'explore' ? <Box className="h-6 w-6 text-emerald-500" /> : <ShoppingBag className="h-6 w-6 text-emerald-500" />}
+            {viewMode === 'explore' 
+                ? (activeCategory === 'Home' ? 'Todos los Assets' : activeCategory) 
+                : 'Biblioteca de Assets'}
           </h2>
           <p className="text-slate-500 dark:text-slate-400 mt-1">
-            {displayAssets.length} productos de alta calidad disponibles
+            {viewMode === 'explore' 
+                ? `${displayAssets.length} productos de alta calidad disponibles` 
+                : `${displayAssets.length} items listos para descargar`
+            }
           </p>
-        </div>
-        
-        <div className="flex flex-wrap items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-             <Filter className="h-4 w-4" /> Filtros
-          </button>
-          
-          <div className="h-6 w-px bg-slate-200 dark:bg-white/10 hidden md:block"></div>
-
-          <span className="text-sm text-slate-500 dark:text-slate-400 hidden md:block">Ordenar por:</span>
-          <select className="bg-transparent text-slate-900 dark:text-white font-medium focus:outline-none cursor-pointer">
-              <option>Más populares</option>
-              <option>Recientes</option>
-              <option>Precio: Menor a Mayor</option>
-          </select>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 gap-6 mb-16">
@@ -98,9 +139,24 @@ export const AssetsView: React.FC<AssetsViewProps> = ({ activeCategory, onAssetS
              onSave={onSave}
           />
         ))}
+        {displayAssets.length === 0 && (
+            <div className="col-span-full py-20 text-center text-slate-500 dark:text-slate-400">
+                {viewMode === 'library' ? (
+                    <div className="flex flex-col items-center">
+                        <ShoppingBag className="h-16 w-16 mb-4 opacity-20" />
+                        <p className="text-lg">No has adquirido ningún asset aún.</p>
+                        <button onClick={() => setViewMode('explore')} className="mt-4 text-emerald-500 hover:underline">
+                            Explorar tienda
+                        </button>
+                    </div>
+                ) : (
+                    <p>No se encontraron assets en esta categoría.</p>
+                )}
+            </div>
+        )}
       </div>
 
-      <Pagination currentPage={1} onPageChange={() => {}} />
+      {displayAssets.length > 0 && <Pagination currentPage={1} onPageChange={() => {}} />}
     </div>
   );
 };

@@ -10,9 +10,10 @@ interface BlogPostViewProps {
   onAuthorClick?: (authorName: string) => void;
   onArticleSelect: (id: string) => void;
   onSave?: (id: string, image: string) => void;
+  onShare?: () => void;
 }
 
-export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, onAuthorClick, onArticleSelect, onSave }) => {
+export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, onAuthorClick, onArticleSelect, onSave, onShare }) => {
   const { id: paramId } = useParams<{ id: string }>();
   const id = articleId || paramId;
   const article = BLOG_ITEMS.find(item => item.id === id) || BLOG_ITEMS[0];
@@ -117,7 +118,10 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                             </button>
                         </div>
 
-                        <button className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 ring-1 ring-slate-200 dark:ring-white/10 transition-colors text-slate-700 dark:text-slate-300">
+                        <button 
+                            onClick={onShare}
+                            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 ring-1 ring-slate-200 dark:ring-white/10 transition-colors text-slate-700 dark:text-slate-300"
+                        >
                             <Share2 className="h-5 w-5" />
                         </button>
 

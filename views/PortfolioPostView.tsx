@@ -9,9 +9,10 @@ interface PortfolioPostViewProps {
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
   onSave?: (id: string, image: string) => void;
+  onShare?: () => void;
 }
 
-export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, onBack, onAuthorClick, onSave }) => {
+export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, onBack, onAuthorClick, onSave, onShare }) => {
   const { id: paramId } = useParams<{ id: string }>();
   const id = itemId || paramId;
   const item = PORTFOLIO_ITEMS.find(p => p.id === id) || PORTFOLIO_ITEMS[0];
@@ -92,7 +93,10 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
             <Bookmark className="h-4 w-4" />
           </button>
 
-          <button className="p-2.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 transition-colors">
+          <button 
+            onClick={onShare}
+            className="p-2.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 transition-colors"
+          >
             <Share2 className="h-4 w-4" />
           </button>
         </div>
