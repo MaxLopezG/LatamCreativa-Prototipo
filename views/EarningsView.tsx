@@ -22,7 +22,7 @@ const TRANSACTIONS = [
   { id: 't6', title: 'Consultoría VFX', type: 'freelance', date: '23 Oct, 2024', amount: 150.00, status: 'completed', buyer: 'TechCorp' },
 ];
 
-// Mock Data for Chart (Stacked)
+// Mock Data for Chart (Line)
 const MONTHLY_DATA = [
   { month: 'May', market: 450, freelance: 300, course: 100 },
   { month: 'Jun', market: 550, freelance: 400, course: 250 },
@@ -37,7 +37,7 @@ const CHART_DATA = MONTHLY_DATA.map(d => ({
   ...d,
   total: d.market + d.freelance + d.course
 }));
-const MAX_REVENUE = Math.max(...CHART_DATA.map(d => d.total)) * 1.1; // 10% padding
+const MAX_REVENUE = Math.max(...CHART_DATA.map(d => d.total)) * 1.2; // 20% padding
 
 // Mock Data for Top Products
 const TOP_ITEMS = [
@@ -51,6 +51,7 @@ const TOP_ITEMS = [
 export const EarningsView: React.FC<EarningsViewProps> = ({ onBack, onNavigate }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'sales' | 'withdrawals'>('all');
   const [topItemsFilter, setTopItemsFilter] = useState<'all' | 'course' | 'asset' | 'freelance'>('all');
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const filteredTopItems = topItemsFilter === 'all' 
     ? TOP_ITEMS 
@@ -62,6 +63,23 @@ export const EarningsView: React.FC<EarningsViewProps> = ({ onBack, onNavigate }
     : activeTab === 'withdrawals' 
       ? TRANSACTIONS.filter(t => t.type === 'withdrawal') 
       : TRANSACTIONS.filter(t => t.type !== 'withdrawal');
+
+  // Chart Generation Helpers
+  const SVG_HEIGHT = 300;
+  const SVG_WIDTH = 1000;
+  const X_STEP = SVG_WIDTH / (CHART_DATA.length - 1);
+
+  const getPoints = (key: 'market' | 'freelance' | 'course') => {
+    return CHART_DATA.map((d, i) => {
+      const x = i * X_STEP;
+      const y = SVG_HEIGHT - (d[key] / MAX_REVENUE) * SVG_HEIGHT;
+      return `${x},${y}`;
+    }).join(' ');
+  };
+
+  const marketPoints = getPoints('market');
+  const freelancePoints = getPoints('freelance');
+  const coursePoints = getPoints('course');
 
   return (
     <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors animate-fade-in">
@@ -173,12 +191,11 @@ export const EarningsView: React.FC<EarningsViewProps> = ({ onBack, onNavigate }
       {/* Analytics Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
           
-          {/* Main Chart */}
-          <div className="lg:col-span-2 bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 p-6 rounded-2xl shadow-sm">
+          {/* Main Chart (Line Chart) */}
+          <div className="lg:col-span-2 bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 p-6 rounded-2xl shadow-sm flex flex-col">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                   <h3 className="font-bold text-lg text-slate-900 dark:text-white">Rendimiento Mensual</h3>
                   
-                  {/* Legend */}
                   <div className="flex items-center gap-4 text-xs font-medium">
                       <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
                           <div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div> Market
@@ -197,38 +214,109 @@ export const EarningsView: React.FC<EarningsViewProps> = ({ onBack, onNavigate }
                   </select>
               </div>
               
-              <div className="h-64 flex items-end justify-between gap-4 px-2">
-                  {CHART_DATA.map((item, index) => {
-                      const heightPercent = (item.total / MAX_REVENUE) * 100;
-                      // Percentages within the bar
-                      const marketPct = (item.market / item.total) * 100;
-                      const freelancePct = (item.freelance / item.total) * 100;
-                      const coursePct = (item.course / item.total) * 100;
+              <div className="flex-1 relative min-h-[300px] w-full">
+                  
+                  {/* Grid Lines */}
+                  <div className="absolute inset-0 flex flex-col justify-between text-xs text-slate-400 pointer-events-none pb-6">
+                      <div className="border-b border-dashed border-slate-200 dark:border-white/5 w-full h-0"></div>
+                      <div className="border-b border-dashed border-slate-200 dark:border-white/5 w-full h-0"></div>
+                      <div className="border-b border-dashed border-slate-200 dark:border-white/5 w-full h-0"></div>
+                      <div className="border-b border-dashed border-slate-200 dark:border-white/5 w-full h-0"></div>
+                      <div className="border-b border-slate-200 dark:border-white/10 w-full h-0"></div>
+                  </div>
 
-                      return (
-                        <div key={index} className="flex-1 flex flex-col items-center gap-2 group cursor-pointer h-full justify-end">
-                            {/* Stacked Bar Container */}
-                            <div 
-                              className="relative w-full max-w-[40px] rounded-t-lg overflow-hidden flex flex-col justify-end transition-all duration-500 hover:opacity-90"
-                              style={{ height: `${heightPercent}%` }}
-                            >
-                                {/* Tooltip */}
-                                <div className="absolute -top-24 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none min-w-[100px] shadow-xl">
-                                    <div className="font-bold mb-1 border-b border-white/20 pb-1 text-center">{item.month} Total: ${item.total}</div>
-                                    <div className="flex justify-between gap-2"><span className="text-rose-400">Market:</span> <span>${item.market}</span></div>
-                                    <div className="flex justify-between gap-2"><span className="text-cyan-400">Free:</span> <span>${item.freelance}</span></div>
-                                    <div className="flex justify-between gap-2"><span className="text-emerald-400">Edu:</span> <span>${item.course}</span></div>
-                                </div>
+                  {/* SVG Chart */}
+                  <svg 
+                    className="absolute inset-0 w-full h-full overflow-visible pb-6" 
+                    viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`} 
+                    preserveAspectRatio="none"
+                  >
+                      {/* Lines */}
+                      <polyline 
+                        fill="none" 
+                        stroke="#F43F5E" 
+                        strokeWidth="4" 
+                        points={marketPoints} 
+                        vectorEffect="non-scaling-stroke"
+                        className="drop-shadow-md"
+                      />
+                      <polyline 
+                        fill="none" 
+                        stroke="#06B6D4" 
+                        strokeWidth="4" 
+                        points={freelancePoints} 
+                        vectorEffect="non-scaling-stroke"
+                        className="drop-shadow-md"
+                      />
+                      <polyline 
+                        fill="none" 
+                        stroke="#10B981" 
+                        strokeWidth="4" 
+                        points={coursePoints} 
+                        vectorEffect="non-scaling-stroke"
+                        className="drop-shadow-md"
+                      />
 
-                                {/* Stacked Segments */}
-                                <div className="w-full bg-emerald-500 transition-all" style={{ height: `${coursePct}%` }}></div>
-                                <div className="w-full bg-cyan-500 transition-all" style={{ height: `${freelancePct}%` }}></div>
-                                <div className="w-full bg-rose-500 transition-all" style={{ height: `${marketPct}%` }}></div>
-                            </div>
-                            <span className="text-xs font-medium text-slate-500 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">{item.month}</span>
-                        </div>
-                      );
-                  })}
+                      {/* Interactive Dots / Overlay */}
+                      {CHART_DATA.map((d, i) => {
+                          const x = i * X_STEP;
+                          const yMarket = SVG_HEIGHT - (d.market / MAX_REVENUE) * SVG_HEIGHT;
+                          const yFreelance = SVG_HEIGHT - (d.freelance / MAX_REVENUE) * SVG_HEIGHT;
+                          const yCourse = SVG_HEIGHT - (d.course / MAX_REVENUE) * SVG_HEIGHT;
+                          const isHovered = hoveredIndex === i;
+
+                          return (
+                              <g key={i} onMouseEnter={() => setHoveredIndex(i)} onMouseLeave={() => setHoveredIndex(null)} className="cursor-pointer">
+                                  {/* Hit Area Rect */}
+                                  <rect x={x - (X_STEP/2)} y="0" width={X_STEP} height={SVG_HEIGHT} fill="transparent" />
+                                  
+                                  {/* Vertical Guide Line */}
+                                  <line 
+                                    x1={x} y1="0" x2={x} y2={SVG_HEIGHT} 
+                                    stroke="currentColor" 
+                                    strokeWidth="1" 
+                                    strokeDasharray="4 4"
+                                    className={`text-slate-300 dark:text-white/20 transition-opacity duration-200 ${isHovered ? 'opacity-100' : 'opacity-0'}`} 
+                                    vectorEffect="non-scaling-stroke"
+                                  />
+
+                                  {/* Dots */}
+                                  <circle cx={x} cy={yMarket} r="6" fill="#F43F5E" stroke="white" strokeWidth="2" className={`transition-all duration-200 ${isHovered ? 'r-8' : ''}`} />
+                                  <circle cx={x} cy={yFreelance} r="6" fill="#06B6D4" stroke="white" strokeWidth="2" className={`transition-all duration-200 ${isHovered ? 'r-8' : ''}`} />
+                                  <circle cx={x} cy={yCourse} r="6" fill="#10B981" stroke="white" strokeWidth="2" className={`transition-all duration-200 ${isHovered ? 'r-8' : ''}`} />
+                              </g>
+                          );
+                      })}
+                  </svg>
+
+                  {/* Tooltip Overlay (HTML) */}
+                  {hoveredIndex !== null && (
+                      <div 
+                        className="absolute top-0 pointer-events-none bg-slate-900/90 dark:bg-white/10 backdrop-blur-md text-white p-3 rounded-xl shadow-2xl border border-white/20 z-20 min-w-[140px] animate-fade-in"
+                        style={{ left: `${(hoveredIndex * (100 / (CHART_DATA.length - 1)))}%`, transform: 'translate(-50%, -120%)' }}
+                      >
+                          <div className="font-bold text-sm mb-2 pb-2 border-b border-white/20 text-center">{CHART_DATA[hoveredIndex].month}</div>
+                          <div className="flex justify-between items-center gap-4 text-xs mb-1">
+                              <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-rose-500"></div> Market</span>
+                              <span className="font-mono">${CHART_DATA[hoveredIndex].market}</span>
+                          </div>
+                          <div className="flex justify-between items-center gap-4 text-xs mb-1">
+                              <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-cyan-500"></div> Free</span>
+                              <span className="font-mono">${CHART_DATA[hoveredIndex].freelance}</span>
+                          </div>
+                          <div className="flex justify-between items-center gap-4 text-xs">
+                              <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Edu</span>
+                              <span className="font-mono">${CHART_DATA[hoveredIndex].course}</span>
+                          </div>
+                      </div>
+                  )}
+
+                  {/* X Axis Labels */}
+                  <div className="absolute bottom-0 left-0 right-0 flex justify-between text-xs text-slate-500 font-bold px-0">
+                      {CHART_DATA.map((d, i) => (
+                          <div key={i} className="flex-1 text-center" style={{ width: 0 }}>{d.month}</div>
+                      ))}
+                  </div>
               </div>
           </div>
 
