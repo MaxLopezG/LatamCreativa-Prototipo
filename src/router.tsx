@@ -39,8 +39,11 @@ const SalesListView = lazy(() => import('./views/SalesListView').then(module => 
 const MainLandingView = lazy(() => import('./views/MainLandingView').then(module => ({ default: module.MainLandingView })));
 const InfoView = lazy(() => import('./views/InfoView').then(module => ({ default: module.InfoView })));
 const SearchResultsView = lazy(() => import('./views/SearchResultsView').then(module => ({ default: module.SearchResultsView })));
+const ContentModeView = lazy(() => import('./views/MainLandingView').then(module => ({ default: module.MainLandingView })));
 const ComingSoonView = lazy(() => import('./views/ComingSoonView').then(module => ({ default: module.ComingSoonView })));
 const SuccessView = lazy(() => import('./views/SuccessView').then(module => ({ default: module.SuccessView })));
+const CollectionsView = lazy(() => import('./views/CollectionsView').then(module => ({ default: module.CollectionsView })));
+const CollectionDetailView = lazy(() => import('./views/CollectionDetailView').then(module => ({ default: module.CollectionDetailView })));
 
 // Lazy Load Create Views
 const CreateProjectView = lazy(() => import('./views/CreateProjectView').then(module => ({ default: module.CreateProjectView })));
@@ -59,139 +62,332 @@ const Suspended = ({ children }: { children?: React.ReactNode }) => (
 
 // Wrappers for injections
 function PortfolioWrapper() {
-    const { state, actions } = useAppStore();
-    return (
-      <Suspended>
-        <PortfolioView activeCategory={state.activeCategory} onItemSelect={() => {}} onCreateClick={() => {}} onSave={actions.openSaveModal} contentMode={state.contentMode} />
-      </Suspended>
-    );
+  const { state, actions } = useAppStore();
+  const navigate = useNavigate();
+  return (
+    <Suspended>
+      <PortfolioView
+        activeCategory={state.activeCategory}
+        onItemSelect={(id) => navigate(`/portfolio/${id}`)}
+        onCreateClick={() => navigate('/create/portfolio')}
+        onSave={actions.openSaveModal}
+        contentMode={state.contentMode}
+      />
+    </Suspended>
+  );
 }
 
 function PortfolioPostWrapper() {
-    const { actions } = useAppStore();
-    return (
-      <Suspended>
-        <PortfolioPostView onBack={() => window.history.back()} onShare={actions.openShareModal} onSave={actions.openSaveModal} />
-      </Suspended>
-    );
+  const { actions } = useAppStore();
+  return (
+    <Suspended>
+      <PortfolioPostView onBack={() => window.history.back()} onShare={actions.openShareModal} onSave={actions.openSaveModal} />
+    </Suspended>
+  );
 }
 
 function FeedWrapper() {
-    const { state, actions } = useAppStore();
-    return (
-      <Suspended>
-        <FeedView onNavigateToModule={() => {}} onItemSelect={() => {}} contentMode={state.contentMode} />
-      </Suspended>
-    );
+  const { state, actions } = useAppStore();
+  const navigate = useNavigate();
+
+  const handleItemSelect = (id: string, type: string) => {
+    if (type === 'portfolio') navigate(`/portfolio/${id}`);
+    if (type === 'course') navigate(`/education/${id}`);
+    if (type === 'asset') navigate(`/market/${id}`);
+    if (type === 'blog') navigate(`/blog/${id}`);
+  };
+
+  return (
+    <Suspended>
+      <FeedView
+        onNavigateToModule={(mod) => navigate(mod === 'home' ? '/' : `/${mod}`)}
+        onItemSelect={handleItemSelect}
+        contentMode={state.contentMode}
+      />
+    </Suspended>
+  );
 }
 
 function EducationWrapper() {
-    const { state } = useAppStore();
-    return (
-      <Suspended>
-        <EducationView activeCategory={state.activeCategory} contentMode={state.contentMode} />
-      </Suspended>
-    );
+  const { state } = useAppStore();
+  const navigate = useNavigate();
+  return (
+    <Suspended>
+      <EducationView
+        activeCategory={state.activeCategory}
+        onCourseSelect={(id) => navigate(`/education/${id}`)}
+        onCreateClick={() => navigate('/create/course')}
+        contentMode={state.contentMode}
+      />
+    </Suspended>
+  );
 }
 
 function CartViewWrapper() {
-    const { state, actions } = useAppStore();
-    return (
-      <Suspended>
-        <CartView items={state.cartItems} onRemove={actions.removeFromCart} onContinueShopping={() => {}} />
-      </Suspended>
-    );
+  const { state, actions } = useAppStore();
+  return (
+    <Suspended>
+      <CartView items={state.cartItems} onRemove={actions.removeFromCart} onContinueShopping={() => { }} />
+    </Suspended>
+  );
 }
 
 function AssetDetailWrapper() {
-    const { actions } = useAppStore();
-    return (
-      <Suspended>
-        <AssetDetailView onBack={() => window.history.back()} onAddToCart={actions.addToCart} onBuyNow={actions.handleBuyNow} onSave={actions.openSaveModal} onShare={actions.openShareModal} />
-      </Suspended>
-    );
+  const { actions } = useAppStore();
+  return (
+    <Suspended>
+      <AssetDetailView onBack={() => window.history.back()} onAddToCart={actions.addToCart} onBuyNow={actions.handleBuyNow} onSave={actions.openSaveModal} onShare={actions.openShareModal} />
+    </Suspended>
+  );
 }
 
 function CourseDetailWrapper() {
-    const { actions } = useAppStore();
-    const navigate = useNavigate();
-    return (
-      <Suspended>
-        <CourseDetailView 
-            onBack={() => window.history.back()} 
-            onAddToCart={actions.addToCart} 
-            onBuyNow={actions.handleBuyNow}
-            onStartCourse={(id) => navigate(`/learning/${id}`)}
-            onShare={actions.openShareModal}
-        />
-      </Suspended>
-    );
+  const { actions } = useAppStore();
+  const navigate = useNavigate();
+  return (
+    <Suspended>
+      <CourseDetailView
+        onBack={() => window.history.back()}
+        onAddToCart={actions.addToCart}
+        onBuyNow={actions.handleBuyNow}
+        onStartCourse={(id) => navigate(`/learning/${id}`)}
+        onShare={actions.openShareModal}
+      />
+    </Suspended>
+  );
 }
 
 function ProjectDetailWrapper() {
-    const { actions } = useAppStore();
-    return (
-      <Suspended>
-        <ProjectDetailView onBack={() => window.history.back()} onShare={actions.openShareModal} />
-      </Suspended>
-    );
+  const { actions } = useAppStore();
+  return (
+    <Suspended>
+      <ProjectDetailView onBack={() => window.history.back()} onShare={actions.openShareModal} />
+    </Suspended>
+  );
 }
 
 function EventDetailWrapper() {
-    const { actions } = useAppStore();
-    return (
-      <Suspended>
-        <EventDetailView onBack={() => window.history.back()} onShare={actions.openShareModal} />
-      </Suspended>
-    );
+  const { actions } = useAppStore();
+  return (
+    <Suspended>
+      <EventDetailView onBack={() => window.history.back()} onShare={actions.openShareModal} />
+    </Suspended>
+  );
 }
 
 function MainLandingWrapper() {
-    const { actions } = useAppStore();
-    return (
-      <Suspended>
-        <MainLandingView onNavigate={actions.handleModuleSelect} />
-      </Suspended>
-    );
+  const { actions } = useAppStore();
+  const navigate = useNavigate();
+
+  const handleNavigate = (moduleId: string) => {
+    actions.handleModuleSelect(moduleId); // Keep state sync if needed
+    if (moduleId === 'education') navigate('/education');
+    else if (moduleId === 'market') navigate('/market');
+    else navigate(`/${moduleId}`);
+  };
+
+  return (
+    <Suspended>
+      <MainLandingView onNavigate={handleNavigate} />
+    </Suspended>
+  );
 }
 
 function UserProfileWrapper() {
-    const { actions } = useAppStore();
-    return (
-      <Suspended>
-        <UserProfileView 
-            onBack={() => window.history.back()} 
-            onItemSelect={(id, type) => console.log('Select item', id, type)} 
-            onOpenChat={actions.openChatWithUser}
-        />
-      </Suspended>
-    );
+  const { actions } = useAppStore();
+  return (
+    <Suspended>
+      <UserProfileView
+        onBack={() => window.history.back()}
+        onItemSelect={(id, type) => console.log('Select item', id, type)}
+        onOpenChat={actions.openChatWithUser}
+      />
+    </Suspended>
+  );
 }
 
 function BlogPostWrapper() {
-    const { actions } = useAppStore();
-    return (
-      <Suspended>
-        <BlogPostView onBack={() => window.history.back()} onArticleSelect={() => {}} onShare={actions.openShareModal} onSave={actions.openSaveModal} />
-      </Suspended>
-    );
+  const { actions } = useAppStore();
+  return (
+    <Suspended>
+      <BlogPostView onBack={() => window.history.back()} onArticleSelect={() => { }} onShare={actions.openShareModal} onSave={actions.openSaveModal} />
+    </Suspended>
+  );
 }
 
 function SalesListWrapper() {
-    const { type } = useParams<{ type: string }>();
-    return (
-      <Suspended>
-        <SalesListView type={type || 'asset'} onBack={() => window.history.back()} />
-      </Suspended>
-    );
+  const { type } = useParams<{ type: string }>();
+  return (
+    <Suspended>
+      <SalesListView type={type || 'asset'} onBack={() => window.history.back()} />
+    </Suspended>
+  );
+}
+
+function CollectionsWrapper() {
+  const { actions } = useAppStore();
+  const navigate = useNavigate();
+  return (
+    <Suspended>
+      <CollectionsView
+        onCreateClick={() => actions.openSaveModal('', '')}
+        onCollectionSelect={(id) => navigate(`/collections/${id}`)}
+      />
+    </Suspended>
+  );
+}
+
+function CollectionDetailWrapper() {
+  const { id } = useParams<{ id: string }>();
+  const { actions } = useAppStore();
+  const navigate = useNavigate();
+
+  const handleItemSelect = (itemId: string) => {
+    navigate(`/portfolio/${itemId}`);
+  };
+
+  return (
+    <Suspended>
+      <CollectionDetailView
+        collectionId={id || ''}
+        onBack={() => window.history.back()}
+        onItemSelect={handleItemSelect}
+        onShare={actions.openShareModal}
+      />
+    </Suspended>
+  );
 }
 
 function CreateWrapper({ Component }: { Component: React.FC<{ onBack: () => void }> }) {
-    return (
-      <Suspended>
-        <Component onBack={() => window.history.back()} />
-      </Suspended>
-    );
+  return (
+    <Suspended>
+      <Component onBack={() => window.history.back()} />
+    </Suspended>
+  );
+}
+
+// Additional Wrappers
+function BlogWrapper() {
+  const { state, actions } = useAppStore();
+  const navigate = useNavigate();
+  return (
+    <Suspended>
+      <BlogView
+        activeCategory={state.activeCategory}
+        onArticleSelect={(id) => navigate(`/blog/${id}`)}
+        onCreateClick={() => navigate('/create/article')}
+        onSave={actions.openSaveModal}
+      />
+    </Suspended>
+  );
+}
+
+function MarketWrapper() {
+  const { state, actions } = useAppStore();
+  const navigate = useNavigate();
+  return (
+    <Suspended>
+      <AssetsView
+        activeCategory={state.activeCategory}
+        onAssetSelect={(id) => navigate(`/market/${id}`)}
+        onCreateClick={() => navigate('/create/asset')}
+        onSave={actions.openSaveModal}
+      />
+    </Suspended>
+  );
+}
+
+function FreelanceWrapper() {
+  const { state } = useAppStore();
+  const navigate = useNavigate();
+  return (
+    <Suspended>
+      <FreelanceView
+        activeCategory={state.activeCategory}
+        onServiceSelect={(id) => navigate(`/freelance/${id}`)}
+        onCreateClick={() => navigate('/create/service')}
+      />
+    </Suspended>
+  );
+}
+
+function JobsWrapper() {
+  const navigate = useNavigate();
+  return (
+    <Suspended>
+      <JobsView
+        onJobSelect={(id) => navigate(`/jobs/${id}`)}
+        onCreateClick={() => navigate('/create/service')} // Assuming service create for jobs?
+      />
+    </Suspended>
+  );
+}
+
+function CommunityWrapper() {
+  const navigate = useNavigate();
+  return (
+    <Suspended>
+      <CommunityView
+        onProjectSelect={(id) => navigate(`/community/${id}`)}
+        onCreateProjectClick={() => navigate('/create/project')}
+      />
+    </Suspended>
+  );
+}
+
+function ChallengesWrapper() {
+  const navigate = useNavigate();
+  return (
+    <Suspended>
+      <ChallengesView
+        onChallengeSelect={(id) => navigate(`/challenges/${id}`)}
+      />
+    </Suspended>
+  );
+}
+
+function EventsWrapper() {
+  const navigate = useNavigate();
+  return (
+    <Suspended>
+      <EventsView
+        onEventSelect={(id) => navigate(`/events/${id}`)}
+        onCreateClick={() => navigate('/create/event')}
+      />
+    </Suspended>
+  );
+}
+
+function ForumWrapper() {
+  const navigate = useNavigate();
+  return (
+    <Suspended>
+      <ForumView
+        onPostSelect={(id) => navigate(`/forum/${id}`)}
+        onCreateClick={() => navigate('/create/forum')}
+      />
+    </Suspended>
+  );
+}
+
+function PeopleWrapper() {
+  const { actions } = useAppStore();
+  const navigate = useNavigate();
+  // Assuming PeopleView has onProfileSelect
+  return (
+    <Suspended>
+      <PeopleView
+        onProfileSelect={(name) => {
+          actions.setViewingAuthorName(name);
+          // If user profile is a route, navigate, else it might be an overlay (VideoContent handled overlay)
+          // Now we need to decide. MainLayout doesn't handle overlay state for viewingAuthorName anymore?
+          // Wait, MainLayout doesn't implement the overlays that VideoContent had.
+          // IMPORTANT: UserProfileView is a route /user/:username.
+          navigate(`/user/${encodeURIComponent(name)}`);
+        }}
+      />
+    </Suspended>
+  );
 }
 
 // Simple wrappers for views that don't need prop injection but need Suspense
@@ -204,16 +400,16 @@ export const router = createBrowserRouter([
     path: '/',
     element: <MainLayout />,
     children: [
-      { index: true, element: <MainLandingWrapper /> }, 
+      { index: true, element: <MainLandingWrapper /> },
       { path: 'home', element: <FeedWrapper /> },
-      
+
       // Portfolio
       { path: 'portfolio', element: <PortfolioWrapper /> },
       { path: 'portfolio/:id', element: <PortfolioPostWrapper /> },
       { path: 'create/portfolio', element: <CreateWrapper Component={CreatePortfolioView} /> },
 
       // Blog
-      { path: 'blog', element: <SuspendedView Component={BlogView} activeCategory="Home" /> },
+      { path: 'blog', element: <BlogWrapper /> },
       { path: 'blog/:id', element: <BlogPostWrapper /> },
       { path: 'create/article', element: <CreateWrapper Component={CreateArticleView} /> },
 
@@ -223,40 +419,40 @@ export const router = createBrowserRouter([
       { path: 'create/course', element: <CreateWrapper Component={CreateCourseView} /> },
 
       // Market
-      { path: 'market', element: <SuspendedView Component={AssetsView} activeCategory="Home" /> },
+      { path: 'market', element: <MarketWrapper /> },
       { path: 'market/:id', element: <AssetDetailWrapper /> },
       { path: 'create/asset', element: <CreateWrapper Component={CreateAssetView} /> },
 
       // Freelance
-      { path: 'freelance', element: <SuspendedView Component={FreelanceView} /> },
+      { path: 'freelance', element: <FreelanceWrapper /> },
       { path: 'freelance/:id', element: <Suspended><ServiceDetailView onBack={() => window.history.back()} /></Suspended> },
       { path: 'create/service', element: <CreateWrapper Component={CreateServiceView} /> },
 
       // Jobs
-      { path: 'jobs', element: <SuspendedView Component={JobsView} /> },
+      { path: 'jobs', element: <JobsWrapper /> },
       { path: 'jobs/:id', element: <Suspended><JobDetailView onBack={() => window.history.back()} /></Suspended> },
-      
+
       // Community
-      { path: 'community', element: <SuspendedView Component={CommunityView} /> }, 
+      { path: 'community', element: <CommunityWrapper /> },
       { path: 'community/:id', element: <ProjectDetailWrapper /> },
       { path: 'create/project', element: <CreateWrapper Component={CreateProjectView} /> },
-      
+
       // Challenges
-      { path: 'challenges', element: <SuspendedView Component={ChallengesView} /> },
+      { path: 'challenges', element: <ChallengesWrapper /> },
       { path: 'challenges/:id', element: <Suspended><ChallengeDetailView onBack={() => window.history.back()} /></Suspended> },
 
       // Events
-      { path: 'events', element: <SuspendedView Component={EventsView} /> },
+      { path: 'events', element: <EventsWrapper /> },
       { path: 'events/:id', element: <EventDetailWrapper /> },
       { path: 'create/event', element: <CreateWrapper Component={CreateEventView} /> },
 
       // Forum
-      { path: 'forum', element: <SuspendedView Component={ForumView} /> },
+      { path: 'forum', element: <ForumWrapper /> },
       { path: 'forum/:id', element: <Suspended><ForumDetailView onBack={() => window.history.back()} /></Suspended> },
       { path: 'create/forum', element: <CreateWrapper Component={CreateForumPostView} /> },
 
       // People
-      { path: 'people', element: <SuspendedView Component={PeopleView} /> },
+      { path: 'people', element: <PeopleWrapper /> },
 
       // User Profile
       { path: 'user/:username', element: <UserProfileWrapper /> },
@@ -264,18 +460,20 @@ export const router = createBrowserRouter([
       // Personal & Utility
       { path: 'cart', element: <CartViewWrapper /> },
       { path: 'success', element: <SuspendedView Component={SuccessView} /> },
+      { path: 'collections', element: <CollectionsWrapper /> },
+      { path: 'collections/:id', element: <CollectionDetailWrapper /> },
       { path: 'settings', element: <SuspendedView Component={SettingsView} /> },
       { path: 'pro', element: <Suspended><ProUpgradeView onBack={() => window.history.back()} /></Suspended> },
       { path: 'earnings', element: <Suspended><EarningsView onBack={() => window.history.back()} /></Suspended> },
       { path: 'earnings/sales/:type', element: <SalesListWrapper /> },
-      
+
       // Search
-      { path: 'search', element: <Suspended><SearchResultsView query="" onItemSelect={() => {}} /></Suspended> },
+      { path: 'search', element: <Suspended><SearchResultsView query="" onItemSelect={() => { }} /></Suspended> },
 
       // Info Pages
       { path: 'about', element: <MainLandingWrapper /> },
       { path: 'info/:pageId', element: <Suspended><InfoView pageId="" onBack={() => window.history.back()} /></Suspended> },
-      
+
       // Fallback
       { path: 'info/help', element: <SuspendedView Component={ComingSoonView} /> },
       { path: 'info/guides', element: <SuspendedView Component={ComingSoonView} /> }
