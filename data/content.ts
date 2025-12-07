@@ -577,6 +577,24 @@ export const ASSET_ITEMS: AssetItem[] = [
     technicalSpecs: {
         textures: true
     }
+  },
+  {
+    id: 'a5',
+    title: 'Low Poly City Pack',
+    creator: 'PolyMaster',
+    creatorAvatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=100&fit=crop',
+    thumbnail: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?q=80&w=600&fit=crop',
+    images: ['https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?q=80&w=1200&fit=crop'],
+    price: 9.99,
+    rating: 4.6,
+    reviewCount: 45,
+    category: 'Modelos 3D',
+    formats: ['FBX', 'OBJ'],
+    fileSize: '120 MB',
+    license: 'Standard',
+    likes: 180,
+    description: 'Pack de ciudad low poly optimizado para móviles.',
+    domain: 'creative'
   }
 ];
 
@@ -805,6 +823,32 @@ export const PORTFOLIO_ITEMS: PortfolioItem[] = [
     description: 'Herramienta para visualizar pipelines de Jenkins y GitHub Actions en tiempo real.',
     domain: 'dev',
     software: ['D3.js', 'Docker', 'Go']
+  },
+  {
+    id: 'p_dev5',
+    title: 'Mobile Banking App UI',
+    artist: 'AppMaster',
+    artistAvatar: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=100&fit=crop',
+    image: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?q=80&w=600&fit=crop',
+    views: '4.5k',
+    likes: '450',
+    category: 'Mobile Dev',
+    description: 'Diseño e implementación de interfaz bancaria moderna en Flutter.',
+    domain: 'dev',
+    software: ['Flutter', 'Dart']
+  },
+  {
+    id: 'p_dev6',
+    title: 'Kubernetes Cluster Monitor',
+    artist: 'SysAdminPro',
+    artistAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&fit=crop',
+    image: 'https://images.unsplash.com/photo-1551033406-611cf9a28f67?q=80&w=600&fit=crop',
+    views: '2.8k',
+    likes: '190',
+    category: 'DevOps',
+    description: 'Dashboard para monitoreo de clusters K8s usando Prometheus y Grafana.',
+    domain: 'dev',
+    software: ['Kubernetes', 'Grafana']
   }
 ];
 
@@ -884,6 +928,36 @@ export const BLOG_ITEMS: ArticleItem[] = [
     comments: 45,
     domain: 'dev',
     content: `<p class="lead">JavaScript es el lenguaje de la web, pero TypeScript es el lenguaje de la escalabilidad.</p>`
+  },
+  {
+    id: 'b_dev2',
+    title: 'Optimizando Docker para Producción',
+    excerpt: 'Buenas prácticas para reducir el tamaño de tus imágenes y mejorar la seguridad.',
+    image: 'https://images.unsplash.com/photo-1605745341112-85968b19335b?q=80&w=600&fit=crop',
+    author: 'OpsMaster',
+    authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&fit=crop',
+    date: '22 Nov, 2023',
+    readTime: '12 min',
+    category: 'DevOps',
+    likes: 450,
+    comments: 30,
+    domain: 'dev',
+    content: `<p>Multi-stage builds son tu mejor amigo...</p>`
+  },
+  {
+    id: 'b_dev3',
+    title: 'Microfrontends: ¿Valen la pena?',
+    excerpt: 'Cuándo implementar una arquitectura de microfrontends y cuándo evitarla.',
+    image: 'https://images.unsplash.com/photo-1555099962-4199c345e5dd?q=80&w=600&fit=crop',
+    author: 'ArchLead',
+    authorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&fit=crop',
+    date: '10 Dic, 2023',
+    readTime: '15 min',
+    category: 'Arquitectura',
+    likes: 600,
+    comments: 55,
+    domain: 'dev',
+    content: `<p>La complejidad operativa es el costo oculto...</p>`
   }
 ];
 
@@ -978,6 +1052,42 @@ export const EDUCATION_ITEMS: CourseItem[] = [
     level: 'Avanzado',
     category: 'Frontend',
     updatedDate: 'Nov 2023',
+    domain: 'dev'
+  },
+  {
+    id: 'c_dev2',
+    title: 'Rust para Principiantes',
+    instructor: 'Rustacean',
+    instructorAvatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=100&fit=crop',
+    thumbnail: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?q=80&w=600&fit=crop',
+    rating: 4.8,
+    reviewCount: 320,
+    students: 1500,
+    price: 15.99,
+    originalPrice: 59.99,
+    duration: '14h 30m',
+    lectures: 55,
+    level: 'Principiante',
+    category: 'Backend',
+    updatedDate: 'Ene 2024',
+    domain: 'dev'
+  },
+  {
+    id: 'c_dev3',
+    title: 'AWS Certified Solutions Architect',
+    instructor: 'Cloud Guru',
+    instructorAvatar: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?q=80&w=100&fit=crop',
+    thumbnail: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=600&fit=crop',
+    rating: 4.9,
+    reviewCount: 1200,
+    students: 8000,
+    price: 29.99,
+    originalPrice: 129.99,
+    duration: '35h 00m',
+    lectures: 200,
+    level: 'Intermedio',
+    category: 'DevOps',
+    updatedDate: 'Feb 2024',
     domain: 'dev'
   }
 ];

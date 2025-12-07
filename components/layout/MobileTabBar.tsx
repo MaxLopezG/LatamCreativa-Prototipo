@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Home, Compass, Plus, MessageCircle, User, FileText, Layers, Video, Box, Briefcase, Building2, Users, MessageCircleQuestion, CalendarDays, X } from 'lucide-react';
+import { useAppStore } from '../../hooks/useAppStore';
 
 interface MobileTabBarProps {
   activeModule: string;
@@ -10,7 +11,17 @@ interface MobileTabBarProps {
 }
 
 export const MobileTabBar: React.FC<MobileTabBarProps> = ({ activeModule, onNavigate, onOpenChat, onCreateAction }) => {
+  const { state } = useAppStore();
+  const { contentMode } = state;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const isDev = contentMode === 'dev';
+  
+  // Dynamic Styles based on Content Mode
+  const accentText = isDev ? 'text-blue-500' : 'text-amber-500';
+  const fabBg = isDev ? 'bg-blue-600' : 'bg-amber-500';
+  const fabShadow = isDev ? 'shadow-blue-600/30' : 'shadow-amber-500/30';
+  const borderAccent = isDev ? 'border-blue-500' : 'border-amber-500';
 
   const createOptions = [
     { id: 'article', icon: FileText, label: 'Artículo', color: 'text-blue-500', bg: 'bg-blue-500/10' },
@@ -72,7 +83,7 @@ export const MobileTabBar: React.FC<MobileTabBarProps> = ({ activeModule, onNavi
             onClick={() => onNavigate('home')}
             className={`flex flex-col items-center justify-center w-full h-full gap-1 ${
               activeModule === 'home' || activeModule === 'landing' 
-                ? 'text-amber-500' 
+                ? accentText 
                 : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
             }`}
           >
@@ -84,7 +95,7 @@ export const MobileTabBar: React.FC<MobileTabBarProps> = ({ activeModule, onNavi
             onClick={() => onNavigate('portfolio')}
             className={`flex flex-col items-center justify-center w-full h-full gap-1 ${
               activeModule === 'portfolio' || activeModule === 'market' 
-                ? 'text-amber-500' 
+                ? accentText 
                 : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
             }`}
           >
@@ -95,7 +106,7 @@ export const MobileTabBar: React.FC<MobileTabBarProps> = ({ activeModule, onNavi
           <div className="relative -top-5">
               <button 
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className={`flex items-center justify-center w-14 h-14 rounded-full text-white shadow-lg shadow-amber-500/30 transition-transform ${isMenuOpen ? 'bg-slate-900 dark:bg-white text-white dark:text-black rotate-45' : 'bg-amber-500 hover:scale-105'}`}
+                  className={`flex items-center justify-center w-14 h-14 rounded-full text-white shadow-lg ${fabShadow} transition-transform ${isMenuOpen ? 'bg-slate-900 dark:bg-white text-white dark:text-black rotate-45' : `${fabBg} hover:scale-105`}`}
               >
                   <Plus className="h-7 w-7" />
               </button>
@@ -113,11 +124,11 @@ export const MobileTabBar: React.FC<MobileTabBarProps> = ({ activeModule, onNavi
             onClick={() => onNavigate('profile')} 
             className={`flex flex-col items-center justify-center w-full h-full gap-1 ${
               activeModule === 'profile' 
-                ? 'text-amber-500' 
+                ? accentText 
                 : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'
             }`}
           >
-            <div className={`h-6 w-6 rounded-full overflow-hidden border-2 ${activeModule === 'profile' ? 'border-amber-500' : 'border-transparent'}`}>
+            <div className={`h-6 w-6 rounded-full overflow-hidden border-2 ${activeModule === 'profile' ? borderAccent : 'border-transparent'}`}>
                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop" alt="Profile" className="w-full h-full object-cover" />
             </div>
             <span className="text-[10px] font-medium">Yo</span>

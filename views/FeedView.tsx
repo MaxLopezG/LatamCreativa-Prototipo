@@ -126,7 +126,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
 
       {/* Live & Stories Rail */}
       <div className="w-full bg-[#050506] border-b border-white/5 py-4 overflow-x-auto scrollbar-hide">
-          <div className="max-w-[2560px] mx-auto px-6 md:px-12 2xl:px-16 flex gap-6">
+          <div className="max-w-[2560px] mx-auto px-4 md:px-12 2xl:px-16 flex gap-4 md:gap-6">
               {storyUsers.map((user, index) => (
                   <div 
                     key={user.id} 
@@ -134,7 +134,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
                     onClick={() => setActiveStoryIndex(index)}
                   >
                       <div className={`p-[3px] rounded-full transition-all ${user.isLive ? 'bg-gradient-to-tr from-amber-500 to-purple-600 animate-pulse' : 'bg-gradient-to-tr from-white/20 to-white/5 group-hover:from-amber-500 group-hover:to-purple-600'}`}>
-                          <div className="h-16 w-16 rounded-full border-2 border-[#050506] overflow-hidden bg-slate-800 relative">
+                          <div className="h-14 w-14 md:h-16 md:w-16 rounded-full border-2 border-[#050506] overflow-hidden bg-slate-800 relative">
                               <img 
                                 src={user.avatar} 
                                 alt={user.name} 
@@ -142,7 +142,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
                               />
                           </div>
                       </div>
-                      <span className="text-xs text-slate-400 font-medium group-hover:text-white transition-colors w-16 text-center truncate">{user.name}</span>
+                      <span className="text-[10px] md:text-xs text-slate-400 font-medium group-hover:text-white transition-colors w-16 text-center truncate">{user.name}</span>
                       {user.isLive && <span className="text-[9px] bg-red-500 text-white px-1.5 rounded uppercase font-bold tracking-wider absolute -mt-4">Live</span>}
                   </div>
               ))}
@@ -150,7 +150,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
       </div>
 
       {/* Cinematic Hero Section */}
-      <div className="relative w-full h-[400px] overflow-hidden">
+      <div className="relative w-full min-h-[300px] md:h-[400px] overflow-hidden">
           <div className="absolute inset-0">
               <img 
                 src={mode === 'dev' ? "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=2000&auto=format&fit=crop" : "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2000&auto=format&fit=crop"} 
@@ -161,15 +161,15 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
               <div className="absolute inset-0 bg-gradient-to-r from-[#030304] via-[#030304]/80 to-transparent"></div>
           </div>
           
-          <div className="relative z-10 h-full w-full max-w-[2560px] mx-auto px-6 md:px-12 2xl:px-16 flex flex-col justify-center">
+          <div className="relative z-10 h-full w-full max-w-[2560px] mx-auto px-4 md:px-12 2xl:px-16 flex flex-col justify-center py-12 md:py-0">
               <div className="max-w-3xl animate-slide-up">
-                  <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${badgeBg} text-xs font-bold uppercase tracking-widest mb-6 border backdrop-blur-md`}>
+                  <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${badgeBg} text-[10px] md:text-xs font-bold uppercase tracking-widest mb-4 md:mb-6 border backdrop-blur-md`}>
                       <Globe className="h-3 w-3" /> Comunidad Oficial
                   </span>
-                  <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight font-display">
+                  <h1 className="text-3xl md:text-6xl font-bold text-white mb-4 md:mb-6 leading-tight font-display">
                       Latam Creativa <span className={`text-transparent bg-clip-text bg-gradient-to-r ${gradientTitle}`}>{mode === 'dev' ? 'Developers' : 'Originals'}</span>
                   </h1>
-                  <p className={`text-lg text-slate-300 mb-8 max-w-xl leading-relaxed border-l-4 ${mode === 'dev' ? 'border-blue-500' : 'border-amber-500'} pl-6`}>
+                  <p className={`text-sm md:text-lg text-slate-300 mb-6 md:mb-8 max-w-xl leading-relaxed border-l-4 ${mode === 'dev' ? 'border-blue-500' : 'border-amber-500'} pl-4 md:pl-6`}>
                       {mode === 'dev' 
                         ? 'Recursos, librerías y tutoriales para desarrolladores de software en Latinoamérica.'
                         : 'Descubre las historias, tutoriales y proyectos exclusivos producidos por y para la comunidad.'
@@ -179,7 +179,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
                   <div className="flex flex-wrap gap-4">
                       <button 
                         onClick={() => onNavigateToModule('blog')}
-                        className={`px-6 py-3 bg-white text-black font-bold rounded-xl ${accentHoverBg} hover:text-white transition-colors shadow-lg`}
+                        className={`px-6 py-3 bg-white text-black font-bold rounded-xl ${accentHoverBg} hover:text-white transition-colors shadow-lg text-sm md:text-base`}
                       >
                           Leer Artículos
                       </button>
@@ -188,7 +188,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
           </div>
       </div>
 
-      <div className="w-full max-w-[2560px] mx-auto px-6 md:px-12 2xl:px-16 -mt-8 relative z-20">
+      <div className="w-full max-w-[2560px] mx-auto px-4 md:px-12 2xl:px-16 -mt-8 relative z-20">
           
           {/* Main Layout Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -199,10 +199,10 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
                   {/* Quick Categories Carousel */}
                   <div className="relative group">
                       {/* Left Gradient/Arrow */}
-                      <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-slate-50 dark:from-[#030304] to-transparent z-10 pointer-events-none"></div>
+                      <div className="hidden md:block absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-slate-50 dark:from-[#030304] to-transparent z-10 pointer-events-none"></div>
                       <button 
                         onClick={() => scrollCategories('left')}
-                        className="absolute left-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 -ml-3"
+                        className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 -ml-3"
                       >
                           <ChevronLeft className="h-6 w-6" />
                       </button>
@@ -213,7 +213,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
                         className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4 px-1"
                       >
                           {categories.map((cat, idx) => (
-                              <div key={idx} className="flex-shrink-0 w-44 group/card relative h-20 rounded-xl bg-[#0A0A0C] border border-white/10 overflow-hidden cursor-pointer hover:-translate-y-1 transition-transform shadow-lg">
+                              <div key={idx} className="flex-shrink-0 w-36 md:w-44 group/card relative h-20 rounded-xl bg-[#0A0A0C] border border-white/10 overflow-hidden cursor-pointer hover:-translate-y-1 transition-transform shadow-lg">
                                   <div className={`absolute inset-0 opacity-0 group-hover/card:opacity-10 bg-gradient-to-br ${cat.color} transition-opacity`}></div>
                                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-4">
                                       <cat.icon className="h-6 w-6 text-white group-hover/card:scale-110 transition-transform" />
@@ -224,10 +224,10 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
                       </div>
 
                       {/* Right Gradient/Arrow */}
-                      <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-slate-50 dark:from-[#030304] to-transparent z-10 pointer-events-none"></div>
+                      <div className="hidden md:block absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-slate-50 dark:from-[#030304] to-transparent z-10 pointer-events-none"></div>
                       <button 
                         onClick={() => scrollCategories('right')}
-                        className="absolute right-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 -mr-3"
+                        className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 -mr-3"
                       >
                           <ChevronRight className="h-6 w-6" />
                       </button>
@@ -236,44 +236,49 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
                   {/* Featured Portfolio */}
                   <section>
                     <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                        <Layers className={`h-6 w-6 ${accentText}`} />
+                      <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                        <Layers className={`h-5 w-5 md:h-6 md:w-6 ${accentText}`} />
                         {mode === 'dev' ? 'Repositorios & Proyectos' : 'Tendencias'}
                       </h2>
-                      <button onClick={() => onNavigateToModule('portfolio')} className={`text-sm font-bold text-slate-500 ${accentHoverText} transition-colors`}>Ver todo</button>
+                      <button onClick={() => onNavigateToModule('portfolio')} className={`text-xs md:text-sm font-bold text-slate-500 ${accentHoverText} transition-colors`}>Ver todo</button>
                     </div>
                     
                     {displayPortfolio.length > 0 ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                         {displayPortfolio.map(item => (
                             <PortfolioCard key={item.id} item={item} onClick={() => onItemSelect(item.id, 'portfolio')} />
                         ))}
                         </div>
                     ) : (
-                        <div className="text-center py-10 text-slate-500">No hay proyectos destacados en este momento.</div>
+                        <div className="text-center py-10 text-slate-500 bg-white/5 rounded-2xl border border-white/5">
+                            No hay proyectos destacados en este momento.
+                        </div>
                     )}
                   </section>
 
                   {/* Blog & News */}
                   <section>
                     <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                        <Newspaper className="h-6 w-6 text-blue-500" />
+                      <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                        <Newspaper className="h-5 w-5 md:h-6 md:w-6 text-blue-500" />
                         Noticias
                       </h2>
-                      <button onClick={() => onNavigateToModule('blog')} className="text-sm font-bold text-slate-500 hover:text-blue-500 transition-colors">Leer blog</button>
+                      <button onClick={() => onNavigateToModule('blog')} className="text-xs md:text-sm font-bold text-slate-500 hover:text-blue-500 transition-colors">Leer blog</button>
                     </div>
 
                     {displayBlog.length > 0 ? (
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="group cursor-pointer relative h-[300px] rounded-2xl overflow-hidden" onClick={() => onItemSelect(displayBlog[0].id, 'blog')}>
+                            {/* Featured Article */}
+                            <div className="group cursor-pointer relative h-[250px] md:h-[300px] rounded-2xl overflow-hidden" onClick={() => onItemSelect(displayBlog[0].id, 'blog')}>
                                 <img src={displayBlog[0].image} alt="" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent"></div>
                                 <div className="absolute bottom-0 left-0 p-6">
                                     <span className="px-2 py-1 bg-blue-500 text-white text-[10px] font-bold rounded mb-2 inline-block">{displayBlog[0].category}</span>
-                                    <h3 className="text-xl font-bold text-white mb-2 leading-tight group-hover:text-blue-400 transition-colors">{displayBlog[0].title}</h3>
+                                    <h3 className="text-lg md:text-xl font-bold text-white mb-2 leading-tight group-hover:text-blue-400 transition-colors">{displayBlog[0].title}</h3>
                                 </div>
                             </div>
+                            
+                            {/* List of Articles */}
                             <div className="flex flex-col gap-4">
                                 {displayBlog.slice(1, 4).map(item => (
                                     <div key={item.id} className="flex gap-4 p-3 rounded-xl bg-white dark:bg-white/5 hover:bg-white/10 transition-colors cursor-pointer border border-slate-200 dark:border-white/5" onClick={() => onItemSelect(item.id, 'blog')}>
@@ -289,16 +294,16 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
                             </div>
                         </div>
                     ) : (
-                        <div className="text-center py-10 text-slate-500">No hay noticias disponibles.</div>
+                        <div className="text-center py-10 text-slate-500 bg-white/5 rounded-2xl border border-white/5">No hay noticias disponibles.</div>
                     )}
                   </section>
 
                   {/* Banner */}
-                  <div className="rounded-2xl bg-gradient-to-r from-purple-900 to-indigo-900 p-8 relative overflow-hidden flex items-center justify-between">
+                  <div className="rounded-2xl bg-gradient-to-r from-purple-900 to-indigo-900 p-6 md:p-8 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                       <div className="relative z-10 max-w-lg">
-                          <h2 className="text-2xl font-bold text-white mb-2">¿Buscas equipo?</h2>
+                          <h2 className="text-xl md:text-2xl font-bold text-white mb-2">¿Buscas equipo?</h2>
                           <p className="text-purple-200 text-sm mb-4">Únete a miles de {mode === 'dev' ? 'desarrolladores' : 'creativos'} en nuestra sección de Comunidad.</p>
-                          <button onClick={() => onNavigateToModule('community')} className="px-6 py-2 bg-white text-purple-900 font-bold rounded-lg hover:scale-105 transition-transform text-sm">
+                          <button onClick={() => onNavigateToModule('community')} className="px-6 py-2 bg-white text-purple-900 font-bold rounded-lg hover:scale-105 transition-transform text-sm w-full md:w-auto">
                               Encontrar Equipo
                           </button>
                       </div>
@@ -310,33 +315,45 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
                   {/* Education */}
                   <section>
                     <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                        <GraduationCap className="h-6 w-6 text-emerald-500" />
+                      <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                        <GraduationCap className="h-5 w-5 md:h-6 md:w-6 text-emerald-500" />
                         Aprende
                       </h2>
-                      <button onClick={() => onNavigateToModule('education')} className="text-sm font-bold text-slate-500 hover:text-emerald-500 transition-colors">Ver cursos</button>
+                      <button onClick={() => onNavigateToModule('education')} className="text-xs md:text-sm font-bold text-slate-500 hover:text-emerald-500 transition-colors">Ver cursos</button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                      {displayEducation.map(item => (
-                        <EducationCard key={item.id} course={item} onClick={() => onItemSelect(item.id, 'course')} />
-                      ))}
-                    </div>
+                    {displayEducation.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {displayEducation.map(item => (
+                            <EducationCard key={item.id} course={item} onClick={() => onItemSelect(item.id, 'course')} />
+                        ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-10 text-slate-500 bg-white/5 rounded-2xl border border-white/5">
+                            No hay cursos disponibles en este momento.
+                        </div>
+                    )}
                   </section>
 
                   {/* Market */}
                   <section>
                     <div className="flex items-center justify-between mb-6">
-                      <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                        <Store className="h-6 w-6 text-purple-500" />
+                      <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                        <Store className="h-5 w-5 md:h-6 md:w-6 text-purple-500" />
                         {mode === 'dev' ? 'Templates & Code' : 'Assets'}
                       </h2>
-                      <button onClick={() => onNavigateToModule('market')} className="text-sm font-bold text-slate-500 hover:text-purple-500 transition-colors">Ir a la tienda</button>
+                      <button onClick={() => onNavigateToModule('market')} className="text-xs md:text-sm font-bold text-slate-500 hover:text-purple-500 transition-colors">Ir a la tienda</button>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                      {displayAssets.map(item => (
-                        <AssetCard key={item.id} asset={item} onClick={() => onItemSelect(item.id, 'asset')} />
-                      ))}
-                    </div>
+                    {displayAssets.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+                        {displayAssets.map(item => (
+                            <AssetCard key={item.id} asset={item} onClick={() => onItemSelect(item.id, 'asset')} />
+                        ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-10 text-slate-500 bg-white/5 rounded-2xl border border-white/5">
+                            No hay assets disponibles en este momento.
+                        </div>
+                    )}
                   </section>
 
               </div>
