@@ -1,20 +1,65 @@
 import React, { useState } from 'react';
 import { useAllUsers } from '../../hooks/useFirebase';
-import { Search, Mail, Calendar, Shield, MoreHorizontal, FileText, Users, ArrowUpRight } from 'lucide-react';
+import { Search, Mail, Calendar, Shield, MoreHorizontal, FileText, Users, ArrowUpRight, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { CreatePostModal } from '../../components/modals/CreatePostModal';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
+import { useAppStore } from '../../hooks/useAppStore';
 
 export const AdminDashboardView: React.FC = () => {
-    const { users, loading } = useAllUsers();
+    const { actions, state } = useAppStore();
+    const currentUser = state.user;
+    const isSuperAdmin = currentUser?.email === 'admin@latamcreativa.com';
+    const { users: initialUsers, loading } = useAllUsers();
+    const [usersList, setUsersList] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-    const filteredUsers = users.filter(u =>
+    // Sync initial users to local state
+    React.useEffect(() => {
+        setUsersList(initialUsers);
+    }, [initialUsers]);
+
+    const handleToggleAdmin = async (userId: string, currentIsAdmin: boolean, userName: string) => {
+        if (!isSuperAdmin) {
+            actions.showToast('Solo el Super Admin puede gestionar roles.', 'error');
+            return;
+        }
+
+        // if (!confirm(...)) return; // Removed for debugging/UX
+        console.log("Toggling admin for:", userId, userName);
+
+        setActionLoading(userId);
+        try {
+            await updateDoc(doc(db, 'users', userId), {
+                isAdmin: !currentIsAdmin,
+                role: !currentIsAdmin ? 'Administrator' : 'Creative Member'
+            });
+
+            // Optimistic Update
+            setUsersList(prev => prev.map(user =>
+                user.id === userId
+                    ? { ...user, isAdmin: !currentIsAdmin, role: !currentIsAdmin ? 'Administrator' : 'Creative Member' }
+                    : user
+            ));
+
+            actions.showToast(`${userName} ahora ${!currentIsAdmin ? 'es Admin' : 'ya no es Admin'}`, 'success');
+        } catch (error) {
+            console.error(error);
+            actions.showToast('Error al actualizar permisos', 'error');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    const filteredUsers = usersList.filter(u =>
         u.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const stats = [
-        { label: 'Total Usuarios', value: users.length, icon: Users, change: '+12%', color: 'text-blue-500' },
+        { label: 'Total Usuarios', value: usersList.length, icon: Users, change: '+12%', color: 'text-blue-500' },
         { label: 'Posts Totales', value: '1,234', icon: FileText, change: '+5%', color: 'text-amber-500' },
         { label: 'Nuevos este mes', value: '156', icon: Calendar, change: '+18%', color: 'text-green-500' },
     ];
@@ -102,8 +147,8 @@ export const AdminDashboardView: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${user.isAdmin
-                                                ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                                                : 'bg-slate-500/10 text-slate-400 border border-white/5'
+                                            ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                                            : 'bg-slate-500/10 text-slate-400 border border-white/5'
                                             }`}>
                                             {user.isAdmin && <Shield className="h-3 w-3" />}
                                             {user.isAdmin ? 'Admin' : 'Miembro'}
@@ -113,9 +158,25 @@ export const AdminDashboardView: React.FC = () => {
                                         {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button className="p-2 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </button>
+                                        <div className="flex items-center justify-end gap-2">
+                                            {isSuperAdmin && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleToggleAdmin(user.id, !!user.isAdmin, user.name)}
+                                                    disabled={actionLoading === user.id}
+                                                    className={`p-2 rounded-lg transition-colors ${user.isAdmin
+                                                        ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500/20'
+                                                        : 'bg-white/5 text-slate-400 hover:text-white hover:bg-white/10'
+                                                        }`}
+                                                    title={user.isAdmin ? "Quitar Admin" : "Hacer Admin"}
+                                                >
+                                                    {actionLoading === user.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shield className="h-4 w-4" />}
+                                                </button>
+                                            )}
+                                            <button className="p-2 hover:bg-white/10 rounded-lg transition-colors text-slate-400 hover:text-white">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

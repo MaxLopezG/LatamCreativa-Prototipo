@@ -32,12 +32,14 @@ const App: React.FC = () => {
 
           let userRole = 'Creative Member';
           let userLocation = 'Latam';
+          let isAdminFromStore = false;
 
           if (userDocSnap.exists()) {
             // User exists, get role and location from Firestore
             const userData = userDocSnap.data();
             userRole = userData.role || 'Creative Member';
             userLocation = userData.location || 'Latam';
+            isAdminFromStore = userData.isAdmin || false;
             // User found
           } else {
             // User doesn't exist, create new document
@@ -64,7 +66,8 @@ const App: React.FC = () => {
             role: isAdmin ? 'Administrator' : userRole,
             location: userLocation,
             email: firebaseUser.email || '',
-            isAdmin: isAdmin
+            isAdmin: isAdminFromStore || isAdmin,
+            createdAt: userDocSnap.exists() ? userDocSnap.data().createdAt : (firebaseUser.metadata.creationTime || new Date().toISOString())
           };
 
           // User state updated
@@ -81,7 +84,8 @@ const App: React.FC = () => {
             role: isAdmin ? 'Administrator' : 'Creative Member',
             location: 'Latam',
             email: firebaseUser.email || '',
-            isAdmin: isAdmin
+            isAdmin: isAdmin,
+            createdAt: firebaseUser.metadata.creationTime || new Date().toISOString()
           };
           actions.setUser(appUser);
         }

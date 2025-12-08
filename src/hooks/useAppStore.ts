@@ -99,6 +99,7 @@ interface AuthSlice {
     socialLinks?: SocialLinks;
     stats?: UserStats;
     isAdmin?: boolean;
+    createdAt?: string;
   } | null;
   cartItems: CartItem[];
   likedItems: string[];

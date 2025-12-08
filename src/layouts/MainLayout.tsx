@@ -10,6 +10,7 @@ import { SaveToCollectionModal } from '../components/modals/SaveToCollectionModa
 import { ShareModal } from '../components/modals/ShareModal';
 import { CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { useAppStore } from '../hooks/useAppStore';
+import { OnboardingModal } from '../components/modals/OnboardingModal';
 
 export const MainLayout: React.FC = () => {
     const { state, actions } = useAppStore();
@@ -139,6 +140,8 @@ export const MainLayout: React.FC = () => {
                 isOpen={state.isShareModalOpen}
                 onClose={actions.closeShareModal}
             />
+
+            <OnboardingModal />
 
             {/* Enhanced Toast Notification */}
             {state.toast && (

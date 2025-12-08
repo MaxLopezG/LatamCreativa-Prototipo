@@ -35,13 +35,15 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
         avatar: 'https://ui-avatars.com/api/?name=U&background=random',
         role: 'Creative Member',
         location: 'Latam',
-        email: ''
+        email: '',
+        createdAt: new Date().toISOString()
     }) : {
         name: authorName || username || 'Unknown User',
         id: 'unknown',
         avatar: 'https://ui-avatars.com/api/?background=random',
         role: 'Digital Artist',
-        location: 'Latam'
+        location: 'Latam',
+        createdAt: undefined
     };
 
     const name = displayUser.name;
@@ -206,7 +208,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                             </div>
                             <div className="flex items-center gap-1.5 hidden sm:flex">
                                 <Calendar className="h-4 w-4 text-slate-500" />
-                                Se unió en Mayo 2021
+                                Se unió en {displayUser.createdAt ? new Date(displayUser.createdAt).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) : 'Mayo 2021'}
                             </div>
                         </div>
                     </div>

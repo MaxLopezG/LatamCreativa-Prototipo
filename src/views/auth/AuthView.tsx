@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../hooks/useAppStore';
-import { Mail, Lock, User, Github, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
-import { auth, googleProvider } from '../../lib/firebase';
+import { Mail, Lock, User, Github, ArrowRight, Loader2, AlertCircle, Globe, Eye, EyeOff } from 'lucide-react';
+import { auth, googleProvider, db } from '../../lib/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signInWithPopup } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 export const AuthView: React.FC = () => {
     const { state, actions } = useAppStore();
@@ -18,7 +19,11 @@ export const AuthView: React.FC = () => {
     // Form State
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [name, setName] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const activeColor = isDev ? 'text-blue-500' : 'text-amber-500';
     const activeBg = isDev ? 'bg-blue-600 hover:bg-blue-700' : 'bg-amber-500 hover:bg-amber-600';
@@ -36,14 +41,32 @@ export const AuthView: React.FC = () => {
                 // Log removed
             } else {
                 // Register Logic
+                if (password !== confirmPassword) {
+                    setError("Las contraseñas no coinciden.");
+                    setIsLoading(false);
+                    return;
+                }
+
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 // Update display name if provided
-                if (name && userCredential.user) {
+
+                // Create User Document with Selected Country immediately
+                if (userCredential.user) {
+                    const displayName = `${firstName} ${lastName}`.trim();
                     await updateProfile(userCredential.user, {
-                        displayName: name
+                        displayName: displayName
                     });
+
+                    const newUser = {
+                        name: displayName || userCredential.user.displayName || 'Usuario',
+                        email: userCredential.user.email || '',
+                        avatar: userCredential.user.photoURL || 'https://ui-avatars.com/api/?name=' + (firstName || 'U'),
+                        role: 'Creative Member',
+                        location: 'Latam',
+                        createdAt: new Date().toISOString()
+                    };
+                    await setDoc(doc(db, 'users', userCredential.user.uid), newUser);
                 }
-                // Log removed
             }
 
             // FORCE STORE UPDATE BEFORE REDIRECT
@@ -52,8 +75,8 @@ export const AuthView: React.FC = () => {
                 const isAdmin = user.email === 'admin@latamcreativa.com';
                 const appUser = {
                     id: user.uid,
-                    name: user.displayName || name || 'Usuario',
-                    avatar: user.photoURL || 'https://ui-avatars.com/api/?name=' + (user.displayName || name || 'U'),
+                    name: user.displayName || (firstName ? `${firstName} ${lastName}`.trim() : 'Usuario'),
+                    avatar: user.photoURL || 'https://ui-avatars.com/api/?name=' + (user.displayName || firstName || 'U'),
                     role: isAdmin ? 'Administrator' : 'Creative Member',
                     location: 'Latam',
                     email: user.email || '',
@@ -144,23 +167,39 @@ export const AuthView: React.FC = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
 
-                        {/* Name Field (Register Only) */}
+                        {/* Name Fields (Register Only) */}
                         {!isLogin && (
-                            <div className="space-y-1.5 animate-fade-in">
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nombre Completo</label>
-                                <div className="relative">
-                                    <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                                    <input
-                                        type="text"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        placeholder="Jhon Doe"
-                                        className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
-                                        required={!isLogin}
-                                    />
+                            <div className="grid grid-cols-2 gap-4 animate-fade-in">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nombres</label>
+                                    <div className="relative">
+                                        <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            value={firstName}
+                                            onChange={(e) => setFirstName(e.target.value)}
+                                            placeholder="Juan"
+                                            className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
+                                            required={!isLogin}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Apellidos</label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={lastName}
+                                            onChange={(e) => setLastName(e.target.value)}
+                                            placeholder="Pérez"
+                                            className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
+                                            required={!isLogin}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         )}
+
 
                         {/* Email Field */}
                         <div className="space-y-1.5">
@@ -182,17 +221,49 @@ export const AuthView: React.FC = () => {
                         <div className="space-y-1.5">
                             <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Contraseña</label>
                             <div className="relative">
-                                <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                                <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400 z-10" />
                                 <input
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="••••••••"
-                                    className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
+                                    className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-12 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
                                     required
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                                >
+                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                </button>
                             </div>
                         </div>
+
+                        {/* Confirm Password Field (Register Only) */}
+                        {!isLogin && (
+                            <div className="space-y-1.5 animate-fade-in">
+                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Confirmar Contraseña</label>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400 z-10" />
+                                    <input
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                        className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-12 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
+                                        required={!isLogin}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                                    >
+                                        {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Submit Button */}
                         <button
