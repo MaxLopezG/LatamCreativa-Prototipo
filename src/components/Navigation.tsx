@@ -149,7 +149,6 @@ export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, con
                     Mis Ganancias
                   </button>
 
-
                   <button
                     onClick={() => {
                       onModuleSelect?.('settings');
@@ -161,11 +160,19 @@ export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, con
                     Configuración
                   </button>
 
-
-
-
-
-                  <div className="h-px bg-slate-100 dark:bg-white/5 my-1"></div>
+                  {/* Admin Dashboard - Only for Admins */}
+                  {(user.isAdmin || user.email === 'admin@latamcreativa.com') && (
+                    <button
+                      onClick={() => {
+                        navigate('/admin');
+                        setIsProfileOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                    >
+                      <Settings className="h-4 w-4 text-amber-500" />
+                      Panel Admin
+                    </button>
+                  )}
 
                   <button
                     onClick={async () => {
@@ -220,6 +227,7 @@ export const SecondarySidebar = ({
 }: SecondarySidebarProps) => {
   const { state } = useAppStore();
   const { user } = state;
+  const navigate = useNavigate();
 
   // State for expanded menu items
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
@@ -461,6 +469,20 @@ export const SecondarySidebar = ({
               <DollarSign className="h-5 w-5" />
               <span className="text-sm font-medium">Mis Ganancias</span>
             </button>
+
+            {/* Admin Dashboard - Mobile */}
+            {user && (user.isAdmin || user.email === 'admin@latamcreativa.com') && (
+              <button
+                onClick={() => {
+                  navigate('/admin');
+                  onClose?.();
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors mb-2"
+              >
+                <Settings className="h-5 w-5 text-amber-500" />
+                <span className="text-sm font-medium">Panel Admin</span>
+              </button>
+            )}
 
             <button
               onClick={() => {

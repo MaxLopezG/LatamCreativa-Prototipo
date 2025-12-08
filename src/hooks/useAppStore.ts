@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { CartItem, Notification, CollectionItem, PortfolioItem, ArticleItem } from '../types';
@@ -107,6 +106,7 @@ interface AuthSlice {
   notifications: Notification[];
   collections: CollectionItem[];
   blogPosts: ArticleItem[];
+  isLoadingAuth: boolean; // Add this property
 
   // Actions
   addToCart: (item: CartItem) => void;
@@ -120,12 +120,13 @@ interface AuthSlice {
   saveToCollection: (collectionId: string) => void;
   createCollection: (title: string, isPrivate: boolean) => void;
   setUser: (user: AuthSlice['user']) => void;
+  clearUser: () => void;
   updateUserProfile: (updates: Partial<AuthSlice['user']>) => void;
   addSkill: (skill: string) => void;
   removeSkill: (skill: string) => void;
   updateSocialLinks: (links: SocialLinks) => void;
+  setLoadingAuth: (loading: boolean) => void; // Add this action definition
 }
-
 // --- Combine Store ---
 type AppStore = UISlice & AuthSlice;
 
@@ -150,9 +151,10 @@ const useZustandStore = create<AppStore>()(
 
       // Auth/User Initial State
       user: null,
+      isLoadingAuth: true, // Initialize to true
       cartItems: [],
       likedItems: [],
-      // Initialize with some dummy created items based on existing portfolio items
+      // Initialize with some dummy created items
       createdItems: PORTFOLIO_ITEMS.slice(0, 2).map(item => ({
         ...item,
         id: `created-${item.id}`,
@@ -203,7 +205,10 @@ const useZustandStore = create<AppStore>()(
       },
 
       // Auth/User Actions
-      setUser: (user) => set({ user }),
+      setUser: (user) => set({ user, isLoadingAuth: false }),
+      setLoadingAuth: (loading) => set({ isLoadingAuth: loading }), // Action to set loading state
+
+      clearUser: () => set({ user: null }),
 
       updateUserProfile: (updates) => set((state) => ({
         user: state.user ? { ...state.user, ...updates } : null
@@ -244,8 +249,6 @@ const useZustandStore = create<AppStore>()(
 
       toggleLike: (itemId) => set((state) => {
         const isLiked = state.likedItems.includes(itemId);
-        // Optional toast
-        // get().showToast(isLiked ? 'Removed from likes' : 'Added to likes', 'info');
         return {
           likedItems: isLiked
             ? state.likedItems.filter(id => id !== itemId)
@@ -339,10 +342,13 @@ export const useAppStore = () => {
 
       isSaveModalOpen: store.isSaveModalOpen,
       itemToSave: store.itemToSave,
-      isShareModalOpen: store.isShareModalOpen
+      isShareModalOpen: store.isShareModalOpen,
+      isLoadingAuth: store.isLoadingAuth
     },
     actions: {
       setUser: store.setUser,
+      setLoadingAuth: store.setLoadingAuth, // Expose action
+      clearUser: store.clearUser,
       updateUserProfile: store.updateUserProfile,
       addSkill: store.addSkill,
       removeSkill: store.removeSkill,

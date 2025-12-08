@@ -392,10 +392,22 @@ const SuspendedView = ({ Component, ...props }: { Component: React.FC<any>, [key
   <Suspended><Component {...props} /></Suspended>
 );
 
+// --- Admin Views ---
+const AdminLayoutView = lazy(() => import('./layouts/AdminLayout').then(module => ({ default: module.AdminLayout })));
+const AdminDashboard = lazy(() => import('./views/admin/AdminDashboardView').then(module => ({ default: module.AdminDashboardView })));
+
 export const router = createBrowserRouter([
   {
     path: '/auth',
     element: <Suspended><AuthView /></Suspended>
+  },
+  {
+    path: 'admin',
+    element: <Suspended><AdminLayoutView /></Suspended>,
+    children: [
+      { index: true, element: <Suspended><AdminDashboard /></Suspended> },
+      { path: 'users', element: <Suspended><AdminDashboard /></Suspended> }, // Reuse for now
+    ]
   },
   {
     path: '/',

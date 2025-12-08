@@ -1,56 +1,113 @@
-import { 
-  PORTFOLIO_ITEMS, BLOG_ITEMS, EDUCATION_ITEMS, ASSET_ITEMS, HOME_FEED_VIDEOS, 
-  ARTIST_DIRECTORY, USER_COLLECTIONS 
-} from '../data/content';
-import { MOCK_CHATS } from '../data/chat';
-import { ChatMessage, ArtistProfile } from '../types';
+import {
+  collection,
+  query,
+  orderBy,
+  limit,
+  startAfter,
+  getDocs,
+  addDoc,
+  doc,
+  getDoc,
+  QueryDocumentSnapshot,
+  DocumentData
+} from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../lib/firebase';
+import { PortfolioItem, ArtistProfile } from '../types';
 
-const delay = (ms = 800) => new Promise(resolve => setTimeout(resolve, ms));
+// Helper for pagination
+export interface PaginatedResult<T> {
+  data: T[];
+  lastDoc: QueryDocumentSnapshot<DocumentData> | null;
+  hasMore: boolean;
+}
 
 export const api = {
-  // 1. Feed con Paginación
-  getFeed: async ({ pageParam = 0 }: { pageParam?: number }) => {
-    await delay();
-    
-    const ITEMS_PER_PAGE = 6;
-    const start = pageParam * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    
-    // Simulamos fin de datos
-    const hasNextPage = end < PORTFOLIO_ITEMS.length;
+  // --- Projects (Feed) ---
+  getProjects: async (lastDoc: QueryDocumentSnapshot<DocumentData> | null = null, pageSize = 10): Promise<PaginatedResult<PortfolioItem>> => {
+    try {
+      let q = query(
+        collection(db, 'projects'),
+        orderBy('createdAt', 'desc'),
+        limit(pageSize)
+      );
 
-    return {
-      // El portafolio se pagina
-      portfolio: PORTFOLIO_ITEMS.slice(start, end),
-      // Los otros se mantienen fijos (o podrías paginarlos también)
-      blog: BLOG_ITEMS.slice(0, 4),
-      education: EDUCATION_ITEMS.slice(0, 4),
-      assets: ASSET_ITEMS.slice(0, 5),
-      videos: HOME_FEED_VIDEOS,
-      nextPage: hasNextPage ? pageParam + 1 : undefined,
-    };
+      if (lastDoc) {
+        q = query(
+          collection(db, 'projects'),
+          orderBy('createdAt', 'desc'),
+          startAfter(lastDoc),
+          limit(pageSize)
+        );
+      }
+
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PortfolioItem));
+
+      return {
+        data,
+        lastDoc: snapshot.docs[snapshot.docs.length - 1] || null,
+        hasMore: snapshot.docs.length === pageSize
+      };
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      throw error;
+    }
   },
 
-  // ... Resto de métodos igual (getUserProfile, etc.)
-  getUserProfile: async (username: string): Promise<ArtistProfile | undefined> => {
-    await delay(600);
-    const user = ARTIST_DIRECTORY.find(u => u.handle.includes(username) || u.name.includes(username));
-    return user || ARTIST_DIRECTORY[0];
+  createProject: async (projectData: Omit<PortfolioItem, 'id'>, imageFile?: File): Promise<string> => {
+    try {
+      let imageUrl = projectData.image;
+
+      // 1. Upload Image if provided
+      if (imageFile) {
+        const storageRef = ref(storage, `projects/${Date.now()}_${imageFile.name}`);
+        const uploadResult = await uploadBytes(storageRef, imageFile);
+        imageUrl = await getDownloadURL(uploadResult.ref);
+      }
+
+      // 2. Save Document
+      const docRef = await addDoc(collection(db, 'projects'), {
+        ...projectData,
+        image: imageUrl,
+        createdAt: new Date().toISOString(),
+        likes: 0,
+        views: 0
+      });
+
+      return docRef.id;
+    } catch (error) {
+      console.error("Error creating project:", error);
+      throw error;
+    }
   },
 
-  getArtistDirectory: async () => { await delay(); return ARTIST_DIRECTORY; },
-  getChatMessages: async (friendId: string) => { await delay(300); return MOCK_CHATS[friendId] || []; },
-  
-  sendMessage: async ({ friendId, text }: { friendId: string; text: string }) => {
-    await delay(600);
-    if (Math.random() > 0.95) throw new Error('Error de red simulado');
-    return {
-      id: Date.now().toString(),
-      senderId: 'me',
-      text,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
+  // --- User Profile & Admin ---
+  getUserProfile: async (userId: string): Promise<any> => {
+    try {
+      const docRef = doc(db, 'users', userId);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() };
+      } else {
+        // If not in firestore, return basic info (fallback)
+        return null;
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+      throw error;
+    }
   },
 
-  getUserCollections: async () => { await delay(500); return USER_COLLECTIONS; }
+  getAllUsers: async (): Promise<any[]> => {
+    try {
+      const q = query(collection(db, 'users'));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+      throw error;
+    }
+  }
 };

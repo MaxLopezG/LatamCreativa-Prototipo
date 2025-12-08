@@ -55,13 +55,16 @@ const App: React.FC = () => {
           }
 
           // Map to App user with data from Firestore (or defaults)
+          const isAdmin = firebaseUser.email === 'admin@latamcreativa.com';
+
           const appUser = {
             id: firebaseUser.uid,
             name: firebaseUser.displayName || 'Usuario',
             avatar: firebaseUser.photoURL || 'https://ui-avatars.com/api/?name=' + (firebaseUser.displayName || 'U'),
-            role: userRole,
+            role: isAdmin ? 'Administrator' : userRole,
             location: userLocation,
-            email: firebaseUser.email || ''
+            email: firebaseUser.email || '',
+            isAdmin: isAdmin
           };
 
           // User state updated
@@ -70,18 +73,22 @@ const App: React.FC = () => {
         } catch (error) {
           console.error("Error fetching/creating user profile:", error);
           // Fallback if Firestore fails: use basic auth data
+          const isAdmin = firebaseUser.email === 'admin@latamcreativa.com';
           const appUser = {
             id: firebaseUser.uid,
             name: firebaseUser.displayName || 'Usuario',
             avatar: firebaseUser.photoURL || 'https://ui-avatars.com/api/?name=' + (firebaseUser.displayName || 'U'),
-            role: 'Creative Member',
+            role: isAdmin ? 'Administrator' : 'Creative Member',
             location: 'Latam',
-            email: firebaseUser.email || ''
+            email: firebaseUser.email || '',
+            isAdmin: isAdmin
           };
           actions.setUser(appUser);
         }
       } else {
         actions.setUser(null);
+        // Ensure loading is set to false even if no user
+        actions.setLoadingAuth(false);
       }
     });
 
