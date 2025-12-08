@@ -10,8 +10,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   const handleNav = (path: string, e: React.MouseEvent) => {
     e.preventDefault();
     if (onNavigate) {
-        onNavigate(path);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+      onNavigate(path);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -19,17 +19,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     <footer className="bg-[#050506] border-t border-white/5 pt-16 pb-8">
       <div className="max-w-[1600px] mx-auto px-6 md:px-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10 mb-16">
-          
+
           {/* Brand Column */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-6">
-               <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center border border-amber-500/20">
-                  <Sparkles className="h-5 w-5 text-amber-500" />
-               </div>
-               <span className="text-xl font-bold text-white tracking-tight">Latam<span className="text-amber-500">.</span>Creativa</span>
+              <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center border border-amber-500/20">
+                <Sparkles className="h-5 w-5 text-amber-500" />
+              </div>
+              <span className="text-xl font-bold text-white tracking-tight">Latam<span className="text-amber-500">.</span>Creativa</span>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed mb-6 max-w-sm">
-              La plataforma definitiva para artistas digitales en Latinoamérica. 
+              La plataforma definitiva para artistas digitales en Latinoamérica.
               Conecta, aprende, trabaja y crece en un solo lugar.
             </p>
             <div className="flex gap-4">
@@ -56,28 +56,28 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <ul className="space-y-4 text-sm text-slate-400">
               <li><button onClick={(e) => handleNav('blog', e)} className="hover:text-amber-500 transition-colors text-left">Blog</button></li>
               <li><button onClick={(e) => handleNav('community', e)} className="hover:text-amber-500 transition-colors text-left">Comunidad</button></li>
-              <li><button onClick={(e) => handleNav('info-help', e)} className="hover:text-amber-500 transition-colors text-left">Ayuda</button></li>
-              <li><button onClick={(e) => handleNav('info-guides', e)} className="hover:text-amber-500 transition-colors text-left">Guías</button></li>
+              <li><button onClick={(e) => handleNav('info/help', e)} className="hover:text-amber-500 transition-colors text-left">Ayuda</button></li>
+              <li><button onClick={(e) => handleNav('info/guides', e)} className="hover:text-amber-500 transition-colors text-left">Guías</button></li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-white font-bold mb-6">Empresa</h4>
             <ul className="space-y-4 text-sm text-slate-400">
-              <li><button onClick={(e) => handleNav('info-about', e)} className="hover:text-amber-500 transition-colors text-left">Sobre Nosotros</button></li>
-              <li><button onClick={(e) => handleNav('info-careers', e)} className="hover:text-amber-500 transition-colors text-left">Carreras</button></li>
-              <li><button onClick={(e) => handleNav('info-press', e)} className="hover:text-amber-500 transition-colors text-left">Prensa</button></li>
-              <li><button onClick={(e) => handleNav('info-contact', e)} className="hover:text-amber-500 transition-colors text-left">Contacto</button></li>
+              <li><button onClick={(e) => handleNav('info/about', e)} className="hover:text-amber-500 transition-colors text-left">Sobre Nosotros</button></li>
+              <li><button onClick={(e) => handleNav('info/careers', e)} className="hover:text-amber-500 transition-colors text-left">Carreras</button></li>
+              <li><button onClick={(e) => handleNav('info/press', e)} className="hover:text-amber-500 transition-colors text-left">Prensa</button></li>
+              <li><button onClick={(e) => handleNav('info/contact', e)} className="hover:text-amber-500 transition-colors text-left">Contacto</button></li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-white font-bold mb-6">Legal</h4>
             <ul className="space-y-4 text-sm text-slate-400">
-              <li><button onClick={(e) => handleNav('info-terms', e)} className="hover:text-amber-500 transition-colors text-left">Términos</button></li>
-              <li><button onClick={(e) => handleNav('info-privacy', e)} className="hover:text-amber-500 transition-colors text-left">Privacidad</button></li>
-              <li><button onClick={(e) => handleNav('info-cookies', e)} className="hover:text-amber-500 transition-colors text-left">Cookies</button></li>
-              <li><button onClick={(e) => handleNav('info-licenses', e)} className="hover:text-amber-500 transition-colors text-left">Licencias</button></li>
+              <li><button onClick={(e) => handleNav('info/terms', e)} className="hover:text-amber-500 transition-colors text-left">Términos</button></li>
+              <li><button onClick={(e) => handleNav('info/privacy', e)} className="hover:text-amber-500 transition-colors text-left">Privacidad</button></li>
+              <li><button onClick={(e) => handleNav('info/cookies', e)} className="hover:text-amber-500 transition-colors text-left">Cookies</button></li>
+              <li><button onClick={(e) => handleNav('info/licenses', e)} className="hover:text-amber-500 transition-colors text-left">Licencias</button></li>
             </ul>
           </div>
 

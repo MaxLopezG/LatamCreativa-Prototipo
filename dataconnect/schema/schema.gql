@@ -1,0 +1,64 @@
+type User @table {
+  username: String!
+  email: String!
+  passwordHash: String!
+  createdAt: Timestamp!
+  displayName: String
+  bio: String
+  avatarUrl: String
+  websiteUrl: String
+  skills: [String]
+}
+
+type Course @table {
+  instructor: User!
+  title: String!
+  description: String!
+  category: String!
+  price: Float!
+  createdAt: Timestamp!
+  imageUrl: String
+  duration: Int
+  difficulty: String
+  rating: Float
+}
+
+type Project @table {
+  owner: User!
+  title: String!
+  description: String!
+  projectType: String!
+  createdAt: Timestamp!
+  imageUrl: String
+  status: String
+  githubRepoUrl: String
+}
+
+type ProjectMember @table(key: ["user", "project"]) {
+  user: User!
+  project: Project!
+  role: String!
+  joinedAt: Timestamp!
+}
+
+type MarketplaceItem @table {
+  seller: User!
+  title: String!
+  description: String!
+  itemType: String!
+  price: Float!
+  createdAt: Timestamp!
+  imageUrls: [String]
+  category: String
+  fileUrl: String
+}
+
+type Community @table {
+  creator: User!
+  name: String!
+  description: String!
+  createdAt: Timestamp!
+  imageUrl: String
+  rules: String
+  privacy: String
+}

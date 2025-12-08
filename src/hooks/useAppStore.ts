@@ -28,9 +28,9 @@ interface UISlice {
   chatActiveUser: string | null;
   isSaveModalOpen: boolean;
   isShareModalOpen: boolean;
-  itemToSave: {id: string, image: string} | null;
+  itemToSave: { id: string, image: string } | null;
   viewingAuthorName: string | null;
-  
+
   // Actions
   setIsSidebarOpen: (isOpen: boolean) => void;
   setActiveCategory: (category: string) => void;
@@ -49,13 +49,13 @@ interface UISlice {
 }
 
 interface AuthSlice {
-  user: { name: string; id: string; avatar: string; role: string; location: string };
+  user: { name: string; id: string; avatar: string; role: string; location: string; email?: string } | null;
   cartItems: CartItem[];
   likedItems: string[];
   createdItems: PortfolioItem[];
   notifications: Notification[];
   collections: CollectionItem[];
-  
+
   // Actions
   addToCart: (item: CartItem) => void;
   removeFromCart: (itemId: string) => void;
@@ -66,6 +66,7 @@ interface AuthSlice {
   markAllNotificationsRead: () => void;
   saveToCollection: (collectionId: string) => void;
   createCollection: (title: string, isPrivate: boolean) => void;
+  setUser: (user: AuthSlice['user']) => void;
 }
 
 // --- Combine Store ---
@@ -91,13 +92,7 @@ const useZustandStore = create<AppStore>()(
       viewingAuthorName: null,
 
       // Auth/User Initial State
-      user: { 
-        name: 'Alex Motion', 
-        id: 'u1',
-        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop',
-        role: 'Senior 3D Artist',
-        location: 'Barcelona, España'
-      },
+      user: null,
       cartItems: [],
       likedItems: [],
       // Initialize with some dummy created items based on existing portfolio items
@@ -116,7 +111,7 @@ const useZustandStore = create<AppStore>()(
       collections: USER_COLLECTIONS,
 
       // --- Actions Implementation ---
-      
+
       setIsSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
       setActiveCategory: (category) => set({ activeCategory: category }),
       setActiveModule: (module) => {
@@ -129,7 +124,7 @@ const useZustandStore = create<AppStore>()(
       },
       setCreateMode: (mode) => set({ createMode: mode }),
       setSearchQuery: (query) => set({ searchQuery: query }),
-      
+
       showToast: (message, type = 'success') => {
         set({ toast: { message, type } });
         setTimeout(() => set({ toast: null }), 3000);
@@ -137,19 +132,21 @@ const useZustandStore = create<AppStore>()(
 
       setIsChatOpen: (isOpen) => set({ isChatOpen: isOpen }),
       setChatActiveUser: (userId) => set({ chatActiveUser: userId }),
-      
+
       openSaveModal: (id, image) => set({ isSaveModalOpen: true, itemToSave: { id, image } }),
       closeSaveModal: () => set({ isSaveModalOpen: false, itemToSave: null }),
-      
+
       openShareModal: () => set({ isShareModalOpen: true }),
       closeShareModal: () => set({ isShareModalOpen: false }),
-      
+
       setViewingAuthorName: (name) => {
         set({ viewingAuthorName: name });
         if (window.innerWidth < 1280 && name) set({ isSidebarOpen: false });
       },
 
       // Auth/User Actions
+      setUser: (user) => set({ user }),
+
       addToCart: (item) => {
         const { cartItems, showToast } = get();
         if (!cartItems.find(i => i.id === item.id)) {
@@ -159,9 +156,9 @@ const useZustandStore = create<AppStore>()(
           showToast(`Este item ya está en tu carrito`, 'info');
         }
       },
-      
-      removeFromCart: (itemId) => set((state) => ({ 
-        cartItems: state.cartItems.filter(i => i.id !== itemId) 
+
+      removeFromCart: (itemId) => set((state) => ({
+        cartItems: state.cartItems.filter(i => i.id !== itemId)
       })),
 
       clearCart: () => set({ cartItems: [] }),
@@ -171,7 +168,7 @@ const useZustandStore = create<AppStore>()(
         // Optional toast
         // get().showToast(isLiked ? 'Removed from likes' : 'Added to likes', 'info');
         return {
-          likedItems: isLiked 
+          likedItems: isLiked
             ? state.likedItems.filter(id => id !== itemId)
             : [...state.likedItems, itemId]
         };
@@ -242,7 +239,7 @@ export const useAppStore = () => {
       contentMode: store.contentMode,
       createMode: store.createMode,
       searchQuery: store.searchQuery,
-      
+
       // User Data
       user: store.user,
       cartItems: store.cartItems,
@@ -250,17 +247,18 @@ export const useAppStore = () => {
       createdItems: store.createdItems,
       collections: store.collections,
       notifications: store.notifications,
-      
+
       toastMessage: store.toast?.message,
       toast: store.toast,
       isChatOpen: store.isChatOpen,
       chatActiveUser: store.chatActiveUser,
-      
+
       isSaveModalOpen: store.isSaveModalOpen,
       itemToSave: store.itemToSave,
       isShareModalOpen: store.isShareModalOpen
     },
     actions: {
+      setUser: store.setUser,
       setIsSidebarOpen: store.setIsSidebarOpen,
       setActiveCategory: store.setActiveCategory,
       setViewingAuthorName: store.setViewingAuthorName,
@@ -270,7 +268,7 @@ export const useAppStore = () => {
       setIsChatOpen: store.setIsChatOpen,
       handleModuleSelect: store.setActiveModule,
       handleSubscriptionSelect: store.setViewingAuthorName,
-      
+
       // Complex Logic Mapped
       handleCreateAction: (actionId: string) => {
         const moduleMap: Record<string, string> = {
@@ -289,35 +287,35 @@ export const useAppStore = () => {
         }
         store.setIsSidebarOpen(false);
       },
-      
+
       handleProClick: () => {
         store.setActiveModule('pro');
         if (window.innerWidth < 1280) store.setIsSidebarOpen(false);
       },
-      
+
       handleSearch: (query: string) => {
         store.setSearchQuery(query);
         store.setActiveModule('search');
       },
-      
+
       addToCart: store.addToCart,
       removeFromCart: store.removeFromCart,
       clearCart: store.clearCart,
       toggleLike: store.toggleLike,
       addCreatedItem: store.addCreatedItem,
-      
+
       handleBuyNow: (item: CartItem) => {
         if (!store.cartItems.find(i => i.id === item.id)) {
-            store.addToCart(item);
+          store.addToCart(item);
         }
         store.setActiveModule('cart');
       },
-      
+
       openChatWithUser: (userName: string) => {
         store.setIsChatOpen(true);
         store.setChatActiveUser('1'); // Mock ID
       },
-      
+
       markNotificationRead: store.markNotificationRead,
       markAllNotificationsRead: store.markAllNotificationsRead,
       openSaveModal: store.openSaveModal,

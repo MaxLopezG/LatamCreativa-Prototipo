@@ -1,0 +1,34 @@
+mutation CreateUser @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users.") {
+  user_insert(data: {
+    username: "newuser",
+    email: "newuser@example.com",
+    passwordHash: "hashedpassword",
+    createdAt_expr: "request.time"
+  })
+}
+
+query ListProjects @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users.") {
+  projects {
+    id
+    title
+    description
+  }
+}
+
+mutation JoinProject($projectId: UUID!) @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users.") {
+  projectMember_insert(data: {
+    projectId: $projectId,
+    userId_expr: "auth.uid",
+    role: "member",
+    joinedAt_expr: "request.time"
+  })
+}
+
+query ListMarketplaceItems @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  marketplaceItems {
+    id
+    title
+    description
+    price
+  }
+}

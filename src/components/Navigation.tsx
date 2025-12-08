@@ -1,8 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Settings, Search, X, Sliders, Code, Palette, ChevronDown, ChevronRight, User, DollarSign, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Settings, Search, X, Sliders, Code, Palette, ChevronDown, ChevronRight, User, DollarSign, LogOut, LogIn } from 'lucide-react';
+import { auth } from '../lib/firebase';
+import { signOut } from 'firebase/auth';
 import { PRIMARY_NAV_ITEMS, NAV_SECTIONS, NAV_SECTIONS_DEV, SUBSCRIPTIONS } from '../data/navigation';
-import { ContentMode } from '../hooks/useAppStore';
+import { ContentMode, useAppStore } from '../hooks/useAppStore';
 
 interface PrimarySidebarProps {
   activeModule?: string;
@@ -12,6 +15,9 @@ interface PrimarySidebarProps {
 }
 
 export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, contentMode, onToggleContentMode }: PrimarySidebarProps) => {
+  const { state, actions } = useAppStore();
+  const navigate = useNavigate();
+  const { user } = state;
   // Active state colors based on mode
   const activeColorClass = contentMode === 'dev'
     ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
@@ -31,26 +37,30 @@ export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, con
   }, []);
 
   return (
-    <aside className="hidden flex-col border-r border-slate-200 dark:border-white/[0.06] md:flex z-50 bg-white/90 dark:bg-[#050506]/90 w-[72px] 2xl:w-[88px] h-screen sticky top-0 transition-all duration-300">
+    <aside className="hidden flex-col border-r border-white/10 md:flex z-50 bg-[#050506] w-[72px] 2xl:w-[88px] h-screen sticky top-0 transition-all duration-300">
 
       {/* Scrollable Navigation Area */}
-      <div className="flex-1 flex flex-col w-full overflow-y-auto scrollbar-hide pt-4 pb-2 2xl:pt-8 2xl:pb-8">
-        <nav className="flex flex-col gap-2 2xl:gap-5 items-center w-full justify-start">
+      <div className="flex-1 flex flex-col w-full overflow-hidden min-h-0 py-2 2xl:py-8">
+        <nav className="flex-1 flex flex-col items-center w-full justify-evenly 2xl:justify-start 2xl:gap-5 min-h-0">
           {PRIMARY_NAV_ITEMS.map((item) => {
             const isActive = activeModule === item.id;
+            const hoverClass = contentMode === 'dev'
+              ? 'hover:bg-blue-500/10 hover:text-blue-500'
+              : 'hover:bg-amber-500/10 hover:text-amber-500';
+
             return (
-              <div key={item.id} className="relative group flex items-center justify-center shrink-0">
+              <div key={item.id} className="relative group flex items-center justify-center">
                 <button
                   onClick={() => onModuleSelect?.(item.id)}
-                  className={`group flex transition-all duration-200 hover:scale-110 active:scale-95 w-9 h-9 2xl:w-12 2xl:h-12 rounded-xl 2xl:rounded-2xl items-center justify-center ${isActive
-                    ? activeColorClass
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-slate-100'
+                  className={`group flex transition-all duration-200 hover:scale-110 active:scale-95 w-7 h-7 2xl:w-12 2xl:h-12 rounded-lg 2xl:rounded-2xl items-center justify-center ${isActive
+                    ? (contentMode === 'dev' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-amber-500 text-white shadow-lg shadow-amber-500/20')
+                    : `text-neutral-500 ${hoverClass}`
                     }`}
                 >
-                  <item.icon className="w-[18px] h-[18px] 2xl:w-[26px] 2xl:h-[26px]" strokeWidth={1.5} />
+                  <item.icon className="w-[16px] h-[16px] 2xl:w-[26px] 2xl:h-[26px]" strokeWidth={1.5} />
                 </button>
                 {/* Tooltip */}
-                <div className="absolute left-14 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[60]">
+                <div className={`absolute left-14 px-3 py-1.5 rounded-lg text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[60] ${contentMode === 'dev' ? 'bg-blue-600' : 'bg-amber-600'}`}>
                   {item.label}
                 </div>
               </div>
@@ -60,97 +70,120 @@ export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, con
       </div>
 
       {/* Fixed Bottom Actions */}
-      <div className="flex flex-col gap-3 2xl:gap-5 items-center pb-4 2xl:pb-8 shrink-0 bg-gradient-to-t from-white dark:from-[#050506] to-transparent w-full z-10" ref={profileMenuRef}>
+      <div className="flex flex-col gap-2 2xl:gap-5 items-center pb-4 2xl:pb-8 shrink-0 bg-gradient-to-t from-[#050506] to-transparent w-full z-10" ref={profileMenuRef}>
 
         {/* Toggle Mode Button */}
         <div className="relative group flex items-center justify-center">
           <button
             onClick={onToggleContentMode}
-            className={`group flex transition-all duration-200 hover:scale-110 active:scale-95 w-9 h-9 2xl:w-12 2xl:h-12 rounded-xl 2xl:rounded-2xl items-center justify-center ${contentMode === 'dev'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-              : 'bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-lg shadow-amber-500/20'
+            className={`group flex transition-all duration-200 hover:scale-110 active:scale-95 w-7 h-7 2xl:w-12 2xl:h-12 rounded-lg 2xl:rounded-2xl items-center justify-center text-white shadow-lg ${contentMode === 'dev'
+              ? 'bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/20'
+              : 'bg-gradient-to-br from-amber-500 to-orange-600 shadow-orange-500/20'
               }`}
           >
-            {contentMode === 'dev' ? <Code className="w-[18px] h-[18px] 2xl:w-6 2xl:h-6" /> : <Palette className="w-[18px] h-[18px] 2xl:w-6 2xl:h-6" />}
+            {contentMode === 'dev' ? <Code className="w-3.5 h-3.5 2xl:w-6 2xl:h-6" strokeWidth={2} /> : <Palette className="w-3.5 h-3.5 2xl:w-6 2xl:h-6" strokeWidth={2} />}
           </button>
-          <div className="absolute left-14 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[60]">
+          <div className={`absolute left-14 px-3 py-1.5 rounded-lg text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[60] ${contentMode === 'dev' ? 'bg-blue-600' : 'bg-amber-600'}`}>
             {contentMode === 'dev' ? 'Ir a Modo Creativo' : 'Ir a Modo Developer'}
           </div>
         </div>
 
-        {/* Settings Button */}
-        <div className="relative group flex items-center justify-center">
-          <button
-            onClick={() => onModuleSelect?.('settings')}
-            className={`group flex w-9 h-9 2xl:w-12 2xl:h-12 items-center justify-center rounded-xl 2xl:rounded-2xl transition-all duration-200 hover:scale-110 active:scale-95 ${activeModule === 'settings'
-              ? 'bg-slate-100 text-slate-900 dark:bg-white/10 dark:text-white'
-              : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-slate-100'
-              }`}
-          >
-            <Settings className="h-[18px] w-[18px] 2xl:h-6 2xl:w-6" strokeWidth={1.5} />
-          </button>
-          <div className="absolute left-14 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[60]">
-            Configuración
-          </div>
-        </div>
 
-        {/* Profile Picture & Menu */}
+
+        {/* Profile Picture & Menu / Login Button */}
         <div className="relative">
-          <button
-            onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="w-9 h-9 2xl:h-12 2xl:w-12 overflow-hidden rounded-xl 2xl:rounded-2xl ring-1 ring-slate-200 dark:ring-white/10 transition-transform hover:scale-105 cursor-pointer block"
-          >
-            <img
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop"
-              alt="User"
-              className="h-full w-full object-cover opacity-90 hover:opacity-100"
-            />
-          </button>
-
-          {isProfileOpen && (
-            <div className="absolute bottom-0 left-16 w-56 bg-white dark:bg-[#1A1A1C] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl p-1.5 z-50 animate-fade-in origin-bottom-left">
-              <div className="px-3 py-2 border-b border-slate-100 dark:border-white/5 mb-1 flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-200">
-                  <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop" alt="" className="h-full w-full object-cover" />
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <p className="text-sm font-bold text-slate-900 dark:text-white truncate">Alex Motion</p>
-                  <p className="text-[10px] text-slate-500 truncate">alex@latam.creativa</p>
-                </div>
+          {!user ? (
+            <button
+              onClick={() => onModuleSelect?.('auth')} // Use 'auth' module ID which should route to /auth
+              className="group flex w-7 h-7 2xl:w-12 2xl:h-12 items-center justify-center rounded-lg 2xl:rounded-2xl transition-all duration-200 hover:scale-110 active:scale-95 text-neutral-500 hover:bg-white/5 hover:text-white"
+            >
+              <LogIn className="h-3.5 w-3.5 2xl:h-6 2xl:w-6" strokeWidth={1.5} />
+              <div className={`absolute left-14 px-3 py-1.5 rounded-lg text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[60] ${contentMode === 'dev' ? 'bg-blue-600' : 'bg-amber-600'}`}>
+                Iniciar Sesión
               </div>
-
+            </button>
+          ) : (
+            <>
               <button
-                onClick={() => {
-                  onModuleSelect?.('profile');
-                  setIsProfileOpen(false);
-                }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="w-7 h-7 2xl:h-12 2xl:w-12 overflow-hidden rounded-lg 2xl:rounded-2xl ring-1 ring-white/10 transition-transform hover:scale-105 cursor-pointer block"
               >
-                <User className="h-4 w-4 text-slate-400" />
-                Mi Perfil
+                <img
+                  src={user.avatar}
+                  alt={user.name}
+                  className="h-full w-full object-cover opacity-90 hover:opacity-100"
+                />
               </button>
 
-              <button
-                onClick={() => {
-                  onModuleSelect?.('earnings');
-                  setIsProfileOpen(false);
-                }}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
-              >
-                <DollarSign className="h-4 w-4 text-slate-400" />
-                Mis Ganancias
-              </button>
+              {isProfileOpen && (
+                <div className="absolute bottom-0 left-16 w-56 bg-white dark:bg-[#1A1A1C] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl p-1.5 z-50 animate-fade-in origin-bottom-left">
+                  <div className="px-3 py-2 border-b border-slate-100 dark:border-white/5 mb-1 flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full overflow-hidden bg-slate-200">
+                      <img src={user.avatar} alt="" className="h-full w-full object-cover" />
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <p className="text-sm font-bold text-slate-900 dark:text-white truncate">{user.name}</p>
+                      <p className="text-[10px] text-slate-500 truncate">{user.email || 'Usuario'}</p>
+                    </div>
+                  </div>
 
-              <div className="h-px bg-slate-100 dark:bg-white/5 my-1"></div>
+                  <button
+                    onClick={() => {
+                      onModuleSelect?.('profile');
+                      setIsProfileOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                  >
+                    <User className="h-4 w-4 text-slate-400" />
+                    Mi Perfil
+                  </button>
 
-              <button
-                onClick={() => setIsProfileOpen(false)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                Cerrar Sesión
-              </button>
-            </div>
+                  <button
+                    onClick={() => {
+                      onModuleSelect?.('earnings');
+                      setIsProfileOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                  >
+                    <DollarSign className="h-4 w-4 text-slate-400" />
+                    Mis Ganancias
+                  </button>
+
+
+                  <button
+                    onClick={() => {
+                      onModuleSelect?.('settings');
+                      setIsProfileOpen(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                  >
+                    <Settings className="h-4 w-4 text-slate-400" />
+                    Configuración
+                  </button>
+
+
+
+
+
+                  <div className="h-px bg-slate-100 dark:bg-white/5 my-1"></div>
+
+                  <button
+                    onClick={async () => {
+                      // 1. Optimistic UI update: Clear user immediately
+                      actions.setUser(null);
+                      // 2. Perform Firebase SignOut
+                      await signOut(auth);
+                      setIsProfileOpen(false);
+                      navigate('/');
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Cerrar Sesión
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -185,6 +218,9 @@ export const SecondarySidebar = ({
   contentMode,
   onToggleContentMode
 }: SecondarySidebarProps) => {
+  const { state } = useAppStore();
+  const { user } = state;
+
   // State for expanded menu items
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
@@ -385,18 +421,22 @@ export const SecondarySidebar = ({
               <div
                 className="flex-1 flex items-center gap-3 cursor-pointer min-w-0"
                 onClick={() => {
-                  onModuleSelect?.('profile');
+                  if (!user) {
+                    onModuleSelect?.('auth');
+                  } else {
+                    onModuleSelect?.('profile');
+                  }
                   onClose?.();
                 }}
               >
                 <img
-                  src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop"
+                  src={user ? user.avatar : "https://ui-avatars.com/api/?name=Guest&background=random"}
                   alt="User"
                   className="h-10 w-10 rounded-full object-cover ring-1 ring-slate-200 dark:ring-white/10"
                 />
                 <div className="min-w-0">
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">Alex Motion</h4>
-                  <p className="text-xs text-slate-500">Ver perfil</p>
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">{user ? user.name : 'Invitado'}</h4>
+                  <p className="text-xs text-slate-500">{user ? 'Ver perfil' : 'Iniciar Sesión'}</p>
                 </div>
               </div>
               <button

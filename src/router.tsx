@@ -44,6 +44,7 @@ const ComingSoonView = lazy(() => import('./views/ComingSoonView').then(module =
 const SuccessView = lazy(() => import('./views/SuccessView').then(module => ({ default: module.SuccessView })));
 const CollectionsView = lazy(() => import('./views/CollectionsView').then(module => ({ default: module.CollectionsView })));
 const CollectionDetailView = lazy(() => import('./views/CollectionDetailView').then(module => ({ default: module.CollectionDetailView })));
+const AuthView = lazy(() => import('./views/auth/AuthView').then(module => ({ default: module.AuthView })));
 
 // Lazy Load Create Views
 const CreateProjectView = lazy(() => import('./views/CreateProjectView').then(module => ({ default: module.CreateProjectView })));
@@ -379,10 +380,6 @@ function PeopleWrapper() {
       <PeopleView
         onProfileSelect={(name) => {
           actions.setViewingAuthorName(name);
-          // If user profile is a route, navigate, else it might be an overlay (VideoContent handled overlay)
-          // Now we need to decide. MainLayout doesn't handle overlay state for viewingAuthorName anymore?
-          // Wait, MainLayout doesn't implement the overlays that VideoContent had.
-          // IMPORTANT: UserProfileView is a route /user/:username.
           navigate(`/user/${encodeURIComponent(name)}`);
         }}
       />
@@ -396,6 +393,10 @@ const SuspendedView = ({ Component, ...props }: { Component: React.FC<any>, [key
 );
 
 export const router = createBrowserRouter([
+  {
+    path: '/auth',
+    element: <Suspended><AuthView /></Suspended>
+  },
   {
     path: '/',
     element: <MainLayout />,
@@ -455,6 +456,7 @@ export const router = createBrowserRouter([
       { path: 'people', element: <PeopleWrapper /> },
 
       // User Profile
+      { path: 'profile', element: <UserProfileWrapper /> },
       { path: 'user/:username', element: <UserProfileWrapper /> },
 
       // Personal & Utility
