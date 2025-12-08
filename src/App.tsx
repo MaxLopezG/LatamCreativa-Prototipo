@@ -38,7 +38,7 @@ const App: React.FC = () => {
             const userData = userDocSnap.data();
             userRole = userData.role || 'Creative Member';
             userLocation = userData.location || 'Latam';
-            console.log("User found in Firestore:", userData);
+            // User found
           } else {
             // User doesn't exist, create new document
             const newUser = {
@@ -51,7 +51,7 @@ const App: React.FC = () => {
             };
 
             await setDoc(userDocRef, newUser);
-            console.log("Created new user in Firestore:", newUser);
+            // New user created
           }
 
           // Map to App user with data from Firestore (or defaults)
@@ -64,7 +64,7 @@ const App: React.FC = () => {
             email: firebaseUser.email || ''
           };
 
-          console.log("Setting App User:", appUser);
+          // User state updated
           actions.setUser(appUser);
 
         } catch (error) {

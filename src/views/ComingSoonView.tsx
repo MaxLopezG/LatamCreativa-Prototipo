@@ -3,7 +3,7 @@ import React from 'react';
 import { ArrowLeft, Bell, Rocket, Timer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-export const ComingSoonView: React.FC = () => {
+const ComingSoonView: React.FC = () => {
     const navigate = useNavigate();
 
     return (
@@ -52,3 +52,5 @@ export const ComingSoonView: React.FC = () => {
         </div>
     );
 };
+
+export default ComingSoonView;

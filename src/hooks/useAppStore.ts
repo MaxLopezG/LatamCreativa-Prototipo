@@ -1,8 +1,41 @@
 
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { CartItem, Notification, CollectionItem, PortfolioItem } from '../types';
-import { USER_COLLECTIONS, PORTFOLIO_ITEMS } from '../data/content';
+import { CartItem, Notification, CollectionItem, PortfolioItem, ArticleItem } from '../types';
+import { USER_COLLECTIONS, PORTFOLIO_ITEMS, BLOG_ITEMS } from '../data/content';
+
+export interface ExperienceItem {
+  id: number | string;
+  role: string;
+  company: string;
+  period: string;
+  location: string;
+  description: string;
+}
+
+export interface EducationItem {
+  id: number | string;
+  degree: string;
+  school: string;
+  period: string;
+  description: string;
+}
+
+export interface SocialLinks {
+  artstation?: string;
+  linkedin?: string;
+  twitter?: string;
+  instagram?: string;
+  github?: string;
+  website?: string;
+}
+
+export interface UserStats {
+  views: number;
+  likes: number;
+  followers: number;
+  following: number;
+}
 
 // --- Types ---
 export type CreateMode = 'none' | 'project' | 'article' | 'portfolio' | 'course' | 'asset' | 'service' | 'forum' | 'event';
@@ -49,12 +82,31 @@ interface UISlice {
 }
 
 interface AuthSlice {
-  user: { name: string; id: string; avatar: string; role: string; location: string; email?: string } | null;
+  user: {
+    name: string;
+    id: string;
+    avatar: string;
+    role: string;
+    location: string;
+    email?: string;
+    bio?: string;
+    experience?: ExperienceItem[];
+    education?: EducationItem[];
+    handle?: string;
+    coverImage?: string;
+    skills?: string[];
+    availableForWork?: boolean;
+    isPro?: boolean;
+    socialLinks?: SocialLinks;
+    stats?: UserStats;
+    isAdmin?: boolean;
+  } | null;
   cartItems: CartItem[];
   likedItems: string[];
   createdItems: PortfolioItem[];
   notifications: Notification[];
   collections: CollectionItem[];
+  blogPosts: ArticleItem[];
 
   // Actions
   addToCart: (item: CartItem) => void;
@@ -62,11 +114,16 @@ interface AuthSlice {
   clearCart: () => void;
   toggleLike: (itemId: string) => void;
   addCreatedItem: (item: PortfolioItem) => void;
+  addBlogPost: (post: ArticleItem) => void;
   markNotificationRead: (id: number) => void;
   markAllNotificationsRead: () => void;
   saveToCollection: (collectionId: string) => void;
   createCollection: (title: string, isPrivate: boolean) => void;
   setUser: (user: AuthSlice['user']) => void;
+  updateUserProfile: (updates: Partial<AuthSlice['user']>) => void;
+  addSkill: (skill: string) => void;
+  removeSkill: (skill: string) => void;
+  updateSocialLinks: (links: SocialLinks) => void;
 }
 
 // --- Combine Store ---
@@ -109,6 +166,7 @@ const useZustandStore = create<AppStore>()(
         { id: 4, type: 'like', user: 'Diego Lopez', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&fit=crop', content: 'le gustó tu artículo', time: 'Ayer', read: true },
       ],
       collections: USER_COLLECTIONS,
+      blogPosts: BLOG_ITEMS,
 
       // --- Actions Implementation ---
 
@@ -147,6 +205,27 @@ const useZustandStore = create<AppStore>()(
       // Auth/User Actions
       setUser: (user) => set({ user }),
 
+      updateUserProfile: (updates) => set((state) => ({
+        user: state.user ? { ...state.user, ...updates } : null
+      })),
+
+      addSkill: (skill) => set((state) => {
+        if (!state.user) return {};
+        const currentSkills = state.user.skills || [];
+        if (currentSkills.includes(skill)) return {};
+        return { user: { ...state.user, skills: [...currentSkills, skill] } };
+      }),
+
+      removeSkill: (skill) => set((state) => {
+        if (!state.user) return {};
+        return { user: { ...state.user, skills: (state.user.skills || []).filter(s => s !== skill) } };
+      }),
+
+      updateSocialLinks: (links) => set((state) => {
+        if (!state.user) return {};
+        return { user: { ...state.user, socialLinks: { ...(state.user.socialLinks || {}), ...links } } };
+      }),
+
       addToCart: (item) => {
         const { cartItems, showToast } = get();
         if (!cartItems.find(i => i.id === item.id)) {
@@ -176,6 +255,10 @@ const useZustandStore = create<AppStore>()(
 
       addCreatedItem: (item) => set((state) => ({
         createdItems: [item, ...state.createdItems]
+      })),
+
+      addBlogPost: (post) => set((state) => ({
+        blogPosts: [post, ...state.blogPosts]
       })),
 
       markNotificationRead: (id) => set((state) => ({
@@ -245,6 +328,7 @@ export const useAppStore = () => {
       cartItems: store.cartItems,
       likedItems: store.likedItems,
       createdItems: store.createdItems,
+      blogPosts: store.blogPosts,
       collections: store.collections,
       notifications: store.notifications,
 
@@ -259,6 +343,10 @@ export const useAppStore = () => {
     },
     actions: {
       setUser: store.setUser,
+      updateUserProfile: store.updateUserProfile,
+      addSkill: store.addSkill,
+      removeSkill: store.removeSkill,
+      updateSocialLinks: store.updateSocialLinks,
       setIsSidebarOpen: store.setIsSidebarOpen,
       setActiveCategory: store.setActiveCategory,
       setViewingAuthorName: store.setViewingAuthorName,
@@ -303,6 +391,7 @@ export const useAppStore = () => {
       clearCart: store.clearCart,
       toggleLike: store.toggleLike,
       addCreatedItem: store.addCreatedItem,
+      addBlogPost: store.addBlogPost,
 
       handleBuyNow: (item: CartItem) => {
         if (!store.cartItems.find(i => i.id === item.id)) {

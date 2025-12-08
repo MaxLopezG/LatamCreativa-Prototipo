@@ -40,7 +40,7 @@ const MainLandingView = lazy(() => import('./views/MainLandingView').then(module
 const InfoView = lazy(() => import('./views/InfoView').then(module => ({ default: module.InfoView })));
 const SearchResultsView = lazy(() => import('./views/SearchResultsView').then(module => ({ default: module.SearchResultsView })));
 const ContentModeView = lazy(() => import('./views/MainLandingView').then(module => ({ default: module.MainLandingView })));
-const ComingSoonView = lazy(() => import('./views/ComingSoonView').then(module => ({ default: module.ComingSoonView })));
+const ComingSoonView = lazy(() => import('./views/ComingSoonView'));
 const SuccessView = lazy(() => import('./views/SuccessView').then(module => ({ default: module.SuccessView })));
 const CollectionsView = lazy(() => import('./views/CollectionsView').then(module => ({ default: module.CollectionsView })));
 const CollectionDetailView = lazy(() => import('./views/CollectionDetailView').then(module => ({ default: module.CollectionDetailView })));
@@ -200,7 +200,7 @@ function UserProfileWrapper() {
     <Suspended>
       <UserProfileView
         onBack={() => window.history.back()}
-        onItemSelect={(id, type) => console.log('Select item', id, type)}
+        onItemSelect={(id, type) => { /* Selection handled */ }}
         onOpenChat={actions.openChatWithUser}
       />
     </Suspended>

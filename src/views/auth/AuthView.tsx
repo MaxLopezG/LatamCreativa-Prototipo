@@ -33,7 +33,7 @@ export const AuthView: React.FC = () => {
             if (isLogin) {
                 // Login Logic
                 await signInWithEmailAndPassword(auth, email, password);
-                console.log("Logged in successfully");
+                // Log removed
             } else {
                 // Register Logic
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -43,19 +43,21 @@ export const AuthView: React.FC = () => {
                         displayName: name
                     });
                 }
-                console.log("Registered successfully", userCredential.user);
+                // Log removed
             }
 
             // FORCE STORE UPDATE BEFORE REDIRECT
             if (auth.currentUser) {
                 const user = auth.currentUser;
+                const isAdmin = user.email === 'admin@latamcreativa.com';
                 const appUser = {
                     id: user.uid,
                     name: user.displayName || name || 'Usuario',
                     avatar: user.photoURL || 'https://ui-avatars.com/api/?name=' + (user.displayName || name || 'U'),
-                    role: 'Creative Member',
+                    role: isAdmin ? 'Administrator' : 'Creative Member',
                     location: 'Latam',
-                    email: user.email || ''
+                    email: user.email || '',
+                    isAdmin: isAdmin
                 };
                 actions.setUser(appUser);
             }
@@ -86,18 +88,20 @@ export const AuthView: React.FC = () => {
         setError(null);
         try {
             await signInWithPopup(auth, googleProvider);
-            console.log("Google login success");
+            // Log removed
 
             // FORCE STORE UPDATE BEFORE REDIRECT
             if (auth.currentUser) {
                 const user = auth.currentUser;
+                const isAdmin = user.email === 'admin@latamcreativa.com';
                 const appUser = {
                     id: user.uid,
                     name: user.displayName || 'Usuario',
                     avatar: user.photoURL || 'https://ui-avatars.com/api/?name=' + (user.displayName || 'U'),
-                    role: 'Creative Member',
+                    role: isAdmin ? 'Administrator' : 'Creative Member',
                     location: 'Latam',
-                    email: user.email || ''
+                    email: user.email || '',
+                    isAdmin: isAdmin
                 };
                 actions.setUser(appUser);
             }
@@ -236,6 +240,7 @@ export const AuthView: React.FC = () => {
                             </svg>
                             Google
                         </button>
+
                     </div>
 
                     {/* Toggle Login/Register */}

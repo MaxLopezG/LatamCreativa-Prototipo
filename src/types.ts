@@ -100,6 +100,8 @@ export interface ArticleItem {
   isExclusive?: boolean; // Locked content
   content?: string; // New: Full article content
   domain?: 'creative' | 'dev';
+  role?: string;
+  tags?: string[];
 }
 
 // New Interface for Education Courses

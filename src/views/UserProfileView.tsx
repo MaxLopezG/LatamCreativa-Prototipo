@@ -1,13 +1,15 @@
 
 import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { ArrowLeft, MapPin, Link as LinkIcon, Calendar, CheckCircle2, UserPlus, Mail, MessageSquare, Layers, Twitter, Instagram, Globe, MoreHorizontal, Briefcase, GraduationCap, UserCheck, Zap, Award, Trophy, Bookmark, Heart, Lock, Plus, Image as ImageIcon, Video, Box, Newspaper, Download, PlayCircle, FileText } from 'lucide-react';
+import { ArrowLeft, MapPin, Link as LinkIcon, Calendar, CheckCircle2, UserPlus, Mail, MessageSquare, Layers, Twitter, Instagram, Globe, MoreHorizontal, Briefcase, GraduationCap, UserCheck, Zap, Award, Trophy, Bookmark, Heart, Lock, Plus, Image as ImageIcon, Video, Box, Newspaper, Download, PlayCircle, FileText, Settings, Github, Linkedin, Palette } from 'lucide-react';
 import { PORTFOLIO_ITEMS, BLOG_ITEMS, EDUCATION_ITEMS, ASSET_ITEMS, ARTIST_TIERS, ARTIST_DIRECTORY } from '../data/content';
 import { PortfolioCard } from '../components/cards/PortfolioCard';
 import { BlogCard } from '../components/cards/BlogCard';
 import { EducationCard } from '../components/cards/EducationCard';
 import { AssetCard } from '../components/cards/AssetCard';
 import { useAppStore } from '../hooks/useAppStore';
+import { EditProfileModal } from '../components/modals/EditProfileModal';
+import { CreatePostModal } from '../components/modals/CreatePostModal';
 
 interface UserProfileViewProps {
     authorName?: string;
@@ -16,101 +18,7 @@ interface UserProfileViewProps {
     onOpenChat?: (authorName: string) => void;
 }
 
-// Extended Experience Data
-const EXPERIENCE = [
-    {
-        id: 1,
-        role: "Lead Environment Artist",
-        company: "Ubisoft Barcelona",
-        period: "2021 - Presente",
-        location: "Barcelona, España",
-        description: "Dirigiendo el equipo de arte de entornos (15 artistas) para un título AAA no anunciado. Responsable de la calidad visual final, pipelines de Unreal Engine 5 (Nanite/Lumen) y optimización de rendimiento para PS5/Xbox Series X. Implementación de flujos de trabajo procedimentales en Houdini que redujeron el tiempo de producción de ciudades en un 40%."
-    },
-    {
-        id: 2,
-        role: "Senior 3D Artist",
-        company: "Gameloft Madrid",
-        period: "2018 - 2021",
-        location: "Madrid, España",
-        description: "Desarrollo de assets de alto rendimiento para 'Asphalt 9: Legends'. Especialista en texturizado PBR, baking de mapas complejos y creación de shaders HLSL optimizados para dispositivos móviles. Colaboración estrecha con el equipo de diseño para asegurar la legibilidad del gameplay a altas velocidades."
-    },
-    {
-        id: 3,
-        role: "3D Generalist",
-        company: "Mediapro",
-        period: "2016 - 2018",
-        location: "Barcelona, España",
-        description: "Creación de gráficos en tiempo real y realidad aumentada para retransmisiones deportivas (LaLiga). Modelado, animación y renderizado de cabeceras de programas utilizando Cinema 4D, Redshift y After Effects. Gestión de plazos ajustados en entornos de producción en vivo."
-    },
-    {
-        id: 4,
-        role: "Freelance Concept Artist",
-        company: "Varios Clientes Indie",
-        period: "2014 - 2016",
-        location: "Remoto",
-        description: "Diseño de personajes y props para juegos indie y juegos de mesa. Desarrollo de guías de estilo visual y keyframes narrativos. Clientes incluyen estudios pequeños en Argentina, México y España."
-    }
-];
-
-// New Education Data
-const EDUCATION = [
-    {
-        id: 1,
-        degree: "Máster en Arte Digital para Videojuegos",
-        school: "Voxel School",
-        period: "2016 - 2017",
-        description: "Especialización intensiva en escultura orgánica con ZBrush, texturizado avanzado con Substance Suite y motores gráficos. Proyecto final 'Cyberpunk Alley' galardonado con el premio al Mejor Arte de Entorno del año y mención honorífica por optimización técnica."
-    },
-    {
-        id: 2,
-        degree: "Grado en Diseño Multimedial",
-        school: "Universidad de Palermo",
-        period: "2011 - 2015",
-        description: "Formación académica integral cubriendo teoría del color, composición visual, historia del arte y diseño interactivo. Tesis de grado: 'La narrativa ambiental en los videojuegos modernos: Contar historias sin palabras', calificada con 9.8/10."
-    },
-    {
-        id: 3,
-        degree: "Unreal Authorized Instructor",
-        school: "Epic Games",
-        period: "2022",
-        description: "Certificación oficial para la enseñanza de Unreal Engine 5. Especialización validada en iluminación global (Lumen), sistemas de partículas (Niagara) y Blueprints para artistas."
-    },
-    {
-        id: 4,
-        degree: "Anatomía Avanzada para Artistas",
-        school: "Scott Eaton Courses",
-        period: "2015",
-        description: "Estudio profundo de la figura humana, écorché, biomecánica y construcción de la forma aplicado a la escultura digital de personajes."
-    }
-];
-
-// Mock Locked Content for Membership Tab
-const LOCKED_POSTS = [
-    {
-        id: 'l1',
-        title: 'Archivos Fuente: Cyberpunk Scene',
-        type: 'Download',
-        date: 'Hace 2 días',
-        image: 'https://images.unsplash.com/photo-1515630278258-407f66498911?q=80&w=600&auto=format&fit=crop',
-        tier: 'Estudiante Pro'
-    },
-    {
-        id: 'l2',
-        title: 'Tutorial Exclusivo: Shaders Avanzados',
-        type: 'Video',
-        date: 'Hace 5 días',
-        image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&auto=format&fit=crop',
-        tier: 'Supporter'
-    },
-    {
-        id: 'l3',
-        title: 'Brush Pack V2 - Early Access',
-        type: 'Asset',
-        date: 'Hace 1 semana',
-        image: 'https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?q=80&w=600&auto=format&fit=crop',
-        tier: 'Estudiante Pro'
-    }
-];
+import { EXPERIENCE, EDUCATION, LOCKED_POSTS } from '../data/profileData';
 
 export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, onBack, onItemSelect, onOpenChat }) => {
     const { state, actions } = useAppStore();
@@ -140,10 +48,32 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
 
     const [activeTab, setActiveTab] = useState<'portfolio' | 'courses' | 'assets' | 'blog' | 'saved' | 'collections' | 'membership'>('portfolio');
     const [isFollowing, setIsFollowing] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
 
     // Attempt to find artist level from directory if exists (Mock logic)
     const directoryArtist = ARTIST_DIRECTORY.find(a => a.name === name);
-    const artistLevel = directoryArtist?.level || 'Pro';
+    const artistLevel = isOwnProfile ? (displayUser.role === 'Creative Member' ? 'Novice' : 'Pro') : (directoryArtist?.level || 'Pro');
+
+    // --- Dynamic Data for Own Profile vs Demo Profile ---
+    const showMockData = !isOwnProfile && name !== 'Usuario Nuevo';
+
+    // Stats
+    const stats = showMockData ? { views: '125k', likes: '4.2k', followers: '8.5k' } : { views: 0, likes: 0, followers: 0 };
+
+    // About
+    const aboutText = showMockData
+        ? "Apasionado por crear mundos inmersivos y contar historias a través del entorno. Especializado en Hard Surface y Diseño de Niveles para videojuegos AAA. Siempre buscando optimizar flujos de trabajo con herramientas procedimentales."
+        : (displayUser['bio'] || "¡Hola! Soy un nuevo miembro de la comunidad creativa.");
+
+    // Experience & Education
+    const experienceList = showMockData ? EXPERIENCE : (isOwnProfile ? (displayUser['experience'] || []) : []);
+    const educationList = showMockData ? EDUCATION : (isOwnProfile ? (displayUser['education'] || []) : []);
+
+    // Extended Profile Data
+    const skills = showMockData ? ['ZBrush', 'Maya', 'Substance Painter', 'Unreal Engine 5'] : (displayUser['skills'] || []);
+    const socialLinks = isOwnProfile ? (displayUser['socialLinks'] || {}) : {};
+    const availableForWork = showMockData ? true : (displayUser['availableForWork'] || false);
 
     const getLevelFrameClass = (level?: string) => {
         switch (level) {
@@ -179,9 +109,17 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
 
     // 4. Blog
     const userArticles = useMemo(() => {
-        const articles = BLOG_ITEMS.filter(b => b.author === name);
-        return articles;
-    }, [name]);
+        // We look for posts where author is "Latam Creativa" (if official) or matches current profile name
+        // For the "Admin" use case, we probably want to see ALL posts if we are admin, but let's stick to name matching for now
+        // or finding posts by this author.
+        // Actually, if I post as "Latam Creativa", it might not show up in "Diego Lopez" profile unless I view "Latam Creativa" profile.
+        // BUT, the user wants to create them.
+        // Let's make sure we see posts created by "Latam Creativa" if we are viewing "Latam Creativa" (which might be the case later)
+        // OR if we just want to see *my* articles.
+
+        // Revised logic: Filter from state.blogPosts
+        return state.blogPosts.filter(b => b.author === name || (name === 'Latam Creativa' && b.author === 'Latam Creativa'));
+    }, [name, state.blogPosts]);
 
     // 5. Saved Items (Likes)
     const savedItems = useMemo(() => {
@@ -203,6 +141,10 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
 
     return (
         <div className="w-full max-w-[2560px] mx-auto animate-fade-in pb-20">
+
+            {/* Edit Modal */}
+            <EditProfileModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} />
+            <CreatePostModal isOpen={isCreatePostModalOpen} onClose={() => setIsCreatePostModalOpen(false)} />
 
             {/* Navigation */}
             <div className="fixed top-0 left-0 right-0 z-40 px-6 py-4 pointer-events-none">
@@ -241,7 +183,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                             </div>
                         </div>
                         {/* Status Indicator */}
-                        <div className="absolute bottom-3 right-3 h-5 w-5 md:h-6 md:w-6 rounded-full bg-green-500 border-4 border-[#030304]" title="Disponible para trabajar"></div>
+                        <div className={`absolute bottom-3 right-3 h-5 w-5 md:h-6 md:w-6 rounded-full border-4 border-[#030304] ${availableForWork ? 'bg-green-500' : 'bg-slate-500'}`} title={availableForWork ? "Disponible para trabajar" : "No disponible"}></div>
                     </div>
 
                     {/* Info Text */}
@@ -276,8 +218,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                                 <button
                                     onClick={() => setIsFollowing(!isFollowing)}
                                     className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${isFollowing
-                                            ? 'bg-white/10 text-white hover:bg-white/20'
-                                            : 'bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-500/20'
+                                        ? 'bg-white/10 text-white hover:bg-white/20'
+                                        : 'bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-500/20'
                                         }`}
                                 >
                                     {isFollowing ? <CheckCircle2 className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
@@ -295,7 +237,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                         )}
 
                         {isOwnProfile && (
-                            <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/10 text-white hover:bg-white/20 font-semibold border border-white/10">
+                            <button
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-white/10 text-white hover:bg-white/20 font-semibold border border-white/10 transition-colors"
+                            >
+                                <Settings className="h-4 w-4" />
                                 Editar Perfil
                             </button>
                         )}
@@ -321,9 +267,9 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                             <div className="flex justify-between items-center mb-2">
                                 <h3 className="font-bold text-sm uppercase tracking-widest flex items-center gap-2 text-white">
                                     <Zap className="h-4 w-4 text-amber-400" />
-                                    Nivel {artistLevel === 'Master' ? '50' : artistLevel === 'Expert' ? '35' : '15'}
+                                    Nivel {artistLevel === 'Master' ? '50' : artistLevel === 'Expert' ? '35' : artistLevel === 'Pro' ? '15' : '1'}
                                 </h3>
-                                <span className="text-white font-bold text-sm">3,450 / 5,000 XP</span>
+                                <span className="text-white font-bold text-sm">{showMockData ? '3,450 / 5,000 XP' : '0 / 100 XP'}</span>
                             </div>
                             <div className="w-full h-2 bg-slate-800 rounded-full mb-6 overflow-hidden">
                                 <div className="h-full rounded-full bg-amber-500" style={{ width: '70%' }}></div>
@@ -347,15 +293,15 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                     {/* Stats */}
                     <div className="grid grid-cols-3 gap-2 p-6 rounded-2xl bg-white/5 border border-white/5">
                         <div className="text-center">
-                            <div className="text-xl 2xl:text-2xl font-bold text-white">125k</div>
+                            <div className="text-xl 2xl:text-2xl font-bold text-white">{stats.views}</div>
                             <div className="text-xs uppercase text-slate-500 font-bold tracking-wider">Vistas</div>
                         </div>
                         <div className="text-center border-l border-white/5">
-                            <div className="text-xl 2xl:text-2xl font-bold text-white">4.2k</div>
+                            <div className="text-xl 2xl:text-2xl font-bold text-white">{stats.likes}</div>
                             <div className="text-xs uppercase text-slate-500 font-bold tracking-wider">Likes</div>
                         </div>
                         <div className="text-center border-l border-white/5">
-                            <div className="text-xl 2xl:text-2xl font-bold text-white">8.5k</div>
+                            <div className="text-xl 2xl:text-2xl font-bold text-white">{stats.followers}</div>
                             <div className="text-xs uppercase text-slate-500 font-bold tracking-wider">Seguidores</div>
                         </div>
                     </div>
@@ -364,15 +310,73 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                     <div>
                         <h3 className="text-base font-bold text-white uppercase tracking-widest mb-4">Sobre mí</h3>
                         <p className="text-base 2xl:text-lg text-slate-400 leading-relaxed mb-6">
-                            Apasionado por crear mundos inmersivos y contar historias a través del entorno.
-                            Especializado en Hard Surface y Diseño de Niveles para videojuegos AAA.
-                            Siempre buscando optimizar flujos de trabajo con herramientas procedimentales.
+                            {aboutText}
                         </p>
-                        <div className="flex gap-3">
-                            <a href="#" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white transition-colors"><Twitter className="h-5 w-5" /></a>
-                            <a href="#" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white transition-colors"><Instagram className="h-5 w-5" /></a>
-                            <a href="#" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white transition-colors"><Globe className="h-5 w-5" /></a>
+                        <div className="flex gap-3 flex-wrap">
+                            {/* Social Links Dynamic Rendering */}
+                            {/* Social Links Dynamic Rendering */}
+                            {(() => {
+                                const getSocialUrl = (baseUrl: string, handle: string) => {
+                                    if (!handle) return '';
+                                    if (handle.startsWith('http://') || handle.startsWith('https://')) return handle;
+                                    return `${baseUrl}${handle.replace(/^@/, '')}`;
+                                };
+
+                                return (
+                                    <>
+                                        {socialLinks.artstation && (
+                                            <a href={getSocialUrl('https://artstation.com/', socialLinks.artstation)} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-[#13AFF0] hover:bg-[#13AFF0]/10 transition-colors" title="ArtStation">
+                                                <Palette className="h-5 w-5" />
+                                            </a>
+                                        )}
+                                        {socialLinks.linkedin && (
+                                            <a href={getSocialUrl('https://linkedin.com/in/', socialLinks.linkedin)} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-[#0A66C2] hover:bg-[#0A66C2]/10 transition-colors" title="LinkedIn">
+                                                <Linkedin className="h-5 w-5" />
+                                            </a>
+                                        )}
+                                        {socialLinks.twitter && (
+                                            <a href={getSocialUrl('https://twitter.com/', socialLinks.twitter)} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-[#1DA1F2] hover:bg-[#1DA1F2]/10 transition-colors" title="Twitter">
+                                                <Twitter className="h-5 w-5" />
+                                            </a>
+                                        )}
+                                        {socialLinks.instagram && (
+                                            <a href={getSocialUrl('https://instagram.com/', socialLinks.instagram)} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-[#E4405F] hover:bg-[#E4405F]/10 transition-colors" title="Instagram">
+                                                <Instagram className="h-5 w-5" />
+                                            </a>
+                                        )}
+                                        {socialLinks.github && (
+                                            <a href={getSocialUrl('https://github.com/', socialLinks.github)} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-colors" title="GitHub">
+                                                <Github className="h-5 w-5" />
+                                            </a>
+                                        )}
+                                        {socialLinks.website && (
+                                            <a href={socialLinks.website.startsWith('http') ? socialLinks.website : `https://${socialLinks.website}`} target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/5 text-slate-400 hover:text-amber-500 hover:bg-amber-500/10 transition-colors" title="Website">
+                                                <Globe className="h-5 w-5" />
+                                            </a>
+                                        )}
+                                    </>
+                                );
+                            })()}
+
+                            {/* Show defaults if no links and it's own profile */}
+                            {isOwnProfile && Object.values(socialLinks).every(v => !v) && (
+                                <p className="text-sm text-slate-500 italic">No has añadido redes sociales.</p>
+                            )}
                         </div>
+
+                        {/* Skills Section */}
+                        {skills.length > 0 && (
+                            <div className="mt-8 pt-8 border-t border-white/5">
+                                <h3 className="text-base font-bold text-white uppercase tracking-widest mb-4">Habilidades</h3>
+                                <div className="flex flex-wrap gap-2">
+                                    {skills.map(skill => (
+                                        <span key={skill} className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 text-slate-300 text-sm font-medium hover:border-amber-500/30 transition-colors">
+                                            {skill}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Experience Section */}
@@ -381,7 +385,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                             <Briefcase className="h-5 w-5 text-amber-500" /> Experiencia
                         </h3>
                         <div className="space-y-10 relative border-l border-white/10 ml-2 pl-8">
-                            {EXPERIENCE.map((job) => (
+                            {experienceList.length > 0 ? experienceList.map((job) => (
                                 <div key={job.id} className="relative">
                                     <div className="absolute -left-[37px] top-1.5 h-3 w-3 rounded-full bg-[#030304] border-2 border-amber-500"></div>
 
@@ -393,7 +397,9 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                                         {job.description}
                                     </p>
                                 </div>
-                            ))}
+                            )) : (
+                                <div className="text-sm text-slate-600 italic">No hay experiencia registrada aún.</div>
+                            )}
                         </div>
                     </div>
 
@@ -403,7 +409,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                             <GraduationCap className="h-5 w-5 text-blue-500" /> Educación
                         </h3>
                         <div className="space-y-10 relative border-l border-white/10 ml-2 pl-8">
-                            {EDUCATION.map((edu) => (
+                            {educationList.length > 0 ? educationList.map((edu) => (
                                 <div key={edu.id} className="relative">
                                     <div className="absolute -left-[37px] top-1.5 h-3 w-3 rounded-full bg-[#030304] border-2 border-blue-500"></div>
 
@@ -414,7 +420,9 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                                         {edu.description}
                                     </p>
                                 </div>
-                            ))}
+                            )) : (
+                                <div className="text-sm text-slate-600 italic">No hay educación registrada aún.</div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -426,8 +434,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                         <button
                             onClick={() => setActiveTab('portfolio')}
                             className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'portfolio'
-                                    ? 'text-amber-500 border-amber-500'
-                                    : 'text-slate-500 border-transparent hover:text-white'
+                                ? 'text-amber-500 border-amber-500'
+                                : 'text-slate-500 border-transparent hover:text-white'
                                 }`}
                         >
                             <Layers className="h-4 w-4" /> Portafolio <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userPortfolio.length}</span>
@@ -436,8 +444,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                         <button
                             onClick={() => setActiveTab('courses')}
                             className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'courses'
-                                    ? 'text-amber-500 border-amber-500'
-                                    : 'text-slate-500 border-transparent hover:text-white'
+                                ? 'text-amber-500 border-amber-500'
+                                : 'text-slate-500 border-transparent hover:text-white'
                                 }`}
                         >
                             <Video className="h-4 w-4" /> Cursos <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userCourses.length}</span>
@@ -446,8 +454,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                         <button
                             onClick={() => setActiveTab('assets')}
                             className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'assets'
-                                    ? 'text-amber-500 border-amber-500'
-                                    : 'text-slate-500 border-transparent hover:text-white'
+                                ? 'text-amber-500 border-amber-500'
+                                : 'text-slate-500 border-transparent hover:text-white'
                                 }`}
                         >
                             <Box className="h-4 w-4" /> Assets <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userAssets.length}</span>
@@ -456,8 +464,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                         <button
                             onClick={() => setActiveTab('blog')}
                             className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'blog'
-                                    ? 'text-amber-500 border-amber-500'
-                                    : 'text-slate-500 border-transparent hover:text-white'
+                                ? 'text-amber-500 border-amber-500'
+                                : 'text-slate-500 border-transparent hover:text-white'
                                 }`}
                         >
                             <Newspaper className="h-4 w-4" /> Blog <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userArticles.length}</span>
@@ -468,8 +476,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                                 <button
                                     onClick={() => setActiveTab('saved')}
                                     className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'saved'
-                                            ? 'text-amber-500 border-amber-500'
-                                            : 'text-slate-500 border-transparent hover:text-white'
+                                        ? 'text-amber-500 border-amber-500'
+                                        : 'text-slate-500 border-transparent hover:text-white'
                                         }`}
                                 >
                                     <Bookmark className="h-4 w-4" /> Guardados <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{savedItems.length}</span>
@@ -477,8 +485,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                                 <button
                                     onClick={() => setActiveTab('collections')}
                                     className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'collections'
-                                            ? 'text-amber-500 border-amber-500'
-                                            : 'text-slate-500 border-transparent hover:text-white'
+                                        ? 'text-amber-500 border-amber-500'
+                                        : 'text-slate-500 border-transparent hover:text-white'
                                         }`}
                                 >
                                     <Layers className="h-4 w-4" /> Colecciones <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userCollections.length}</span>
@@ -489,8 +497,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                         <button
                             onClick={() => setActiveTab('membership')}
                             className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'membership'
-                                    ? 'text-amber-500 border-amber-500'
-                                    : 'text-slate-500 border-transparent hover:text-white'
+                                ? 'text-amber-500 border-amber-500'
+                                : 'text-slate-500 border-transparent hover:text-white'
                                 }`}
                         >
                             <Heart className="h-4 w-4" /> Membresía
@@ -502,7 +510,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                         <>
                             {userPortfolio.length > 0 ? (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5 animate-slide-up">
-                                    {userPortfolio.map((item: any) => (
+                                    {userPortfolio.map((item) => (
                                         <PortfolioCard
                                             key={item.id}
                                             item={item}
@@ -592,6 +600,18 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                     {/* TAB: BLOG */}
                     {activeTab === 'blog' && (
                         <>
+                            {/* Header Actions for Blog */}
+                            {isOwnProfile && (
+                                <div className="mb-8 flex justify-end">
+                                    <button
+                                        onClick={() => setIsCreatePostModalOpen(true)}
+                                        className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2 shadow-lg shadow-amber-500/20"
+                                    >
+                                        <Plus className="h-4 w-4" /> Nueva Historia
+                                    </button>
+                                </div>
+                            )}
+
                             {userArticles.length > 0 ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-slide-up">
                                     {userArticles.map((item) => (
@@ -611,7 +631,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                                     <h3 className="text-lg font-bold text-white mb-2">Sin artículos publicados</h3>
                                     <p className="text-slate-400 max-w-md mb-6">Escribe sobre tus experiencias y tutoriales.</p>
                                     {isOwnProfile && (
-                                        <button onClick={() => actions.handleCreateAction('article')} className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2">
+                                        <button onClick={() => setIsCreatePostModalOpen(true)} className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2">
                                             <Plus className="h-4 w-4" /> Escribir Artículo
                                         </button>
                                     )}
@@ -625,7 +645,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                         <>
                             {savedItems.length > 0 ? (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5 animate-slide-up">
-                                    {savedItems.map((item: any) => {
+                                    {savedItems.map((item) => {
                                         // Simple type guard or rendering logic
                                         if ('price' in item && 'fileSize' in item) { // Asset
                                             return <AssetCard key={item.id} asset={item} onClick={() => onItemSelect(item.id, 'asset')} onSave={actions.openSaveModal} />;
