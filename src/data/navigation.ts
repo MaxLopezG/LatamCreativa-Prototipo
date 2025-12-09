@@ -9,23 +9,23 @@ import { NavItem, NavSection, Subscription, Chip, CategoryItem } from '../types'
 // --- MAIN SIDEBAR MODULES (REORDERED LOGICALLY) ---
 export const PRIMARY_NAV_ITEMS: NavItem[] = [
   // 1. Navigation Base
-  { id: 'home', icon: Home, label: 'Inicio' }, 
+  { id: 'home', icon: Home, label: 'Inicio' },
 
   // 2. Showcase (Visual Core)
   { id: 'portfolio', icon: ImageIcon, label: 'Portafolio' },
   { id: 'collections', icon: Bookmark, label: 'Colecciones' },
 
-  // 3. Professional & Growth (Career/Money)
-  { id: 'jobs', icon: Building2, label: 'Empleos' },
-  { id: 'freelance', icon: Briefcase, label: 'Freelance' },
-  { id: 'market', icon: Store, label: 'Mercado' },
-  { id: 'education', icon: GraduationCap, label: 'Educación' },
+  // 3. Professional & Growth (Career/Money) - HIDDEN FOR NOW
+  // { id: 'jobs', icon: Building2, label: 'Empleos' },
+  // { id: 'freelance', icon: Briefcase, label: 'Freelance' },
+  // { id: 'market', icon: Store, label: 'Mercado' },
+  // { id: 'education', icon: GraduationCap, label: 'Educación' },
 
   // 4. Collaboration & Community (Interaction)
-  { id: 'community', icon: Users, label: 'Proyectos' }, 
-  { id: 'challenges', icon: Trophy, label: 'Retos' },
-  { id: 'events', icon: CalendarDays, label: 'Eventos' },
-  { id: 'people', icon: UsersRound, label: 'Comunidad' }, 
+  { id: 'community', icon: Users, label: 'Proyectos' },
+  // { id: 'challenges', icon: Trophy, label: 'Retos' },
+  // { id: 'events', icon: CalendarDays, label: 'Eventos' },
+  // { id: 'people', icon: UsersRound, label: 'Comunidad' }, 
   { id: 'forum', icon: MessageCircleQuestion, label: 'Foro' },
 
   // 5. Content & News

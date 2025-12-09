@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { X, Newspaper, Image as ImageIcon, Tag, Send, CheckCircle2 } from 'lucide-react';
+import { X, Newspaper, Image as ImageIcon, Tag, Send, CheckCircle2, Upload, Loader2 } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
 import { ArticleItem } from '../../types';
 import { TagInput } from '../ui/TagInput';
 import { COMMON_TAGS } from '../../data/tags';
+import { db, storage } from '../../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { collection, addDoc } from 'firebase/firestore';
 
 interface CreatePostModalProps {
     isOpen: boolean;
@@ -24,9 +27,11 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClos
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [image, setImage] = useState('');
+    const [imageFile, setImageFile] = useState<File | null>(null);
     const [tags, setTags] = useState<string[]>([]);
     const [currentTag, setCurrentTag] = useState('');
     const [isOfficialPost, setIsOfficialPost] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (!isOpen) return null;
 
@@ -37,44 +42,82 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClos
         }
     };
 
-    const handlePublish = () => {
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setImageFile(file);
+            // Create a preview URL
+            const previewUrl = URL.createObjectURL(file);
+            setImage(previewUrl);
+        }
+    };
+
+    const handlePublish = async () => {
         if (!title || !content) return;
+        setIsSubmitting(true);
 
-        const author = isOfficialPost ? OFFICIAL_PROFILE : {
-            name: user?.name || 'Anonymous',
-            id: user?.id || 'anon',
-            avatar: user?.avatar || '',
-            role: user?.role || 'Member'
-        };
+        try {
+            let imageUrl = image;
 
-        const newPost: ArticleItem = {
-            id: Date.now().toString(),
-            title,
-            excerpt: content.substring(0, 120) + '...',
-            content, // In a real app, this would be the full rich text
-            author: author.name,
-            authorAvatar: author.avatar,
-            role: author.role,
-            date: 'Justo ahora',
-            readTime: `${Math.max(1, Math.ceil(content.split(' ').length / 200))} min`,
-            likes: 0,
-            comments: 0,
-            image: image || 'https://images.unsplash.com/photo-1542435503-956c469947f6?q=80&w=1000&auto=format&fit=crop', // Default fallback
-            tags,
-            category: 'General'
-        };
+            // 1. Upload Image if exists
+            if (imageFile) {
+                const storageRef = ref(storage, `blog-covers/${Date.now()}_${imageFile.name}`);
+                const snapshot = await uploadBytes(storageRef, imageFile);
+                imageUrl = await getDownloadURL(snapshot.ref);
+            } else if (!image) {
+                // Default image if none provided
+                imageUrl = 'https://images.unsplash.com/photo-1542435503-956c469947f6?q=80&w=1000&auto=format&fit=crop';
+            }
 
-        actions.addBlogPost(newPost);
-        actions.showToast('Artículo publicado exitosamente', 'success');
+            // 2. Prepare Author Data
+            const author = isOfficialPost ? OFFICIAL_PROFILE : {
+                name: user?.name || 'Anonymous',
+                id: user?.id || 'anon',
+                avatar: user?.avatar || '',
+                role: user?.role || 'Member'
+            };
 
-        // Reset form
-        setTitle('');
-        setContent('');
-        setImage('');
-        setTags([]);
-        setIsOfficialPost(false);
+            const newPost: ArticleItem = {
+                id: Date.now().toString(), // Helper ID, Firestore will generate real one ideally or we use this
+                title,
+                excerpt: content.substring(0, 120) + '...',
+                content,
+                author: author.name,
+                authorAvatar: author.avatar,
+                role: author.role,
+                date: new Date().toISOString(),
+                readTime: `${Math.max(1, Math.ceil(content.split(' ').length / 200))} min`,
+                likes: 0,
+                comments: 0,
+                image: imageUrl,
+                tags,
+                category: 'General'
+            };
 
-        onClose();
+            // 3. Save to Firestore
+            const docRef = await addDoc(collection(db, 'articles'), newPost);
+
+            // 4. Update Local State (Optimistic or Refresh)
+            // We'll update the ID to match Firestore's ID
+            actions.addBlogPost({ ...newPost, id: docRef.id });
+
+            actions.showToast('Artículo publicado exitosamente', 'success');
+
+            // Reset form
+            setTitle('');
+            setContent('');
+            setImage('');
+            setImageFile(null);
+            setTags([]);
+            setIsOfficialPost(false);
+            onClose();
+
+        } catch (error) {
+            console.error("Error publishing post:", error);
+            actions.showToast('Error al publicar el artículo', 'error');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -110,22 +153,46 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClos
                     </div>
 
                     {/* Image URL */}
+                    {/* Image Upload */}
                     <div className="space-y-4">
                         <label className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-                            <ImageIcon className="h-4 w-4" /> Imagen de Portada (URL)
+                            <ImageIcon className="h-4 w-4" /> Imagen de Portada
                         </label>
-                        <div className="flex gap-4">
-                            <input
-                                type="text"
-                                value={image}
-                                onChange={(e) => setImage(e.target.value)}
-                                className="flex-1 px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-amber-500 transition-all text-sm"
-                                placeholder="https://..."
-                            />
-                        </div>
-                        {image && (
-                            <div className="relative h-48 w-full rounded-xl overflow-hidden border border-slate-200 dark:border-white/10">
+
+                        {!image ? (
+                            <div className="border-2 border-dashed border-slate-200 dark:border-white/10 rounded-xl p-8 transition-colors hover:border-amber-500 hover:bg-amber-500/5 group">
+                                <label className="flex flex-col items-center justify-center cursor-pointer">
+                                    <div className="bg-slate-100 dark:bg-white/5 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
+                                        <Upload className="h-6 w-6 text-slate-400 group-hover:text-amber-500" />
+                                    </div>
+                                    <span className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-1">
+                                        Haz clic para subir una imagen
+                                    </span>
+                                    <span className="text-xs text-slate-400 text-center max-w-xs">
+                                        PNG, JPG o WEBP (Max. 5MB)
+                                    </span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handleImageSelect}
+                                    />
+                                </label>
+                            </div>
+                        ) : (
+                            <div className="relative h-56 w-full rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 group">
                                 <img src={image} alt="Preview" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <button
+                                        onClick={() => {
+                                            setImage('');
+                                            setImageFile(null);
+                                        }}
+                                        className="bg-red-500 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-red-600 transition-colors transform translate-y-4 group-hover:translate-y-0 duration-200"
+                                    >
+                                        Eliminar Imagen
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -184,14 +251,23 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClos
                         </button>
                         <button
                             onClick={handlePublish}
-                            disabled={!title || !content}
-                            className={`px-8 py-3 rounded-xl font-bold text-white shadow-lg flex items-center gap-2 transition-all ${!title || !content
+                            disabled={!title || !content || isSubmitting}
+                            className={`px-8 py-3 rounded-xl font-bold text-white shadow-lg flex items-center gap-2 transition-all ${!title || !content || isSubmitting
                                 ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed opacity-50'
                                 : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20'
                                 }`}
                         >
-                            <Send className="h-4 w-4" />
-                            Publicar Artículo
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    Publicando...
+                                </>
+                            ) : (
+                                <>
+                                    <Send className="h-4 w-4" />
+                                    Publicar Artículo
+                                </>
+                            )}
                         </button>
                     </div>
                 </div>

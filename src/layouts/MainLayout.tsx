@@ -1,6 +1,5 @@
-
-import React from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { PrimarySidebar, SecondarySidebar } from '../components/Navigation';
 import { Header } from '../components/Header';
 import { Footer } from '../components/layout/Footer';
@@ -15,6 +14,24 @@ import { OnboardingModal } from '../components/modals/OnboardingModal';
 export const MainLayout: React.FC = () => {
     const { state, actions } = useAppStore();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Sync State with URL on mount and change
+    useEffect(() => {
+        const path = location.pathname;
+        if (path === '/') {
+            if (state.activeModule !== 'home') actions.handleModuleSelect('home');
+        } else {
+            // Extract the first segment: /portfolio/123 -> portfolio
+            const moduleName = path.split('/')[1];
+            // Only update if different and valid module
+            if (moduleName && state.activeModule !== moduleName) {
+                // We might want to validate against known modules, but strict checking isn't crucial for highlight only
+                // Just ensuring we don't overwrite if it's a "detail" view that keeps the parent module active
+                actions.handleModuleSelect(moduleName);
+            }
+        }
+    }, [location.pathname]);
 
     const isLearningMode = state.activeModule === 'learning';
     const selectionColor = state.contentMode === 'dev' ? 'selection:bg-blue-500/30' : 'selection:bg-amber-500/30';
@@ -90,6 +107,7 @@ export const MainLayout: React.FC = () => {
                         onMarkRead={actions.markNotificationRead}
                         onMarkAllRead={actions.markAllNotificationsRead}
                         contentMode={state.contentMode}
+                        onLoginClick={() => navigate('/auth')}
                     />
                 )}
 
@@ -107,7 +125,7 @@ export const MainLayout: React.FC = () => {
                 </div>
             </main>
 
-            {!isLearningMode && (
+            {!isLearningMode && state.user && (
                 <ChatWidget
                     isOpen={state.isChatOpen}
                     onToggle={() => actions.setIsChatOpen(!state.isChatOpen)}

@@ -65,12 +65,23 @@ const Suspended = ({ children }: { children?: React.ReactNode }) => (
 function PortfolioWrapper() {
   const { state, actions } = useAppStore();
   const navigate = useNavigate();
+
+  // Helper for Auth Guard
+  const handleCreateClick = (path: string) => {
+    if (!state.user) {
+      actions.showToast('Debes iniciar sesión para crear contenido', 'info');
+      navigate('/auth'); // Or just show toast? User preferred "remember to be logged in". Redirect is better.
+      return;
+    }
+    navigate(path);
+  };
+
   return (
     <Suspended>
       <PortfolioView
         activeCategory={state.activeCategory}
         onItemSelect={(id) => navigate(`/portfolio/${id}`)}
-        onCreateClick={() => navigate('/create/portfolio')}
+        onCreateClick={() => handleCreateClick('/create/portfolio')}
         onSave={actions.openSaveModal}
         contentMode={state.contentMode}
       />
@@ -110,14 +121,24 @@ function FeedWrapper() {
 }
 
 function EducationWrapper() {
-  const { state } = useAppStore();
+  const { state, actions } = useAppStore();
   const navigate = useNavigate();
+
+  const handleCreateClick = (path: string) => {
+    if (!state.user) {
+      actions.showToast('Debes iniciar sesión para crear contenido', 'info');
+      navigate('/auth');
+      return;
+    }
+    navigate(path);
+  };
+
   return (
     <Suspended>
       <EducationView
         activeCategory={state.activeCategory}
         onCourseSelect={(id) => navigate(`/education/${id}`)}
-        onCreateClick={() => navigate('/create/course')}
+        onCreateClick={() => handleCreateClick('/create/course')}
         contentMode={state.contentMode}
       />
     </Suspended>
@@ -226,12 +247,22 @@ function SalesListWrapper() {
 }
 
 function CollectionsWrapper() {
-  const { actions } = useAppStore();
+  const { state, actions } = useAppStore();
   const navigate = useNavigate();
+
+  const handleCreateClick = () => {
+    if (!state.user) {
+      actions.showToast('Debes iniciar sesión para crear colecciones', 'info');
+      navigate('/auth');
+      return;
+    }
+    actions.openSaveModal('', '');
+  };
+
   return (
     <Suspended>
       <CollectionsView
-        onCreateClick={() => actions.openSaveModal('', '')}
+        onCreateClick={handleCreateClick}
         onCollectionSelect={(id) => navigate(`/collections/${id}`)}
       />
     </Suspended>
@@ -271,12 +302,22 @@ function CreateWrapper({ Component }: { Component: React.FC<{ onBack: () => void
 function BlogWrapper() {
   const { state, actions } = useAppStore();
   const navigate = useNavigate();
+
+  const handleCreateClick = (path: string) => {
+    if (!state.user) {
+      actions.showToast('Debes iniciar sesión para escribir un artículo', 'info');
+      navigate('/auth');
+      return;
+    }
+    navigate(path);
+  };
+
   return (
     <Suspended>
       <BlogView
         activeCategory={state.activeCategory}
         onArticleSelect={(id) => navigate(`/blog/${id}`)}
-        onCreateClick={() => navigate('/create/article')}
+        onCreateClick={() => handleCreateClick('/create/article')}
         onSave={actions.openSaveModal}
       />
     </Suspended>
@@ -286,12 +327,22 @@ function BlogWrapper() {
 function MarketWrapper() {
   const { state, actions } = useAppStore();
   const navigate = useNavigate();
+
+  const handleCreateClick = (path: string) => {
+    if (!state.user) {
+      actions.showToast('Debes iniciar sesión para vender un asset', 'info');
+      navigate('/auth');
+      return;
+    }
+    navigate(path);
+  };
+
   return (
     <Suspended>
       <AssetsView
         activeCategory={state.activeCategory}
         onAssetSelect={(id) => navigate(`/market/${id}`)}
-        onCreateClick={() => navigate('/create/asset')}
+        onCreateClick={() => handleCreateClick('/create/asset')}
         onSave={actions.openSaveModal}
       />
     </Suspended>
@@ -299,38 +350,70 @@ function MarketWrapper() {
 }
 
 function FreelanceWrapper() {
-  const { state } = useAppStore();
+  const { state, actions } = useAppStore();
   const navigate = useNavigate();
+
+  const handleCreateClick = (path: string) => {
+    if (!state.user) {
+      actions.showToast('Debes iniciar sesión para ofrecer un servicio', 'info');
+      navigate('/auth');
+      return;
+    }
+    navigate(path);
+  };
+
   return (
     <Suspended>
       <FreelanceView
         activeCategory={state.activeCategory}
         onServiceSelect={(id) => navigate(`/freelance/${id}`)}
-        onCreateClick={() => navigate('/create/service')}
+        onCreateClick={() => handleCreateClick('/create/service')}
       />
     </Suspended>
   );
 }
 
 function JobsWrapper() {
+  const { state, actions } = useAppStore();
   const navigate = useNavigate();
+
+  const handleCreateClick = (path: string) => {
+    if (!state.user) {
+      actions.showToast('Debes iniciar sesión para publicar un empleo', 'info');
+      navigate('/auth');
+      return;
+    }
+    navigate(path);
+  };
+
   return (
     <Suspended>
       <JobsView
         onJobSelect={(id) => navigate(`/jobs/${id}`)}
-        onCreateClick={() => navigate('/create/service')} // Assuming service create for jobs?
+        onCreateClick={() => handleCreateClick('/create/service')} // Assuming service create for jobs?
       />
     </Suspended>
   );
 }
 
 function CommunityWrapper() {
+  const { state, actions } = useAppStore();
   const navigate = useNavigate();
+
+  const handleCreateClick = (path: string) => {
+    if (!state.user) {
+      actions.showToast('Debes iniciar sesión para crear un proyecto', 'info');
+      navigate('/auth');
+      return;
+    }
+    navigate(path);
+  };
+
   return (
     <Suspended>
       <CommunityView
         onProjectSelect={(id) => navigate(`/community/${id}`)}
-        onCreateProjectClick={() => navigate('/create/project')}
+        onCreateProjectClick={() => handleCreateClick('/create/project')}
       />
     </Suspended>
   );
@@ -348,24 +431,46 @@ function ChallengesWrapper() {
 }
 
 function EventsWrapper() {
+  const { state, actions } = useAppStore();
   const navigate = useNavigate();
+
+  const handleCreateClick = (path: string) => {
+    if (!state.user) {
+      actions.showToast('Debes iniciar sesión para publicar un evento', 'info');
+      navigate('/auth');
+      return;
+    }
+    navigate(path);
+  };
+
   return (
     <Suspended>
       <EventsView
         onEventSelect={(id) => navigate(`/events/${id}`)}
-        onCreateClick={() => navigate('/create/event')}
+        onCreateClick={() => handleCreateClick('/create/event')}
       />
     </Suspended>
   );
 }
 
 function ForumWrapper() {
+  const { state, actions } = useAppStore();
   const navigate = useNavigate();
+
+  const handleCreateClick = (path: string) => {
+    if (!state.user) {
+      actions.showToast('Debes iniciar sesión para preguntar en el foro', 'info');
+      navigate('/auth');
+      return;
+    }
+    navigate(path);
+  };
+
   return (
     <Suspended>
       <ForumView
         onPostSelect={(id) => navigate(`/forum/${id}`)}
-        onCreateClick={() => navigate('/create/forum')}
+        onCreateClick={() => handleCreateClick('/create/forum')}
       />
     </Suspended>
   );

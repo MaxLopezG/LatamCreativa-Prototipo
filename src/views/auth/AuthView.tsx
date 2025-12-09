@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../hooks/useAppStore';
 import { Mail, Lock, User, Github, ArrowRight, Loader2, AlertCircle, Globe, Eye, EyeOff } from 'lucide-react';
 import { auth, googleProvider, db } from '../../lib/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signInWithPopup } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signInWithPopup, sendEmailVerification, signOut } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 
 export const AuthView: React.FC = () => {
@@ -15,6 +15,7 @@ export const AuthView: React.FC = () => {
     const [isLogin, setIsLogin] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isVerificationSent, setIsVerificationSent] = useState(false);
 
     // Form State
     const [email, setEmail] = useState('');
@@ -37,7 +38,15 @@ export const AuthView: React.FC = () => {
         try {
             if (isLogin) {
                 // Login Logic
-                await signInWithEmailAndPassword(auth, email, password);
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+                // CHECK IF EMAIL IS VERIFIED
+                // CHECK IF EMAIL IS VERIFIED
+                if (!userCredential.user.emailVerified) {
+                    await signOut(auth);
+                    setError("Tu correo electrónico no ha sido verificado. Por favor revisa tu bandeja de entrada.");
+                    return; // Stop execution
+                }
                 // Log removed
             } else {
                 // Register Logic
@@ -63,15 +72,36 @@ export const AuthView: React.FC = () => {
                         avatar: userCredential.user.photoURL || 'https://ui-avatars.com/api/?name=' + (firstName || 'U'),
                         role: 'Creative Member',
                         location: 'Latam',
+                        firstName: firstName,
+                        lastName: lastName,
                         createdAt: new Date().toISOString()
                     };
                     await setDoc(doc(db, 'users', userCredential.user.uid), newUser);
+
+                    // Send Email Verification
+                    try {
+                        await sendEmailVerification(userCredential.user);
+                        await signOut(auth); // Sign out immediately
+                        setIsVerificationSent(true);
+                        setIsLoading(false);
+                        return; // Stop execution (don't redirect)
+                    } catch (emailError) {
+                        console.error("Error sending verification email:", emailError);
+                        actions.showToast('Cuenta creada, pero hubo un error enviando el correo de verificación.', 'error');
+                    }
                 }
             }
 
-            // FORCE STORE UPDATE BEFORE REDIRECT
+            // FORCE STORE UPDATE BEFORE REDIRECT (Only if still logged in)
             if (auth.currentUser) {
                 const user = auth.currentUser;
+                // Double check verification for good measure (though we caught it above for login)
+                if (!user.emailVerified) {
+                    // Should technically be caught by the onAuthStateChanged in App.tsx or the check above, 
+                    // but in the registration flow we just signed them out, so we return here.
+                    return;
+                }
+
                 const isAdmin = user.email === 'admin@latamcreativa.com';
                 const appUser = {
                     id: user.uid,
@@ -165,123 +195,146 @@ export const AuthView: React.FC = () => {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
+                    {/* Verification Sent Screen */}
+                    {isVerificationSent ? (
+                        <div className="text-center py-8 animate-fade-in relative z-10">
+                            <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6 ${isDev ? 'bg-blue-500/10 text-blue-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                                <Mail className="h-8 w-8" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Verifica tu Correo</h2>
+                            <p className="text-slate-600 dark:text-slate-400 mb-8">
+                                Hemos enviado un enlace de confirmación a <strong>{email}</strong>.
+                                <br />Por favor, verifica tu cuenta para poder continuar.
+                            </p>
+                            <button
+                                onClick={() => {
+                                    setIsVerificationSent(false);
+                                    setIsLogin(true); // Switch to login view
+                                }}
+                                className={`w-full py-3 rounded-xl text-white font-bold transition-all ${activeBg}`}
+                            >
+                                Volver al Inicio de Sesión
+                            </button>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
 
-                        {/* Name Fields (Register Only) */}
-                        {!isLogin && (
-                            <div className="grid grid-cols-2 gap-4 animate-fade-in">
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nombres</label>
-                                    <div className="relative">
-                                        <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                                        <input
-                                            type="text"
-                                            value={firstName}
-                                            onChange={(e) => setFirstName(e.target.value)}
-                                            placeholder="Juan"
-                                            className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
-                                            required={!isLogin}
-                                        />
+                            {/* Name Fields (Register Only) */}
+                            {!isLogin && (
+                                <div className="grid grid-cols-2 gap-4 animate-fade-in">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nombres</label>
+                                        <div className="relative">
+                                            <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                value={firstName}
+                                                onChange={(e) => setFirstName(e.target.value)}
+                                                placeholder="Juan"
+                                                className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
+                                                required={!isLogin}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Apellidos</label>
+                                        <div className="relative">
+                                            <input
+                                                type="text"
+                                                value={lastName}
+                                                onChange={(e) => setLastName(e.target.value)}
+                                                placeholder="Pérez"
+                                                className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
+                                                required={!isLogin}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Apellidos</label>
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            value={lastName}
-                                            onChange={(e) => setLastName(e.target.value)}
-                                            placeholder="Pérez"
-                                            className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
-                                            required={!isLogin}
-                                        />
-                                    </div>
+                            )}
+
+
+                            {/* Email Field */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Correo Electrónico</label>
+                                <div className="relative">
+                                    <Mail className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                                    <input
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="hola@ejemplo.com"
+                                        className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
+                                        required
+                                    />
                                 </div>
                             </div>
-                        )}
 
-
-                        {/* Email Field */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Correo Electrónico</label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="hola@ejemplo.com"
-                                    className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        {/* Password Field */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Contraseña</label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400 z-10" />
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-12 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                                >
-                                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Confirm Password Field (Register Only) */}
-                        {!isLogin && (
-                            <div className="space-y-1.5 animate-fade-in">
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Confirmar Contraseña</label>
+                            {/* Password Field */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Contraseña</label>
                                 <div className="relative">
                                     <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400 z-10" />
                                     <input
-                                        type={showConfirmPassword ? "text" : "password"}
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        type={showPassword ? "text" : "password"}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
                                         placeholder="••••••••"
                                         className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-12 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
-                                        required={!isLogin}
+                                        required
                                     />
                                     <button
                                         type="button"
-                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        onClick={() => setShowPassword(!showPassword)}
                                         className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
                                     >
-                                        {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                     </button>
                                 </div>
                             </div>
-                        )}
 
-                        {/* Submit Button */}
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className={`w-full py-3.5 rounded-xl text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-all ${activeBg} ${isLoading ? 'opacity-80 cursor-wait' : ''}`}
-                        >
-                            {isLoading ? (
-                                <Loader2 className="h-5 w-5 animate-spin" />
-                            ) : (
-                                <>
-                                    {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
-                                    <ArrowRight className="h-5 w-5" />
-                                </>
+                            {/* Confirm Password Field (Register Only) */}
+                            {!isLogin && (
+                                <div className="space-y-1.5 animate-fade-in">
+                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Confirmar Contraseña</label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400 z-10" />
+                                        <input
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            placeholder="••••••••"
+                                            className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-12 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
+                                            required={!isLogin}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                                        >
+                                            {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                        </button>
+                                    </div>
+                                </div>
                             )}
-                        </button>
 
-                    </form>
+                            {/* Submit Button */}
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className={`w-full py-3.5 rounded-xl text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-all ${activeBg} ${isLoading ? 'opacity-80 cursor-wait' : ''}`}
+                            >
+                                {isLoading ? (
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                ) : (
+                                    <>
+                                        {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
+                                        <ArrowRight className="h-5 w-5" />
+                                    </>
+                                )}
+                            </button>
+
+                        </form>
+                    )}
 
                     {/* Divider */}
                     <div className="relative my-8">

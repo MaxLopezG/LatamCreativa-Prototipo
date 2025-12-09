@@ -138,7 +138,7 @@ const useZustandStore = create<AppStore>()(
       // UI Initial State
       isSidebarOpen: false,
       activeCategory: 'Home',
-      activeModule: 'landing',
+      activeModule: 'home',
       contentMode: 'creative',
       createMode: 'none',
       searchQuery: '',
@@ -366,6 +366,21 @@ export const useAppStore = () => {
 
       // Complex Logic Mapped
       handleCreateAction: (actionId: string) => {
+        // AUTH GUARD: Check if user is logged in
+        if (!store.user) {
+          store.showToast('Debes iniciar sesión para crear contenido', 'info');
+          // Navigate to auth? We don't have navigate here easily without injection.
+          // BUT MainLayout uses this action.
+          // Ideally, we rely on the component using this to handle nav, OR we update activeModule to 'auth'?
+          // Let's set activeModule to 'auth' which MainLayout listens to but doesn't auto-redirect to /auth route unless mapped.
+          // Correction: MainLayout maps 'home'->'/', 'learning'->'/education'. It defaults other modules to `/${moduleId}`.
+          // So setting activeModule = 'auth' -> navigates to '/auth'.
+
+          store.setActiveModule('auth');
+          store.setIsSidebarOpen(false);
+          return;
+        }
+
         const moduleMap: Record<string, string> = {
           project: 'community',
           article: 'blog',

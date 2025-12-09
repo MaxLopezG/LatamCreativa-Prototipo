@@ -4,7 +4,7 @@ import { ArrowUpDown, Plus, Newspaper, BookOpen } from 'lucide-react';
 import { BlogCard } from '../components/cards/BlogCard';
 import { Pagination } from '../components/common/Pagination';
 import { useAppStore } from '../hooks/useAppStore';
-import { CreatePostModal } from '../components/modals/CreatePostModal';
+
 
 interface BlogViewProps {
   activeCategory: string;
@@ -13,14 +13,12 @@ interface BlogViewProps {
   onSave?: (id: string, image: string) => void;
 }
 
-export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSelect, onSave }) => {
+export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSelect, onSave, onCreateClick }) => {
   const { state } = useAppStore();
-  const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
   const blogPosts = state.blogPosts;
 
   return (
     <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors animate-fade-in">
-      <CreatePostModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
 
       {/* Cinematic Hero Banner */}
       <div className="relative rounded-3xl overflow-hidden min-h-[400px] flex items-center mb-12 group shadow-2xl">
@@ -44,7 +42,7 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
 
           <div className="flex flex-wrap items-center gap-4">
             <button
-              onClick={() => setIsCreateModalOpen(true)}
+              onClick={onCreateClick}
               className="px-8 py-4 bg-white text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors shadow-xl shadow-black/20 flex items-center gap-2"
             >
               <Plus className="h-5 w-5" /> Escribir Artículo

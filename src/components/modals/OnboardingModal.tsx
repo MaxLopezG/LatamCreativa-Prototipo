@@ -27,28 +27,40 @@ export const OnboardingModal: React.FC = () => {
     const [filteredRoles, setFilteredRoles] = useState<string[]>([]);
 
     useEffect(() => {
-        // Show if user is logged in AND hasn't completed onboarding
-        // We track "completed" via a flag in local storage for "skip" or checking if location is still default 'Latam'
-        // For this requirement: "when a new user registers... fill info... skip button"
+        if (!user) {
+            setIsOpen(false);
+            return;
+        }
 
-        if (user) {
-            // Check if we should show it
-            const hasSkipped = localStorage.getItem(`onboarding_skipped_${user.id}`);
-            const isIncomplete = user.location === 'Latam' || !user.location; // Default is 'Latam'
+        const hasSkipped = localStorage.getItem(`onboarding_skipped_${user.id}`);
+        // "Latam" is the default location, so we consider it incomplete if it matches that or is missing.
+        const isIncomplete = user.location === 'Latam' || !user.location;
+        const shouldShow = isIncomplete && !hasSkipped;
 
-            if (isIncomplete && !hasSkipped) {
+        let timeoutId: NodeJS.Timeout;
+
+        if (shouldShow) {
+            // Delay opening by 2000ms to allow Firestore to sync the full profile
+            // This prevents the modal from flashing for existing users with slow connections
+            timeoutId = setTimeout(() => {
                 setIsOpen(true);
-                // Pre-fill
+                // Pre-fill only when we actually open
                 setName(user.name || '');
                 setRole(user.role || '');
-                setLocation(''); // Force selection? or show 'Latam' -> Better force selection so leave empty if they want to change
+                setLocation('');
                 setBio(user.bio || '');
                 setSkills(user.skills || []);
                 setSocialLinks(user.socialLinks || {});
-            } else {
-                setIsOpen(false);
-            }
+            }, 2000);
+        } else {
+            // If the user IS complete (or skipped), close immediately.
+            // This fixes the case where data loads LATER than the timeout.
+            setIsOpen(false);
         }
+
+        return () => {
+            if (timeoutId) clearTimeout(timeoutId);
+        };
     }, [user]);
 
     if (!isOpen || !user) return null;
