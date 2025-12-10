@@ -53,6 +53,12 @@ export const MainLayout: React.FC = () => {
         navigate('/');
     };
 
+    // Global Search Handler
+    const handleGlobalSearch = (query: string) => {
+        actions.handleSearch(query);
+        navigate(`/search?q=${encodeURIComponent(query)}`);
+    };
+
     // Handler for creating
     // If Create Actions need navigation, handle here, but they usually open Modals or change local state (createMode)
     // The Views handle createMode.
@@ -100,7 +106,7 @@ export const MainLayout: React.FC = () => {
                         activeCategory={state.activeCategory}
                         onCreateAction={actions.handleCreateAction}
                         onLogoClick={handleLogoClick}
-                        onSearch={actions.handleSearch}
+                        onSearch={handleGlobalSearch}
                         cartCount={state.cartItems.length}
                         onCartClick={() => handleModuleNavigation('cart')}
                         notifications={state.notifications}

@@ -41,6 +41,20 @@ export const Header = ({
     const [searchQuery, setSearchQuery] = useState('');
     const menuRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    // Ctrl+K Shortcut
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+                setIsSearchFocused(true);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     // Close menus when clicking outside
     useEffect(() => {
@@ -107,6 +121,7 @@ export const Header = ({
                         <Search className={`h-4 w-4 transition-colors ${isSearchFocused ? accentText : 'text-slate-400'}`} />
                     </div>
                     <input
+                        ref={searchInputRef}
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}

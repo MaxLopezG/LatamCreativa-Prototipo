@@ -1,6 +1,6 @@
 
 import React, { Suspense, lazy } from 'react';
-import { createBrowserRouter, useNavigate, useParams } from 'react-router-dom';
+import { createBrowserRouter, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { useAppStore } from './hooks/useAppStore';
 import { Loader } from './components/common/Loader';
@@ -36,10 +36,33 @@ const SettingsView = lazy(() => import('./views/SettingsView').then(module => ({
 const ProUpgradeView = lazy(() => import('./views/ProUpgradeView').then(module => ({ default: module.ProUpgradeView })));
 const EarningsView = lazy(() => import('./views/EarningsView').then(module => ({ default: module.EarningsView })));
 const SalesListView = lazy(() => import('./views/SalesListView').then(module => ({ default: module.SalesListView })));
-const MainLandingView = lazy(() => import('./views/MainLandingView').then(module => ({ default: module.MainLandingView })));
+
+const ServicesHomeView = lazy(() => import('./views/ServicesHomeView').then(module => ({ default: module.ServicesHomeView })));
+const AboutView = lazy(() => import('./views/AboutView').then(module => ({ default: module.AboutView })));
 const InfoView = lazy(() => import('./views/InfoView').then(module => ({ default: module.InfoView })));
 const SearchResultsView = lazy(() => import('./views/SearchResultsView').then(module => ({ default: module.SearchResultsView })));
-const ContentModeView = lazy(() => import('./views/MainLandingView').then(module => ({ default: module.MainLandingView })));
+
+// Search Wrapper
+function SearchResultsWrapper() {
+  const [searchParams] = useSearchParams();
+  const query = searchParams.get('q') || '';
+  const navigate = useNavigate();
+
+  const handleItemSelect = (id: string, type: string) => {
+    if (type === 'portfolio') navigate(`/portfolio/${id}`);
+    if (type === 'course') navigate(`/education/${id}`);
+    if (type === 'asset') navigate(`/market/${id}`);
+    if (type === 'blog') navigate(`/blog/${id}`);
+    // Add other types if necessary
+  };
+
+  return (
+    <Suspended>
+      <SearchResultsView query={query} onItemSelect={handleItemSelect} />
+    </Suspended>
+  );
+}
+
 const ComingSoonView = lazy(() => import('./views/ComingSoonView'));
 const SuccessView = lazy(() => import('./views/SuccessView').then(module => ({ default: module.SuccessView })));
 const CollectionsView = lazy(() => import('./views/CollectionsView').then(module => ({ default: module.CollectionsView })));
@@ -91,9 +114,15 @@ function PortfolioWrapper() {
 
 function PortfolioPostWrapper() {
   const { actions } = useAppStore();
+  const navigate = useNavigate();
   return (
     <Suspended>
-      <PortfolioPostView onBack={() => window.history.back()} onShare={actions.openShareModal} onSave={actions.openSaveModal} />
+      <PortfolioPostView
+        onBack={() => window.history.back()}
+        onShare={actions.openShareModal}
+        onSave={actions.openSaveModal}
+        onAuthorClick={(name) => navigate(`/user/${encodeURIComponent(name)}`)}
+      />
     </Suspended>
   );
 }
@@ -197,20 +226,34 @@ function EventDetailWrapper() {
   );
 }
 
-function MainLandingWrapper() {
+
+
+function ServicesHomeWrapper() {
   const { actions } = useAppStore();
   const navigate = useNavigate();
 
   const handleNavigate = (moduleId: string) => {
-    actions.handleModuleSelect(moduleId); // Keep state sync if needed
-    if (moduleId === 'education') navigate('/education');
-    else if (moduleId === 'market') navigate('/market');
-    else navigate(`/${moduleId}`);
+    if (moduleId === 'about') navigate('/about');
+    else {
+      actions.handleModuleSelect(moduleId);
+      if (moduleId === 'education') navigate('/education');
+      else if (moduleId === 'market') navigate('/market');
+      else navigate(`/${moduleId}`);
+    }
   };
 
   return (
     <Suspended>
-      <MainLandingView onNavigate={handleNavigate} />
+      <ServicesHomeView onNavigate={handleNavigate} />
+    </Suspended>
+  );
+}
+
+function AboutWrapper() {
+  const navigate = useNavigate();
+  return (
+    <Suspended>
+      <AboutView onNavigate={(path) => navigate(path)} />
     </Suspended>
   );
 }
@@ -518,7 +561,7 @@ export const router = createBrowserRouter([
     path: '/',
     element: <MainLayout />,
     children: [
-      { index: true, element: <MainLandingWrapper /> },
+      { index: true, element: <ServicesHomeWrapper /> },
       { path: 'home', element: <FeedWrapper /> },
 
       // Portfolio
@@ -587,10 +630,10 @@ export const router = createBrowserRouter([
       { path: 'earnings/sales/:type', element: <SalesListWrapper /> },
 
       // Search
-      { path: 'search', element: <Suspended><SearchResultsView query="" onItemSelect={() => { }} /></Suspended> },
+      { path: 'search', element: <SearchResultsWrapper /> },
 
       // Info Pages
-      { path: 'about', element: <MainLandingWrapper /> },
+      { path: 'about', element: <AboutWrapper /> },
       { path: 'info/:pageId', element: <Suspended><InfoView pageId="" onBack={() => window.history.back()} /></Suspended> },
 
       // Fallback

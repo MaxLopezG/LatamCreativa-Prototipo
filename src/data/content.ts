@@ -394,9 +394,9 @@ export const FREELANCE_SERVICES: FreelanceServiceItem[] = [
     description: 'API robusta, segura y documentada con Swagger. Incluye autenticación JWT y conexión a base de datos.',
     domain: 'dev',
     packages: {
-        basic: { price: 100, title: 'Básico', desc: 'API simple con 5 endpoints. Sin auth.', delivery: '3 días', revisions: 1 },
-        standard: { price: 250, title: 'Estándar', desc: 'API completa con Auth, DB y 15 endpoints.', delivery: '7 días', revisions: 2 },
-        premium: { price: 500, title: 'Premium', desc: 'Arquitectura microservicios, tests y deploy.', delivery: '14 días', revisions: 3 }
+      basic: { price: 100, title: 'Básico', desc: 'API simple con 5 endpoints. Sin auth.', delivery: '3 días', revisions: 1 },
+      standard: { price: 250, title: 'Estándar', desc: 'API completa con Auth, DB y 15 endpoints.', delivery: '7 días', revisions: 2 },
+      premium: { price: 500, title: 'Premium', desc: 'Arquitectura microservicios, tests y deploy.', delivery: '14 días', revisions: 3 }
     }
   },
   {
@@ -415,9 +415,9 @@ export const FREELANCE_SERVICES: FreelanceServiceItem[] = [
     description: 'Rig corporal y facial completo listo para animación. Compatible con Unreal Engine y Unity.',
     domain: 'creative',
     packages: {
-        basic: { price: 80, title: 'Básico', desc: 'Rig corporal bipedo standard.', delivery: '4 días', revisions: 2 },
-        standard: { price: 150, title: 'Estándar', desc: 'Rig corporal + facial básico (blendshapes).', delivery: '7 días', revisions: 3 },
-        premium: { price: 300, title: 'Premium', desc: 'Rig completo con controles avanzados y físicas.', delivery: '10 días', revisions: 5 }
+      basic: { price: 80, title: 'Básico', desc: 'Rig corporal bipedo standard.', delivery: '4 días', revisions: 2 },
+      standard: { price: 150, title: 'Estándar', desc: 'Rig corporal + facial básico (blendshapes).', delivery: '7 días', revisions: 3 },
+      premium: { price: 300, title: 'Premium', desc: 'Rig completo con controles avanzados y físicas.', delivery: '10 días', revisions: 5 }
     }
   }
 ];
@@ -535,8 +535,8 @@ export const ASSET_ITEMS: AssetItem[] = [
     description: 'Árboles, rocas, hierba y plantas fotorealistas escaneadas. LODs incluidos para optimización.',
     domain: 'creative',
     technicalSpecs: {
-        textures: true,
-        materials: true
+      textures: true,
+      materials: true
     }
   },
   {
@@ -575,7 +575,7 @@ export const ASSET_ITEMS: AssetItem[] = [
     description: 'Texturas tileables pintadas a mano para mazmorras y castillos. Normals y Height maps incluidos.',
     domain: 'creative',
     technicalSpecs: {
-        textures: true
+      textures: true
     }
   },
   {
@@ -599,258 +599,8 @@ export const ASSET_ITEMS: AssetItem[] = [
 ];
 
 // --- PORTFOLIO DATA (EXPANDED) ---
-export const PORTFOLIO_ITEMS: PortfolioItem[] = [
-  {
-    id: 'p1',
-    title: 'Cyberpunk Street Vendor',
-    artist: 'Alejandro M.',
-    artistAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1555680202-c86f0e12f086?q=80&w=600&fit=crop',
-    views: '12.5k',
-    likes: '1.2k',
-    category: 'Modelado 3D',
-    description: 'Una escena nocturna inspirada en las calles de Neo-Tokyo. Modelado en Blender y texturizado en Substance Painter.',
-    domain: 'creative',
-    images: [
-      'https://images.unsplash.com/photo-1555680202-c86f0e12f086?q=80&w=1200&fit=crop',
-      'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=1200&fit=crop', 
-      'https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=1200&fit=crop'
-    ],
-    software: ['Blender', 'Substance Painter', 'Photoshop']
-  },
-  {
-    id: 'p2',
-    title: 'Ancient Warrior Character',
-    artist: 'Sofia R.',
-    artistAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?q=80&w=600&fit=crop',
-    views: '8.2k',
-    likes: '950',
-    category: 'Escultura',
-    description: 'Escultura digital de un guerrero antiguo. Enfoque en anatomía y detalles de armadura desgastada.',
-    domain: 'creative',
-    images: ['https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?q=80&w=1200&fit=crop'],
-    software: ['ZBrush', 'Maya', 'Marmoset']
-  },
-  {
-    id: 'p3',
-    title: 'Isometric Room Design',
-    artist: 'Kenji S.',
-    artistAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=600&fit=crop',
-    views: '15k',
-    likes: '2.1k',
-    category: 'Concept Art',
-    description: 'Diseño isométrico de una habitación de hacker. Iluminación y composición en Blender.',
-    domain: 'creative',
-    images: ['https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1200&fit=crop'],
-    software: ['Blender', 'Cycles']
-  },
-  {
-    id: 'p4',
-    title: 'Abstract Motion Loop',
-    artist: 'Elena G.',
-    artistAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=600&fit=crop',
-    views: '5.6k',
-    likes: '400',
-    category: 'Motion Graphics',
-    description: 'Loop abstracto creado con Cinema 4D y X-Particles.',
-    domain: 'creative',
-    images: ['https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1200&fit=crop'],
-    software: ['Cinema 4D', 'Redshift']
-  },
-  {
-    id: 'p5',
-    title: 'Realistic Portrait Study',
-    artist: 'Marco P.',
-    artistAvatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&fit=crop',
-    views: '10k',
-    likes: '1.5k',
-    category: 'Modelado 3D',
-    description: 'Estudio de retrato realista. Piel con texturing.xyz y pelo con XGen.',
-    domain: 'creative',
-    images: ['https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1200&fit=crop'],
-    software: ['Maya', 'Arnold', 'ZBrush']
-  },
-  {
-    id: 'p6',
-    title: 'Stylized Game Asset: Sword',
-    artist: 'Anna L.',
-    artistAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1589254065878-42c9da997008?q=80&w=600&fit=crop',
-    views: '3.4k',
-    likes: '250',
-    category: 'Game Dev',
-    description: 'Espada estilizada pintada a mano para un RPG de fantasía.',
-    domain: 'creative',
-    images: ['https://images.unsplash.com/photo-1589254065878-42c9da997008?q=80&w=1200&fit=crop'],
-    software: ['Blender', 'Substance Painter']
-  },
-  {
-    id: 'p7',
-    title: 'Post-Apocalyptic Environment',
-    artist: 'David B.',
-    artistAvatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1595878715977-2e8f8df18ea8?q=80&w=600&fit=crop',
-    views: '18k',
-    likes: '2.8k',
-    category: 'Modelado 3D',
-    description: 'Entorno de juego en Unreal Engine 5 utilizando Lumen y Nanite.',
-    domain: 'creative',
-    images: ['https://images.unsplash.com/photo-1595878715977-2e8f8df18ea8?q=80&w=1200&fit=crop'],
-    software: ['Unreal Engine 5', 'Quixel Megascans']
-  },
-  {
-    id: 'p8',
-    title: '2D Animation Reel 2024',
-    artist: 'Clara M.',
-    artistAvatar: 'https://images.unsplash.com/photo-1554151228-14d9def656ec?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=600&fit=crop',
-    views: '9.1k',
-    likes: '800',
-    category: 'Animación 2D',
-    description: 'Recopilación de mis mejores trabajos de animación tradicional y cut-out del año.',
-    domain: 'creative',
-    images: ['https://images.unsplash.com/photo-1618331835717-801e976710b2?q=80&w=1200&fit=crop'],
-    software: ['Toon Boom Harmony', 'After Effects']
-  },
-  {
-    id: 'p9',
-    title: 'Creature Concept: Swamp Lurker',
-    artist: 'Tom H.',
-    artistAvatar: 'https://images.unsplash.com/photo-1552374196-c4e7ffc6e126?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=600&fit=crop',
-    views: '6.7k',
-    likes: '550',
-    category: 'Concept Art',
-    description: 'Diseño de criatura para un juego de terror. Bocetos y render final.',
-    domain: 'creative',
-    images: ['https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1200&fit=crop'],
-    software: ['Photoshop', 'ZBrush']
-  },
-  {
-    id: 'p10',
-    title: 'VFX Explosion Study',
-    artist: 'Lucas S.',
-    artistAvatar: 'https://images.unsplash.com/photo-1542909168-82c3e7fdca5c?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=600&fit=crop',
-    views: '4.2k',
-    likes: '320',
-    category: 'VFX',
-    description: 'Simulación de explosión y humo en Houdini, renderizado en Mantra.',
-    domain: 'creative',
-    images: ['https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=1200&fit=crop'],
-    software: ['Houdini', 'Nuke']
-  },
-  {
-    id: 'p11',
-    title: 'Pixel Art City',
-    artist: 'PixelJunkie',
-    artistAvatar: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=600&fit=crop',
-    views: '11k',
-    likes: '1.8k',
-    category: 'Arte 2D',
-    description: 'Escena urbana detallada en pixel art. Paleta de colores limitada.',
-    domain: 'creative',
-    images: ['https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1200&fit=crop'],
-    software: ['Aseprite']
-  },
-  {
-    id: 'p12',
-    title: 'ArchViz Interior: Minimalist Loft',
-    artist: 'Sarah Arch',
-    artistAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=600&fit=crop',
-    views: '14k',
-    likes: '2.5k',
-    category: 'ArchViz',
-    description: 'Visualización arquitectónica fotorrealista de un loft minimalista.',
-    domain: 'creative',
-    images: ['https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1200&fit=crop'],
-    software: ['3ds Max', 'Corona Renderer']
-  },
-  {
-    id: 'p_dev1',
-    title: 'E-commerce Platform: ShopNext',
-    artist: 'David Code',
-    artistAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?q=80&w=600&fit=crop',
-    views: '5.2k',
-    likes: '340',
-    category: 'Full Stack',
-    description: 'Plataforma de comercio electrónico completa con carrito, pagos via Stripe y panel de administración.',
-    domain: 'dev',
-    software: ['Next.js', 'Stripe', 'PostgreSQL']
-  },
-  {
-    id: 'p_dev2',
-    title: 'AI Chatbot Interface',
-    artist: 'Sarah UI',
-    artistAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?q=80&w=600&fit=crop',
-    views: '8.1k',
-    likes: '600',
-    category: 'UI/UX Design',
-    description: 'Diseño de interfaz para un asistente virtual impulsado por IA. Enfoque en accesibilidad y micro-interacciones.',
-    domain: 'dev',
-    software: ['Figma', 'React']
-  },
-  {
-    id: 'p_dev3',
-    title: '3D Portfolio Website',
-    artist: 'WebWizard',
-    artistAvatar: 'https://images.unsplash.com/photo-1527980965255-d3b416303d12?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=600&fit=crop',
-    views: '9.5k',
-    likes: '1.1k',
-    category: 'Frontend',
-    description: 'Sitio web personal interactivo utilizando Three.js y React Fiber para mostrar modelos 3D en la web.',
-    domain: 'dev',
-    software: ['React Three Fiber', 'WebGL']
-  },
-  {
-    id: 'p_dev4',
-    title: 'DevOps CI/CD Pipeline Visualizer',
-    artist: 'CloudNinja',
-    artistAvatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1558494949-ef526b0042a0?q=80&w=600&fit=crop',
-    views: '3.2k',
-    likes: '210',
-    category: 'DevOps',
-    description: 'Herramienta para visualizar pipelines de Jenkins y GitHub Actions en tiempo real.',
-    domain: 'dev',
-    software: ['D3.js', 'Docker', 'Go']
-  },
-  {
-    id: 'p_dev5',
-    title: 'Mobile Banking App UI',
-    artist: 'AppMaster',
-    artistAvatar: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?q=80&w=600&fit=crop',
-    views: '4.5k',
-    likes: '450',
-    category: 'Mobile Dev',
-    description: 'Diseño e implementación de interfaz bancaria moderna en Flutter.',
-    domain: 'dev',
-    software: ['Flutter', 'Dart']
-  },
-  {
-    id: 'p_dev6',
-    title: 'Kubernetes Cluster Monitor',
-    artist: 'SysAdminPro',
-    artistAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&fit=crop',
-    image: 'https://images.unsplash.com/photo-1551033406-611cf9a28f67?q=80&w=600&fit=crop',
-    views: '2.8k',
-    likes: '190',
-    category: 'DevOps',
-    description: 'Dashboard para monitoreo de clusters K8s usando Prometheus y Grafana.',
-    domain: 'dev',
-    software: ['Kubernetes', 'Grafana']
-  }
-];
+export const PORTFOLIO_ITEMS: PortfolioItem[] = [];
+
 
 // --- BLOG DATA (EXPANDED) ---
 export const BLOG_ITEMS: ArticleItem[] = [

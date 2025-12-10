@@ -73,6 +73,16 @@ const App: React.FC = () => {
           // User state updated
           actions.setUser(appUser);
 
+          // Restore Content Mode based on Role
+          const devKeywords = ['developer', 'desarrollador', 'engineer', 'ingeniero', 'coder', 'programmer', 'programador', 'software', 'tech', 'web', 'app', 'mobile', 'backend', 'frontend', 'fullstack', 'devops', 'data', 'ai'];
+          const userRoleName = (appUser.role || '').toLowerCase();
+          const isDevRole = devKeywords.some(k => userRoleName.includes(k));
+          const initialMode = isDevRole ? 'dev' : 'creative';
+
+          // Only force set if it's different from default to avoid jitter, but logical correctness requires setting it.
+          // We set it to ensure consistency with the user's persona.
+          actions.setContentMode(initialMode);
+
         } catch (error) {
           console.error("Error fetching/creating user profile:", error);
           // Fallback if Firestore fails: use basic auth data

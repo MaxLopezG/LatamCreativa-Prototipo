@@ -73,15 +73,20 @@ export const OnboardingModal: React.FC = () => {
 
         setLoading(true);
         try {
+            // Determine Content Mode based on Role
+            const devKeywords = ['developer', 'desarrollador', 'engineer', 'ingeniero', 'coder', 'programmer', 'programador', 'software', 'tech', 'web', 'app', 'mobile', 'backend', 'frontend', 'fullstack', 'devops', 'data', 'ai'];
+            const lowerRole = role.toLowerCase();
+            const isDevRole = devKeywords.some(k => lowerRole.includes(k));
+            const newMode: 'dev' | 'creative' = isDevRole ? 'dev' : 'creative';
+
             const updatedUser = {
                 ...user,
                 name,
                 role,
-                location: location || 'Latam', // Fallback if they didn't select but clicked save?
+                location: location || 'Latam',
                 bio,
                 skills,
                 socialLinks,
-                // We could add a onboarded: true flag to firestore if we wanted
             };
 
             // Update Firestore
@@ -95,9 +100,15 @@ export const OnboardingModal: React.FC = () => {
                 socialLinks
             });
 
-            // Update Local
+            // Update Local State & Mode
             actions.setUser(updatedUser);
-            actions.showToast('¡Perfil completado! Bienvenido.', 'success');
+            if (state.contentMode !== newMode) {
+                actions.setContentMode(newMode);
+                actions.showToast(`Modo ${newMode === 'dev' ? 'Developer' : 'Creativo'} activado según tu perfil`, 'info');
+            } else {
+                actions.showToast('¡Perfil completado! Bienvenido.', 'success');
+            }
+
             setIsOpen(false);
 
         } catch (error) {

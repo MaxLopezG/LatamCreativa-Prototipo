@@ -2,11 +2,11 @@
 import React from 'react';
 import { ImageIcon, GraduationCap, Store, Newspaper, Users, ArrowRight, Zap, Globe, Shield, Briefcase, Quote } from 'lucide-react';
 
-interface MainLandingViewProps {
+interface AboutViewProps {
     onNavigate: (moduleId: string) => void;
 }
 
-export const MainLandingView: React.FC<MainLandingViewProps> = ({ onNavigate }) => {
+export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
     const services = [
         {
             id: 'portfolio',
@@ -85,26 +85,20 @@ export const MainLandingView: React.FC<MainLandingViewProps> = ({ onNavigate }) 
 
                     <div className="relative z-10 px-6 md:px-16 w-full max-w-4xl py-12">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-white text-xs font-bold uppercase tracking-widest mb-6 backdrop-blur-md shadow-lg">
-                            <Zap className="h-3 w-3 text-amber-500" /> La Plataforma #1 para Artistas
+                            <Zap className="h-3 w-3 text-amber-500" /> Sobre Nosotros
                         </div>
                         <h1 className="text-4xl md:text-5xl lg:text-6xl 2xl:text-7xl font-bold text-white mb-6 leading-tight drop-shadow-lg transition-all duration-300">
-                            El ecosistema definitivo para <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-600">Creativos Digitales</span>
+                            La plataforma definitiva para <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-600">Creativos en Latam</span>
                         </h1>
                         <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl leading-relaxed drop-shadow-md">
-                            Conecta, aprende, vende y colabora en un solo lugar. Latam Creativa unifica todas las herramientas que necesitas para impulsar tu carrera artística.
+                            Nuestra misión es conectar, educar y potenciar a la próxima generación de artistas digitales en Latinoamérica.
                         </p>
                         <div className="flex flex-wrap gap-4">
                             <button
-                                onClick={() => onNavigate('portfolio')}
+                                onClick={() => onNavigate('/')}
                                 className="px-8 py-4 bg-white text-black font-bold rounded-xl hover:bg-slate-200 transition-colors shadow-lg shadow-white/10 w-full md:w-auto"
                             >
-                                Explorar Portafolios
-                            </button>
-                            <button
-                                onClick={() => onNavigate('community')}
-                                className="px-8 py-4 bg-white/5 text-white border border-white/10 font-bold rounded-xl hover:bg-white/10 transition-colors backdrop-blur-md w-full md:w-auto"
-                            >
-                                Unirse a la Comunidad
+                                Ver Servicios
                             </button>
                         </div>
                     </div>
@@ -138,55 +132,6 @@ export const MainLandingView: React.FC<MainLandingViewProps> = ({ onNavigate }) 
                     <div className="text-center md:text-left">
                         <div className="text-3xl font-bold text-slate-900 dark:text-white">25+</div>
                         <div className="text-xs text-slate-500 uppercase tracking-widest mt-1">Países</div>
-                    </div>
-                </div>
-
-                {/* Services Grid */}
-                <div className="py-16">
-                    <div className="flex items-center justify-between mb-10">
-                        <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Todo lo que necesitas</h2>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {services.map((service) => (
-                            <div
-                                key={service.id}
-                                onClick={() => onNavigate(service.id)}
-                                className={`group relative p-6 2xl:p-8 rounded-3xl bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-white/5 transition-all cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/20 ${service.border}`}
-                            >
-                                <div className={`w-12 h-12 2xl:w-14 2xl:h-14 rounded-2xl ${service.bg} flex items-center justify-center mb-6 transition-transform group-hover:scale-110`}>
-                                    <service.icon className={`h-6 w-6 2xl:h-7 2xl:w-7 ${service.color}`} />
-                                </div>
-                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-amber-500 transition-colors">
-                                    {service.title}
-                                </h3>
-                                <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
-                                    {service.desc}
-                                </p>
-                                <div className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white group-hover:gap-4 transition-all">
-                                    Explorar <ArrowRight className="h-4 w-4" />
-                                </div>
-                            </div>
-                        ))}
-
-                        {/* Pro Card */}
-                        <div
-                            onClick={() => onNavigate('pro')}
-                            className="group relative p-6 2xl:p-8 rounded-3xl bg-gradient-to-br from-amber-500 to-orange-600 text-white transition-all cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:shadow-amber-500/30"
-                        >
-                            <div className="w-12 h-12 2xl:w-14 2xl:h-14 rounded-2xl bg-white/20 flex items-center justify-center mb-6">
-                                <Globe className="h-6 w-6 2xl:h-7 2xl:w-7 text-white" />
-                            </div>
-                            <h3 className="text-2xl font-bold mb-3">
-                                Hazte PRO
-                            </h3>
-                            <p className="text-amber-100 mb-8 leading-relaxed">
-                                Sube de nivel con descargas ilimitadas, 0% de comisión y acceso a contenido exclusivo.
-                            </p>
-                            <div className="flex items-center gap-2 text-sm font-bold text-white group-hover:gap-4 transition-all">
-                                Ver Planes <ArrowRight className="h-4 w-4" />
-                            </div>
-                        </div>
                     </div>
                 </div>
 

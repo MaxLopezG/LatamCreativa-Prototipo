@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { ArrowLeft, Heart, Share2, MessageSquare, Briefcase, UserPlus, CheckCircle2, Maximize2, X, Bookmark } from 'lucide-react';
 import { PORTFOLIO_ITEMS } from '../data/content';
+import { useAppStore } from '../hooks/useAppStore';
 
 interface PortfolioPostViewProps {
   itemId?: string;
@@ -13,270 +14,367 @@ interface PortfolioPostViewProps {
 }
 
 export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, onBack, onAuthorClick, onSave, onShare }) => {
+  const { state } = useAppStore();
+  const createdItems = state.createdItems || [];
+  const allItems = [...createdItems, ...PORTFOLIO_ITEMS];
+
   const { id: paramId } = useParams<{ id: string }>();
   const id = itemId || paramId;
-  const item = PORTFOLIO_ITEMS.find(p => p.id === id) || PORTFOLIO_ITEMS[0];
-  const relatedItems = PORTFOLIO_ITEMS.filter(p => p.id !== id && p.category === item.category).slice(0, 4);
+  const item = allItems.find(p => p.id === id);
+
+  if (!item) {
+    return (
+      <div className="min-h-screen bg-[#030304] flex flex-col items-center justify-center p-8 text-center">
+        <h2 className="text-2xl font-bold text-white mb-4">Proyecto no encontrado</h2>
+        <p className="text-slate-400 mb-8">El proyecto que buscas no existe o ha sido eliminado.</p>
+        <button onClick={onBack} className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors">
+          Volver
+        </button>
+      </div>
+    );
+  }
+
+  const relatedItems = allItems.filter(p => p.id !== id && p.category === item.category).slice(0, 4);
 
   const [isLiked, setIsLiked] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
-  const projectImages = item.images && item.images.length > 0 
-    ? item.images 
+  const projectImages = item.images && item.images.length > 0
+    ? item.images
     : [
-        item.image, 
-        'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1600&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1600&auto=format&fit=crop',
-        'https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=1600&auto=format&fit=crop'
-      ];
+      item.image,
+      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1600&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1600&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=1600&auto=format&fit=crop'
+    ];
+
+  // Colors for software tags
+  const getSoftwareColor = (name: string) => {
+    const map: Record<string, string> = {
+      'Blender': 'text-orange-500 bg-orange-500/10 border-orange-500/20',
+      'Substance Painter': 'text-green-500 bg-green-500/10 border-green-500/20',
+      'Photoshop': 'text-blue-500 bg-blue-500/10 border-blue-500/20',
+      'Unreal Engine': 'text-slate-200 bg-white/10 border-white/20',
+      'Maya': 'text-teal-500 bg-teal-500/10 border-teal-500/20',
+      'ZBrush': 'text-purple-500 bg-purple-500/10 border-purple-500/20',
+    };
+    return map[name] || 'text-slate-400 bg-slate-500/10 border-slate-500/20';
+  };
 
   const softwares = item.software && item.software.length > 0
-    ? item.software.map(s => ({ name: s, color: 'bg-slate-200 dark:bg-white/10' }))
-    : [
-        { name: 'Blender', color: 'bg-orange-500' },
-        { name: 'Substance Painter', color: 'bg-green-500' },
-        { name: 'Photoshop', color: 'bg-blue-500' }
-      ];
+    ? item.software
+    : ['Blender', 'Photoshop', 'Substance Painter'];
 
   return (
-    <div className="max-w-[1800px] mx-auto animate-fade-in pb-20 relative">
-      
+    <div className="min-h-screen bg-[#030304] animate-fade-in pb-20 relative">
+
+      {/* LIGHTBOX */}
       {lightboxImage && (
-        <div className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in" onClick={() => setLightboxImage(null)}>
-            <button 
-                onClick={() => setLightboxImage(null)}
-                className="absolute top-6 right-6 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-            >
-                <X className="h-8 w-8" />
-            </button>
-            <img src={lightboxImage} alt="Fullscreen" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" />
+        <div className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in" onClick={() => setLightboxImage(null)}>
+          <button
+            onClick={() => setLightboxImage(null)}
+            className="absolute top-6 right-6 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-50"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img src={lightboxImage} alt="Fullscreen" className="max-w-full max-h-[95vh] object-contain rounded shadow-2xl" />
         </div>
       )}
 
-      <div className="sticky top-0 z-30 bg-white/90 dark:bg-[#030304]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 h-16 flex items-center justify-between transition-colors">
+      {/* STICKY HEADER */}
+      <div className="sticky top-0 z-40 bg-[#030304]/80 backdrop-blur-xl border-b border-white/5 h-16 flex items-center justify-between px-4 md:px-8 transition-all">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={onBack}
-            className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 transition-colors"
+            className="p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <div className="flex flex-col">
-            <h1 className="text-base font-bold text-slate-900 dark:text-white leading-tight line-clamp-1">{item.title}</h1>
-            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-               <span>por <button onClick={() => onAuthorClick?.(item.artist)} className="text-slate-900 dark:text-white font-medium hover:text-amber-500 hover:underline">{item.artist}</button></span>
-               <span>•</span>
-               <span className="text-amber-500">{item.category}</span>
+          <div className="hidden md:flex flex-col">
+            <h1 className="text-sm font-bold text-white leading-tight line-clamp-1">{item.title}</h1>
+            <div className="flex items-center gap-2 text-[10px] text-slate-400">
+              <span className="hover:text-amber-500 cursor-pointer transition-colors" onClick={() => onAuthorClick?.(item.artist)}>{item.artist}</span>
+              <span>•</span>
+              <span className="text-amber-500">{item.category}</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <button 
-             onClick={() => setIsLiked(!isLiked)}
-             className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-               isLiked 
-                ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/20' 
-                : 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20'
-             }`}
+        <div className="flex items-center gap-2">
+          {/* Like Button */}
+          <button
+            onClick={() => setIsLiked(!isLiked)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all border ${isLiked
+              ? 'bg-amber-500 border-amber-500 text-black'
+              : 'bg-white/5 border-white/5 text-slate-300 hover:bg-white/10'
+              }`}
           >
             <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
             <span className="hidden sm:inline">{isLiked ? 'Te gusta' : 'Me gusta'}</span>
           </button>
-          
-          <button 
-            onClick={() => onSave?.(item.id, item.image)}
-            className="p-2.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white hover:bg-amber-500 hover:text-white transition-colors"
-            title="Guardar"
-          >
-            <Bookmark className="h-4 w-4" />
-          </button>
 
-          <button 
-            onClick={onShare}
-            className="p-2.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20 transition-colors"
-          >
-            <Share2 className="h-4 w-4" />
-          </button>
+          {/* Action Buttons */}
+          <div className="flex bg-white/5 rounded-full p-1 border border-white/5">
+            <button
+              onClick={() => onSave?.(item.id, item.image)}
+              className="p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+              title="Guardar en colección"
+            >
+              <Bookmark className="h-4 w-4" />
+            </button>
+            <div className="w-px bg-white/10 my-1 mx-1"></div>
+            <button
+              onClick={onShare}
+              className="p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+              title="Compartir"
+            >
+              <Share2 className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-4 md:px-10 py-8">
-        
-        <div className="lg:col-span-9 space-y-8">
-          
-          <div className="relative group rounded-xl overflow-hidden shadow-2xl bg-slate-900">
-             <img 
-                src={projectImages[0]} 
-                alt="Main View" 
-                className="w-full h-auto block" 
-                onClick={() => setLightboxImage(projectImages[0])}
-             />
-             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center pointer-events-none">
-                 <button className="opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-full flex items-center gap-2 pointer-events-auto font-medium">
-                     <Maximize2 className="h-4 w-4" /> Ampliar
-                 </button>
-             </div>
+      <div className="max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 p-4 md:p-8">
+
+        {/* --- LEFT: MAIN IMAGE GALLERY --- */}
+        <div className="lg:col-span-9 space-y-4">
+
+          {/* Title and Metadata (Moved to Top) */}
+          <div className="mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">{item.title}</h1>
+            <div className="flex flex-wrap gap-2">
+              {softwares.map(soft => (
+                <div key={soft} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold border ${getSoftwareColor(soft)}`}>
+                  {soft}
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="py-6 border-b border-slate-200 dark:border-white/10">
-             <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Sobre el proyecto</h3>
-             <div className="prose prose-lg prose-slate dark:prose-invert max-w-none text-slate-600 dark:text-slate-300">
-               <p>
-                 {item.description || "Este proyecto es una exploración personal utilizando nuevas técnicas de modelado y texturizado. El objetivo era lograr un acabado de alta calidad optimizado para renderizado en tiempo real."}
-               </p>
-             </div>
+          {/* Main Hero Image */}
+          <div
+            className="group relative w-full bg-black rounded-sm overflow-hidden shadow-2xl shadow-black/50 cursor-zoom-in"
+            onClick={() => setLightboxImage(projectImages[0])}
+          >
+            <img
+              src={projectImages[0]}
+              alt="Main View"
+              className="w-full h-auto object-cover"
+            />
+            {/* Hover Actions */}
+            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <button className="bg-black/60 backdrop-blur-md text-white p-2.5 rounded-lg hover:bg-black/80 transition-colors">
+                <Maximize2 className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
+          {/* Description Block */}
+          <div className="bg-[#0A0A0C] border border-white/5 p-8 rounded-xl shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none"></div>
+
+            <div className="prose prose-invert prose-lg max-w-none text-slate-300 relative z-10 font-light">
+              <p>
+                {item.description || "Este proyecto representa una exploración profunda de técnicas avanzadas de renderizado y composición. Inspirado en la estética cyberpunk y la arquitectura brutalista, busqué crear una atmósfera que se sintiera tanto futurista como vivida. Utilicé Blender para el modelado principal y Substance Painter para texturizado procedural, finalizando en Photoshop para corrección de color."}
+              </p>
+            </div>
+          </div>
+
+          {/* Additional Images Grid */}
           {projectImages.length > 1 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {projectImages.slice(1).map((img, index) => (
-                  <div 
-                      key={index} 
-                      className={`relative group rounded-xl overflow-hidden cursor-zoom-in bg-slate-900 shadow-lg ${projectImages.length === 3 && index === 1 ? 'md:col-span-2' : ''}`}
-                      onClick={() => setLightboxImage(img)}
-                  >
-                    <img src={img} alt={`Detail ${index + 1}`} className="w-full h-full object-cover min-h-[300px]" />
-                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="p-2 bg-black/50 backdrop-blur-md rounded-lg text-white">
-                            <Maximize2 className="h-5 w-5" />
-                        </div>
-                    </div>
+            <div className="grid grid-cols-1 gap-4">
+              {projectImages.slice(1).map((img, index) => (
+                <div
+                  key={index}
+                  className="group relative w-full bg-black rounded-sm overflow-hidden shadow-xl cursor-zoom-in"
+                  onClick={() => setLightboxImage(img)}
+                >
+                  {/* Lazy load simulation */}
+                  <img src={img} alt={`Detail ${index + 1}`} className="w-full h-auto object-cover" loading="lazy" />
+                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <button className="bg-black/60 backdrop-blur-md text-white p-2 rounded-lg hover:bg-black/80">
+                      <Maximize2 className="h-4 w-4" />
+                    </button>
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
           )}
 
-          <div className="pt-8">
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-              <MessageSquare className="h-5 w-5" /> Comentarios
+          {/* Comments Section */}
+          <div className="pt-8 max-w-4xl mx-auto">
+            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-amber-500" /> Comentarios <span className="text-slate-500 text-sm font-normal">(124)</span>
             </h3>
-            <div className="flex gap-4 mb-8">
-                <div className="h-10 w-10 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
-                   <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&fit=crop" alt="Me" className="h-full w-full object-cover" />
+
+            {/* Input */}
+            <div className="flex gap-4 mb-8 bg-[#0A0A0C] p-4 rounded-xl border border-white/5">
+              <div className="h-10 w-10 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold text-sm">
+                TÚ
+              </div>
+              <div className="flex-1">
+                <textarea
+                  className="w-full bg-transparent text-white text-sm placeholder-slate-500 focus:outline-none resize-none min-h-[40px]"
+                  placeholder="Escribe un comentario constructivo..."
+                  rows={2}
+                ></textarea>
+                <div className="flex justify-end mt-2">
+                  <button className="px-5 py-1.5 bg-amber-500 text-black font-bold rounded-lg hover:bg-amber-400 text-xs transition-colors">Publicar</button>
                 </div>
+              </div>
+            </div>
+
+            {/* Fake Comments */}
+            <div className="space-y-6">
+              <div className="flex gap-4">
+                <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&auto=format&fit=crop" className="h-10 w-10 rounded-full object-cover" alt="User" />
                 <div className="flex-1">
-                   <textarea 
-                     className="w-full bg-slate-100 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl p-4 text-slate-900 dark:text-white text-base focus:outline-none focus:border-amber-500 transition-colors resize-none"
-                     placeholder="Deja un comentario constructivo..."
-                     rows={3}
-                   ></textarea>
-                   <div className="flex justify-end mt-2">
-                      <button className="px-6 py-2 bg-slate-900 dark:bg-white text-white dark:text-black font-bold rounded-lg hover:opacity-90 transition-opacity">Publicar</button>
-                   </div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-white font-bold text-sm">Marcus Chen</span>
+                    <span className="text-[10px] text-slate-500">hace 2 días</span>
+                  </div>
+                  <p className="text-slate-300 text-sm">¡La iluminación en la tercera imagen es increíble! ¿Usaste Cycles o Eevee?</p>
+                  <div className="flex items-center gap-4 mt-2">
+                    <button className="text-xs text-slate-500 hover:text-white flex items-center gap-1"><Heart className="h-3 w-3" /> 12</button>
+                    <button className="text-xs text-slate-500 hover:text-white">Responder</button>
+                  </div>
                 </div>
+              </div>
+              <div className="flex gap-4">
+                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop" className="h-10 w-10 rounded-full object-cover" alt="User" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-white font-bold text-sm">Sarah Jenkins</span>
+                    <span className="text-[10px] text-slate-500">hace 1 semana</span>
+                  </div>
+                  <p className="text-slate-300 text-sm">Me encanta la composición y las texturas del suelo. Gran trabajo.</p>
+                  <div className="flex items-center gap-4 mt-2">
+                    <button className="text-xs text-slate-500 hover:text-white flex items-center gap-1"><Heart className="h-3 w-3" /> 8</button>
+                    <button className="text-xs text-slate-500 hover:text-white">Responder</button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+
         </div>
 
+        {/* --- RIGHT: SIDEBAR --- */}
         <aside className="lg:col-span-3 space-y-6">
-            <div className="sticky top-24">
-                
-                <div className="bg-white dark:bg-white/[0.03] p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none mb-6">
-                    <div className="flex items-center gap-4 mb-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 p-2 -m-2 rounded-xl transition-colors" onClick={() => onAuthorClick?.(item.artist)}>
-                        <div className="h-14 w-14 rounded-full overflow-hidden ring-2 ring-slate-100 dark:ring-white/10">
-                            <img src={item.artistAvatar} alt={item.artist} className="h-full w-full object-cover" />
-                        </div>
-                        <div>
-                            <div className="flex items-center gap-1.5">
-                                <h3 className="font-bold text-slate-900 dark:text-white truncate">{item.artist}</h3>
-                                <CheckCircle2 className="h-3.5 w-3.5 text-amber-500" />
-                            </div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Senior 3D Artist</p>
-                        </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                       <button 
-                         onClick={() => setIsFollowing(!isFollowing)}
-                         className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                            isFollowing 
-                            ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white'
-                            : 'bg-amber-500 text-white hover:bg-amber-600'
-                         }`}
-                       >
-                           {isFollowing ? <CheckCircle2 className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-                           {isFollowing ? 'Siguiendo' : 'Seguir'}
-                       </button>
-                       <button className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-black hover:opacity-90 text-sm font-semibold transition-opacity">
-                           <Briefcase className="h-4 w-4" />
-                           Contratar
-                       </button>
-                    </div>
-                </div>
+          <div className="sticky top-24 space-y-6">
 
-                <div className="bg-white dark:bg-white/[0.03] p-6 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none mb-6">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Estadísticas</h4>
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                        <div>
-                            <div className="text-lg font-bold text-slate-900 dark:text-white">{item.views}</div>
-                            <div className="text-[10px] text-slate-500 uppercase font-bold">Vistas</div>
-                        </div>
-                        <div>
-                            <div className="text-lg font-bold text-slate-900 dark:text-white">{item.likes}</div>
-                            <div className="text-[10px] text-slate-500 uppercase font-bold">Likes</div>
-                        </div>
-                        <div>
-                            <div className="text-lg font-bold text-slate-900 dark:text-white">124</div>
-                            <div className="text-[10px] text-slate-500 uppercase font-bold">Coment.</div>
-                        </div>
-                    </div>
-                </div>
+            {/* Author Card */}
+            <div className="bg-[#0A0A0C] p-6 rounded-2xl border border-white/5 shadow-xl relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 to-purple-500"></div>
 
-                <div className="mb-8">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Software Usado</h4>
-                    <div className="flex flex-wrap gap-2">
-                        {softwares.map(soft => (
-                            <div key={soft.name} className={`flex items-center gap-2 px-3 py-2 ${soft.color} bg-opacity-20 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/5`}>
-                                {soft.name}
-                            </div>
-                        ))}
+              <div className="flex items-center gap-4 mb-6 cursor-pointer" onClick={() => onAuthorClick?.(item.artist)}>
+                <div className="relative">
+                  <div className="h-16 w-16 rounded-full overflow-hidden p-[2px] bg-gradient-to-tr from-amber-500 to-transparent">
+                    <div className="h-full w-full rounded-full bg-black p-[2px]">
+                      <img src={item.artistAvatar} alt={item.artist} className="h-full w-full object-cover rounded-full" />
                     </div>
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 bg-black rounded-full p-1">
+                    <CheckCircle2 className="h-4 w-4 text-white fill-blue-500" />
+                  </div>
                 </div>
-
-                <div className="mb-8">
-                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Etiquetas</h4>
-                    <div className="flex flex-wrap gap-2">
-                        {[item.category, 'ArtStation', 'Digital Art', 'Render'].map(tag => (
-                             <span key={tag} className="px-3 py-1 rounded bg-slate-100 dark:bg-white/5 text-xs text-slate-600 dark:text-slate-400 font-medium hover:bg-amber-500/10 hover:text-amber-500 cursor-pointer transition-colors border border-transparent hover:border-amber-500/20">
-                                 #{tag}
-                             </span>
-                        ))}
-                    </div>
+                <div>
+                  <h3 className="font-bold text-white text-lg hover:underline decoration-amber-500 underline-offset-4 decoration-2">{item.artist}</h3>
+                  <p className="text-xs text-slate-400">Senior Environment Artist</p>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    {state.user && state.user.name === item.artist ? state.user.location : 'Tokio, Japón'}
+                  </p>
                 </div>
+              </div>
 
-                 <div>
-                    <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Más del artista</h4>
-                        <button onClick={() => onAuthorClick?.(item.artist)} className="text-xs text-amber-500 hover:text-amber-400 font-bold">Ver todo</button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                        {relatedItems.map(rel => (
-                            <div key={rel.id} onClick={() => {}} className="aspect-square rounded-lg bg-slate-200 dark:bg-slate-800 overflow-hidden cursor-pointer hover:opacity-80 transition-opacity border border-slate-200 dark:border-white/5">
-                                <img src={rel.image} alt={rel.title} className="w-full h-full object-cover" />
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setIsFollowing(!isFollowing)}
+                  className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${isFollowing
+                    ? 'bg-white/5 text-white border border-white/5'
+                    : 'bg-amber-500 text-black hover:bg-amber-400 shadow-lg shadow-amber-500/20'
+                    }`}
+                >
+                  {isFollowing ? <CheckCircle2 className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                  {isFollowing ? 'Siguiendo' : 'Seguir'}
+                </button>
+                <button className="flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-bold text-sm hover:bg-slate-200 transition-colors">
+                  <Briefcase className="h-4 w-4" /> Contratar
+                </button>
+              </div>
             </div>
+
+            {/* Stats Card */}
+            <div className="bg-[#0A0A0C] p-5 rounded-2xl border border-white/5">
+              <div className="grid grid-cols-3 gap-2 text-center divide-x divide-white/5">
+                <div>
+                  <div className="text-white font-bold">{item.views.toLocaleString()}</div>
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-1">Vistas</div>
+                </div>
+                <div>
+                  <div className="text-white font-bold">{item.likes.toLocaleString()}</div>
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-1">Likes</div>
+                </div>
+                <div>
+                  <div className="text-white font-bold">124</div>
+                  <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-1">Coment.</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div className="bg-[#0A0A0C] p-5 rounded-2xl border border-white/5">
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Etiquetas</h4>
+              <div className="flex flex-wrap gap-2">
+                {[item.category, 'Concept Art', 'Sci-Fi', 'Environment', '2024'].map(tag => (
+                  <span key={tag} className="px-3 py-1.5 rounded-lg bg-white/5 text-xs text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer transition-colors border border-transparent hover:border-white/10">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* More from Author/Category */}
+            <div>
+              <div className="flex items-center justify-between mb-4 px-2">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Más como esto</h4>
+                <button className="text-xs text-amber-500 hover:underline font-bold">Ver todo</button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {relatedItems.map(rel => (
+                  <div key={rel.id} className="group aspect-square rounded-xl bg-white/5 overflow-hidden cursor-pointer relative">
+                    <img src={rel.image} alt={rel.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                      <span className="text-xs font-bold text-white line-clamp-1">{rel.title}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
         </aside>
+
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0A0A0C] border-t border-slate-200 dark:border-white/10 p-4 lg:hidden flex items-center justify-between z-40 safe-area-pb">
-           <div className="flex items-center gap-4">
-               <button className="flex flex-col items-center text-slate-500 dark:text-slate-400 hover:text-amber-500 transition-colors">
-                   <Heart className="h-6 w-6" />
-                   <span className="text-[10px] mt-1 font-bold">{item.likes}</span>
-               </button>
-               <button className="flex flex-col items-center text-slate-500 dark:text-slate-400">
-                   <MessageSquare className="h-6 w-6" />
-                   <span className="text-[10px] mt-1 font-bold">124</span>
-               </button>
-           </div>
-           <button className="px-8 py-3 bg-amber-500 text-white rounded-xl font-bold text-sm shadow-lg shadow-amber-500/20">Contratar</button>
+      {/* MOBILE BOTTOM ACTIONS */}
+      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0C]/90 backdrop-blur-xl border-t border-white/10 p-4 lg:hidden flex items-center justify-between z-50">
+        <div className="flex items-center gap-6">
+          <button className={`${isLiked ? 'text-amber-500' : 'text-slate-400'} flex flex-col items-center gap-1`} onClick={() => setIsLiked(!isLiked)}>
+            <Heart className={`h-6 w-6 ${isLiked ? 'fill-current' : ''}`} />
+            <span className="text-[10px] font-bold">{item.likes}</span>
+          </button>
+          <button className="text-slate-400 flex flex-col items-center gap-1">
+            <MessageSquare className="h-6 w-6" />
+            <span className="text-[10px] font-bold">124</span>
+          </button>
+        </div>
+        <button className="px-8 py-3 bg-white text-black rounded-xl font-bold text-sm">
+          Contactar
+        </button>
       </div>
+
     </div>
   );
 };

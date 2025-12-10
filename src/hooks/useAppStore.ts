@@ -134,182 +134,193 @@ type AppStore = UISlice & AuthSlice;
 // --- Zustand Implementation ---
 const useZustandStore = create<AppStore>()(
   devtools(
-    (set, get) => ({
-      // UI Initial State
-      isSidebarOpen: false,
-      activeCategory: 'Home',
-      activeModule: 'home',
-      contentMode: 'creative',
-      createMode: 'none',
-      searchQuery: '',
-      toast: null,
-      isChatOpen: false,
-      chatActiveUser: null,
-      isSaveModalOpen: false,
-      isShareModalOpen: false,
-      itemToSave: null,
-      viewingAuthorName: null,
+    persist(
+      (set, get) => ({
+        // UI Initial State
+        isSidebarOpen: false,
+        activeCategory: 'Home',
+        activeModule: 'home',
+        contentMode: 'creative',
+        createMode: 'none',
+        searchQuery: '',
+        toast: null,
+        isChatOpen: false,
+        chatActiveUser: null,
+        isSaveModalOpen: false,
+        isShareModalOpen: false,
+        itemToSave: null,
+        viewingAuthorName: null,
 
-      // Auth/User Initial State
-      user: null,
-      isLoadingAuth: true, // Initialize to true
-      cartItems: [],
-      likedItems: [],
-      // Initialize with some dummy created items
-      createdItems: PORTFOLIO_ITEMS.slice(0, 2).map(item => ({
-        ...item,
-        id: `created-${item.id}`,
-        artist: 'Alex Motion',
-        artistAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop'
-      })),
-      notifications: [
-        { id: 1, type: 'comment', user: 'Sarah Jenkins', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&fit=crop', content: 'comentó en tu proyecto "Cyberpunk City"', time: 'Hace 2 min', read: false },
-        { id: 2, type: 'follow', user: 'Alex Motion', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&fit=crop', content: 'comenzó a seguirte', time: 'Hace 1 hora', read: false },
-        { id: 3, type: 'system', user: 'Latam Creativa', avatar: 'https://ui-avatars.com/api/?name=LC&background=F59E0B&color=fff', content: 'Tu curso "Blender 101" ha sido aprobado', time: 'Hace 3 horas', read: true },
-        { id: 4, type: 'like', user: 'Diego Lopez', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&fit=crop', content: 'le gustó tu artículo', time: 'Ayer', read: true },
-      ],
-      collections: USER_COLLECTIONS,
-      blogPosts: BLOG_ITEMS,
+        // Auth/User Initial State
+        user: null,
+        isLoadingAuth: true,
+        cartItems: [],
+        likedItems: [],
+        // Initialize with default or empty, persist will rehydrate
+        createdItems: [],
+        notifications: [
+          { id: 1, type: 'comment', user: 'Sarah Jenkins', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&fit=crop', content: 'comentó en tu proyecto "Cyberpunk City"', time: 'Hace 2 min', read: false },
+          { id: 2, type: 'follow', user: 'Alex Motion', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&fit=crop', content: 'comenzó a seguirte', time: 'Hace 1 hora', read: false },
+          { id: 3, type: 'system', user: 'Latam Creativa', avatar: 'https://ui-avatars.com/api/?name=LC&background=F59E0B&color=fff', content: 'Tu curso "Blender 101" ha sido aprobado', time: 'Hace 3 horas', read: true },
+          { id: 4, type: 'like', user: 'Diego Lopez', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&fit=crop', content: 'le gustó tu artículo', time: 'Ayer', read: true },
+        ],
+        collections: USER_COLLECTIONS,
+        blogPosts: [], // Initialize empty, will rely on persist or defaults if needed
 
-      // --- Actions Implementation ---
+        // --- Actions Implementation ---
 
-      setIsSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
-      setActiveCategory: (category) => set({ activeCategory: category }),
-      setActiveModule: (module) => {
-        set({ activeModule: module, viewingAuthorName: null, createMode: 'none', searchQuery: '' });
-        if (window.innerWidth < 1280) set({ isSidebarOpen: false });
-      },
-      setContentMode: (mode) => {
-        set({ contentMode: mode, activeCategory: 'Home' });
-        get().showToast(mode === 'dev' ? 'Modo Desarrollador Activado 👨‍💻' : 'Modo Creativo Activado 🎨', 'info');
-      },
-      setCreateMode: (mode) => set({ createMode: mode }),
-      setSearchQuery: (query) => set({ searchQuery: query }),
+        setIsSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
+        setActiveCategory: (category) => set({ activeCategory: category }),
+        setActiveModule: (module) => {
+          set({ activeModule: module, viewingAuthorName: null, createMode: 'none', searchQuery: '' });
+          if (window.innerWidth < 1280) set({ isSidebarOpen: false });
+        },
+        setContentMode: (mode) => {
+          set({ contentMode: mode, activeCategory: 'Home' });
+          get().showToast(mode === 'dev' ? 'Modo Desarrollador Activado 👨‍💻' : 'Modo Creativo Activado 🎨', 'info');
+        },
+        setCreateMode: (mode) => set({ createMode: mode }),
+        setSearchQuery: (query) => set({ searchQuery: query }),
 
-      showToast: (message, type = 'success') => {
-        set({ toast: { message, type } });
-        setTimeout(() => set({ toast: null }), 3000);
-      },
+        showToast: (message, type = 'success') => {
+          set({ toast: { message, type } });
+          setTimeout(() => set({ toast: null }), 3000);
+        },
 
-      setIsChatOpen: (isOpen) => set({ isChatOpen: isOpen }),
-      setChatActiveUser: (userId) => set({ chatActiveUser: userId }),
+        setIsChatOpen: (isOpen) => set({ isChatOpen: isOpen }),
+        setChatActiveUser: (userId) => set({ chatActiveUser: userId }),
 
-      openSaveModal: (id, image) => set({ isSaveModalOpen: true, itemToSave: { id, image } }),
-      closeSaveModal: () => set({ isSaveModalOpen: false, itemToSave: null }),
+        openSaveModal: (id, image) => set({ isSaveModalOpen: true, itemToSave: { id, image } }),
+        closeSaveModal: () => set({ isSaveModalOpen: false, itemToSave: null }),
 
-      openShareModal: () => set({ isShareModalOpen: true }),
-      closeShareModal: () => set({ isShareModalOpen: false }),
+        openShareModal: () => set({ isShareModalOpen: true }),
+        closeShareModal: () => set({ isShareModalOpen: false }),
 
-      setViewingAuthorName: (name) => {
-        set({ viewingAuthorName: name });
-        if (window.innerWidth < 1280 && name) set({ isSidebarOpen: false });
-      },
+        setViewingAuthorName: (name) => {
+          set({ viewingAuthorName: name });
+          if (window.innerWidth < 1280 && name) set({ isSidebarOpen: false });
+        },
 
-      // Auth/User Actions
-      setUser: (user) => set({ user, isLoadingAuth: false }),
-      setLoadingAuth: (loading) => set({ isLoadingAuth: loading }), // Action to set loading state
+        // Auth/User Actions
+        setUser: (user) => set({ user, isLoadingAuth: false }),
+        setLoadingAuth: (loading) => set({ isLoadingAuth: loading }),
 
-      clearUser: () => set({ user: null }),
+        clearUser: () => set({ user: null }),
 
-      updateUserProfile: (updates) => set((state) => ({
-        user: state.user ? { ...state.user, ...updates } : null
-      })),
+        updateUserProfile: (updates) => set((state) => ({
+          user: state.user ? { ...state.user, ...updates } : null
+        })),
 
-      addSkill: (skill) => set((state) => {
-        if (!state.user) return {};
-        const currentSkills = state.user.skills || [];
-        if (currentSkills.includes(skill)) return {};
-        return { user: { ...state.user, skills: [...currentSkills, skill] } };
-      }),
+        addSkill: (skill) => set((state) => {
+          if (!state.user) return {};
+          const currentSkills = state.user.skills || [];
+          if (currentSkills.includes(skill)) return {};
+          return { user: { ...state.user, skills: [...currentSkills, skill] } };
+        }),
 
-      removeSkill: (skill) => set((state) => {
-        if (!state.user) return {};
-        return { user: { ...state.user, skills: (state.user.skills || []).filter(s => s !== skill) } };
-      }),
+        removeSkill: (skill) => set((state) => {
+          if (!state.user) return {};
+          return { user: { ...state.user, skills: (state.user.skills || []).filter(s => s !== skill) } };
+        }),
 
-      updateSocialLinks: (links) => set((state) => {
-        if (!state.user) return {};
-        return { user: { ...state.user, socialLinks: { ...(state.user.socialLinks || {}), ...links } } };
-      }),
+        updateSocialLinks: (links) => set((state) => {
+          if (!state.user) return {};
+          return { user: { ...state.user, socialLinks: { ...(state.user.socialLinks || {}), ...links } } };
+        }),
 
-      addToCart: (item) => {
-        const { cartItems, showToast } = get();
-        if (!cartItems.find(i => i.id === item.id)) {
-          set({ cartItems: [...cartItems, item] });
-          showToast(`Añadido al carrito: ${item.title}`, 'success');
-        } else {
-          showToast(`Este item ya está en tu carrito`, 'info');
+        addToCart: (item) => {
+          const { cartItems, showToast } = get();
+          if (!cartItems.find(i => i.id === item.id)) {
+            set({ cartItems: [...cartItems, item] });
+            showToast(`Añadido al carrito: ${item.title}`, 'success');
+          } else {
+            showToast(`Este item ya está en tu carrito`, 'info');
+          }
+        },
+
+        removeFromCart: (itemId) => set((state) => ({
+          cartItems: state.cartItems.filter(i => i.id !== itemId)
+        })),
+
+        clearCart: () => set({ cartItems: [] }),
+
+        toggleLike: (itemId) => set((state) => {
+          const isLiked = state.likedItems.includes(itemId);
+          return {
+            likedItems: isLiked
+              ? state.likedItems.filter(id => id !== itemId)
+              : [...state.likedItems, itemId]
+          };
+        }),
+
+        addCreatedItem: (item) => set((state) => ({
+          createdItems: [item, ...state.createdItems]
+        })),
+
+        addBlogPost: (post) => set((state) => ({
+          blogPosts: [post, ...state.blogPosts]
+        })),
+
+        markNotificationRead: (id) => set((state) => ({
+          notifications: state.notifications.map(n => n.id === id ? { ...n, read: true } : n)
+        })),
+
+        markAllNotificationsRead: () => set((state) => ({
+          notifications: state.notifications.map(n => ({ ...n, read: true }))
+        })),
+
+        saveToCollection: (collectionId) => {
+          const { itemToSave, showToast, closeSaveModal } = get();
+          if (!itemToSave) return;
+
+          set((state) => ({
+            collections: state.collections.map(col => {
+              if (col.id === collectionId) {
+                return {
+                  ...col,
+                  itemCount: col.itemCount + 1,
+                  thumbnails: [itemToSave.image, ...col.thumbnails.slice(0, 3)]
+                };
+              }
+              return col;
+            })
+          }));
+          showToast("Guardado en colección", 'success');
+          closeSaveModal();
+        },
+
+        createCollection: (title, isPrivate) => {
+          const { itemToSave, showToast, closeSaveModal } = get();
+          if (!itemToSave) return;
+
+          const newCol: CollectionItem = {
+            id: Date.now().toString(),
+            title,
+            isPrivate,
+            itemCount: 1,
+            thumbnails: [itemToSave.image]
+          };
+
+          set((state) => ({ collections: [newCol, ...state.collections] }));
+          showToast("Nueva colección creada y guardada", 'success');
+          closeSaveModal();
         }
-      },
-
-      removeFromCart: (itemId) => set((state) => ({
-        cartItems: state.cartItems.filter(i => i.id !== itemId)
-      })),
-
-      clearCart: () => set({ cartItems: [] }),
-
-      toggleLike: (itemId) => set((state) => {
-        const isLiked = state.likedItems.includes(itemId);
-        return {
-          likedItems: isLiked
-            ? state.likedItems.filter(id => id !== itemId)
-            : [...state.likedItems, itemId]
-        };
       }),
-
-      addCreatedItem: (item) => set((state) => ({
-        createdItems: [item, ...state.createdItems]
-      })),
-
-      addBlogPost: (post) => set((state) => ({
-        blogPosts: [post, ...state.blogPosts]
-      })),
-
-      markNotificationRead: (id) => set((state) => ({
-        notifications: state.notifications.map(n => n.id === id ? { ...n, read: true } : n)
-      })),
-
-      markAllNotificationsRead: () => set((state) => ({
-        notifications: state.notifications.map(n => ({ ...n, read: true }))
-      })),
-
-      saveToCollection: (collectionId) => {
-        const { itemToSave, showToast, closeSaveModal } = get();
-        if (!itemToSave) return;
-
-        set((state) => ({
-          collections: state.collections.map(col => {
-            if (col.id === collectionId) {
-              return {
-                ...col,
-                itemCount: col.itemCount + 1,
-                thumbnails: [itemToSave.image, ...col.thumbnails.slice(0, 3)]
-              };
-            }
-            return col;
-          })
-        }));
-        showToast("Guardado en colección", 'success');
-        closeSaveModal();
-      },
-
-      createCollection: (title, isPrivate) => {
-        const { itemToSave, showToast, closeSaveModal } = get();
-        if (!itemToSave) return;
-
-        const newCol: CollectionItem = {
-          id: Date.now().toString(),
-          title,
-          isPrivate,
-          itemCount: 1,
-          thumbnails: [itemToSave.image]
-        };
-
-        set((state) => ({ collections: [newCol, ...state.collections] }));
-        showToast("Nueva colección creada y guardada", 'success');
-        closeSaveModal();
+      {
+        name: 'app-storage', // name of the item in the storage (must be unique)
+        partialize: (state) => ({
+          // Select which fields to persist
+          user: state.user,
+          createdItems: state.createdItems,
+          blogPosts: state.blogPosts,
+          cartItems: state.cartItems,
+          likedItems: state.likedItems,
+          collections: state.collections,
+          contentMode: state.contentMode,
+          notifications: state.notifications
+        }),
       }
-    })
+    )
   )
 );
 
@@ -357,6 +368,8 @@ export const useAppStore = () => {
       setIsSidebarOpen: store.setIsSidebarOpen,
       setActiveCategory: store.setActiveCategory,
       setViewingAuthorName: store.setViewingAuthorName,
+      setViewingAuthorName: store.setViewingAuthorName,
+      setContentMode: store.setContentMode,
       toggleContentMode: () => store.setContentMode(store.contentMode === 'creative' ? 'dev' : 'creative'),
       setCreateMode: store.setCreateMode,
       setChatActiveUser: store.setChatActiveUser,

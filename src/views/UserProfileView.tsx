@@ -24,9 +24,12 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
     const { state, actions } = useAppStore();
     const { username } = useParams<{ username: string }>();
 
+    // Check if the username in URL matches the logged-in user's name
+    const isUrlUserMe = state.user && username && decodeURIComponent(username) === state.user.name;
+
     // Determine if viewing own profile or public profile
-    // If we are at /profile or /user/me, it's own profile
-    const isOwnProfile = !authorName && (!username || username === 'me');
+    // If we are at /profile or /user/me OR if the /user/:name matches logged in user
+    const isOwnProfile = !authorName && (!username || username === 'me' || isUrlUserMe);
 
     // Safe user object creation
     const displayUser = isOwnProfile ? (state.user || {

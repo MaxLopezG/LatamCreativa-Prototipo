@@ -2,8 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save, Plus, Trash2, Briefcase, GraduationCap, User, MapPin } from 'lucide-react';
 import { useAppStore, ExperienceItem, EducationItem, SocialLinks } from '../../hooks/useAppStore';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 import { TagInput } from '../ui/TagInput';
 import { COMMON_TAGS } from '../../data/tags';
+import { COMMON_ROLES } from '../../data/roles';
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -28,6 +31,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     const [availableForWork, setAvailableForWork] = useState(false);
     const [newSkill, setNewSkill] = useState('');
 
+    // Suggestions State
+    const [showRoleSuggestions, setShowRoleSuggestions] = useState(false);
+    const [filteredRoles, setFilteredRoles] = useState<string[]>([]);
+
     // Initialize state from User Store when modal opens
     useEffect(() => {
         if (isOpen && user) {
@@ -45,22 +52,57 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
     if (!isOpen || !user) return null;
 
-    const handleSave = () => {
-        const updatedUser = {
-            ...user,
-            name,
-            role,
-            location,
-            bio,
-            experience,
-            education,
-            skills,
-            socialLinks,
-            availableForWork
-        };
-        actions.setUser(updatedUser);
-        actions.showToast('Perfil actualizado correctamente', 'success');
-        onClose();
+    const handleSave = async () => {
+        try {
+            // Determine Content Mode based on Role
+            const devKeywords = ['developer', 'desarrollador', 'engineer', 'ingeniero', 'coder', 'programmer', 'programador', 'software', 'tech', 'web', 'app', 'mobile', 'backend', 'frontend', 'fullstack', 'devops', 'data', 'ai'];
+            const lowerRole = role.toLowerCase();
+            const isDevRole = devKeywords.some(k => lowerRole.includes(k));
+            const newMode: 'dev' | 'creative' = isDevRole ? 'dev' : 'creative';
+
+            const updatedUser = {
+                ...user,
+                name,
+                role,
+                location,
+                bio,
+                experience,
+                education,
+                skills,
+                socialLinks,
+                availableForWork
+            };
+
+            // Update Firestore
+            const userRef = doc(db, 'users', user.id);
+            await updateDoc(userRef, {
+                name,
+                role,
+                location,
+                bio,
+                experience,
+                education,
+                skills,
+                socialLinks,
+                availableForWork
+            });
+
+            // Update Local
+            actions.setUser(updatedUser);
+
+            // Switch Mode if needed
+            if (state.contentMode !== newMode) {
+                actions.setContentMode(newMode);
+                actions.showToast(`Perfil actualizado y modo ${newMode === 'dev' ? 'Developer' : 'Creativo'} activado`, 'info');
+            } else {
+                actions.showToast('Perfil actualizado correctamente', 'success');
+            }
+
+            onClose();
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            actions.showToast('Error al actualizar el perfil', 'error');
+        }
     };
 
     // --- Experience Handlers ---
@@ -183,10 +225,37 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                         <input
                                             type="text"
                                             value={role}
-                                            onChange={(e) => setRole(e.target.value)}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                setRole(val);
+                                                setFilteredRoles(COMMON_ROLES.filter(r => r.toLowerCase().includes(val.toLowerCase())));
+                                                setShowRoleSuggestions(true);
+                                            }}
+                                            onFocus={() => {
+                                                setFilteredRoles(COMMON_ROLES.filter(r => r.toLowerCase().includes(role.toLowerCase())));
+                                                setShowRoleSuggestions(true);
+                                            }}
+                                            onBlur={() => setTimeout(() => setShowRoleSuggestions(false), 200)}
                                             className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
                                             placeholder="ej. Concept Artist"
                                         />
+                                        {/* Suggestions Dropdown */}
+                                        {showRoleSuggestions && filteredRoles.length > 0 && (
+                                            <div className="absolute z-50 w-full mt-1 bg-white dark:bg-[#1A1D23] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
+                                                {filteredRoles.map((r) => (
+                                                    <div
+                                                        key={r}
+                                                        className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer text-sm text-slate-700 dark:text-slate-300 transition-colors"
+                                                        onClick={() => {
+                                                            setRole(r);
+                                                            setShowRoleSuggestions(false);
+                                                        }}
+                                                    >
+                                                        {r}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>

@@ -96,8 +96,11 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, onSuccess: (url: string) => void) => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      onSuccess(url);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onSuccess(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -115,16 +118,25 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
       return;
     }
 
-    // Simulate API Call
-    console.log('Publishing Article:', {
+    // Construct the article item
+    const newArticle = {
+      id: Date.now().toString(),
       title,
-      category,
-      tags,
-      coverImage,
-      blocks,
-      mode: state.contentMode
-    });
+      excerpt: blocks.find(b => b.type === 'text')?.content.substring(0, 150) + '...' || '',
+      image: coverImage || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?q=80&w=1000&auto=format&fit=crop',
+      author: state.user?.name || 'Usuario Anónimo',
+      authorAvatar: state.user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop',
+      date: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }),
+      readTime: Math.ceil((blocks.filter(b => b.type === 'text').reduce((acc, curr) => acc + curr.content.length, 0) / 500)) + ' min',
+      category: category,
+      likes: 0,
+      comments: 0,
+      content: blocks.map(b => b.content).join('\n\n'),
+      tags: tags,
+      domain: state.contentMode
+    };
 
+    actions.addBlogPost(newArticle);
     actions.showToast('Artículo publicado correctamente', 'success');
     onBack();
   };
