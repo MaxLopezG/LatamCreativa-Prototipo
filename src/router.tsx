@@ -1,6 +1,6 @@
 
 import React, { Suspense, lazy } from 'react';
-import { createBrowserRouter, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { createBrowserRouter, useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
 import { useAppStore } from './hooks/useAppStore';
 import { Loader } from './components/common/Loader';
@@ -261,9 +261,13 @@ function AboutWrapper() {
 function UserProfileWrapper() {
   const { actions } = useAppStore();
   const navigate = useNavigate();
+  const location = useLocation();
+  const authorFromState = location.state?.author;
+
   return (
     <Suspended>
       <UserProfileView
+        author={authorFromState}
         onBack={() => window.history.back()}
         onItemSelect={(id, type) => {
           if (type === 'blog') navigate(`/blog/${id}`);
@@ -287,7 +291,10 @@ function BlogPostWrapper() {
         onArticleSelect={(id) => navigate(`/blog/${id}`)}
         onShare={actions.openShareModal}
         onSave={actions.openSaveModal}
-        onAuthorClick={(name) => navigate(`/user/${encodeURIComponent(name)}`)}
+        onAuthorClick={(author: any) => {
+          const name = typeof author === 'object' ? author.name : author;
+          navigate(`/user/${encodeURIComponent(name)}`, { state: { author: typeof author === 'object' ? author : { name: author } } });
+        }}
       />
     </Suspended>
   );
@@ -540,7 +547,9 @@ function PeopleWrapper() {
     <Suspended>
       <PeopleView
         onProfileSelect={(name) => {
-          actions.setViewingAuthorName(name);
+          // Construct a partial author object since we only have the name from PeopleView
+          // This ensures compatibility with the store's expected type
+          actions.setViewingAuthor({ name });
           navigate(`/user/${encodeURIComponent(name)}`);
         }}
       />

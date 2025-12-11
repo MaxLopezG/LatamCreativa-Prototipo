@@ -43,8 +43,6 @@ export const BlogCard: React.FC<BlogCardProps> = ({ article, onClick, onSave }) 
         <div className="flex items-center gap-2 mb-3 text-xs font-medium text-slate-400">
           <img src={article.authorAvatar} alt={article.author} className="w-5 h-5 rounded-full ring-1 ring-white/20" />
           <span className="text-slate-300">{article.author}</span>
-          <span className="w-1 h-1 rounded-full bg-slate-600"></span>
-          <span>{article.date}</span>
         </div>
 
         <h3 className="font-bold text-lg text-white mb-2 leading-tight group-hover:text-rose-400 transition-colors line-clamp-2">
@@ -57,8 +55,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({ article, onClick, onSave }) 
 
         <div className="flex items-center justify-between pt-4 border-t border-white/5">
           <div className="flex items-center gap-1.5 text-xs font-medium text-rose-400 bg-rose-500/10 px-2 py-1 rounded">
-            <Clock className="h-3.5 w-3.5" />
-            <span>{article.readTime}</span>
+            {new Date(article.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
           </div>
 
           <div className="flex items-center gap-4 text-xs text-slate-500">

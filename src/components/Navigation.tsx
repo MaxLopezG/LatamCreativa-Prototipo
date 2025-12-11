@@ -6,6 +6,7 @@ import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 import { PRIMARY_NAV_ITEMS, NAV_SECTIONS, NAV_SECTIONS_DEV, SUBSCRIPTIONS } from '../data/navigation';
 import { ContentMode, useAppStore } from '../hooks/useAppStore';
+import { usersService } from '../services/modules/users';
 
 interface PrimarySidebarProps {
   activeModule?: string;
@@ -221,6 +222,39 @@ export const SecondarySidebar = ({
 
   // State for expanded menu items
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  // State for real subscriptions
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [loadingSubs, setLoadingSubs] = useState(false);
+
+  // Fetch Subscriptions
+  useEffect(() => {
+    const fetchSubs = async () => {
+      if (!user) {
+        setSubscriptions([]);
+        return;
+      }
+
+      try {
+        setLoadingSubs(true);
+        const followingIds = await usersService.getFollowing(user.id);
+
+        if (followingIds.length > 0) {
+          // Fetch profiles in parallel
+          const profilesPromises = followingIds.map(id => usersService.getUserProfile(id));
+          const profiles = await Promise.all(profilesPromises);
+          setSubscriptions(profiles.filter(p => p !== null));
+        } else {
+          setSubscriptions([]);
+        }
+      } catch (error) {
+        console.error("Error loading subscriptions", error);
+      } finally {
+        setLoadingSubs(false);
+      }
+    };
+
+    fetchSubs();
+  }, [user, state.subscriptionsTimestamp]); // Refetch when user changes OR timestamp updates
 
   // Switch sections based on mode
   const currentNavSections = contentMode === 'dev' ? NAV_SECTIONS_DEV : NAV_SECTIONS;
@@ -387,29 +421,42 @@ export const SecondarySidebar = ({
 
           {/* Subscriptions */}
           <div className="mb-8">
-            <h3 className="uppercase text-xs font-semibold text-slate-500 tracking-widest mb-4 px-2">Suscripciones</h3>
+            <h3 className="uppercase text-xs font-semibold text-slate-500 tracking-widest mb-4 px-2">
+              Suscripciones {loadingSubs && <span className="ml-2 opacity-50 animate-pulse">...</span>}
+            </h3>
+
             <div className="space-y-3">
-              {SUBSCRIPTIONS.map((sub) => (
+              {user && subscriptions.length === 0 && !loadingSubs && (
+                <div className="px-2 text-sm text-slate-500 italic">No sigues a nadie aún.</div>
+              )}
+
+              {user && subscriptions.map((sub) => (
                 <a
                   key={sub.id}
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
                     onSubscriptionSelect?.(sub.name);
-                    onClose?.(); // Auto close on mobile
+                    navigate(`/user/${encodeURIComponent(sub.name)}`, { state: { author: sub } });
+                    onClose?.();
                   }}
                   className="group flex items-center gap-4 px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors"
                 >
                   <div className="relative h-10 w-10 overflow-hidden rounded-full ring-1 ring-slate-200 dark:ring-white/10">
-                    <img src={sub.image} className="h-full w-full object-cover opacity-80 transition-opacity group-hover:opacity-100" alt={sub.name} />
+                    <img src={sub.avatar || sub.image || `https://ui-avatars.com/api/?name=${encodeURIComponent(sub.name)}&background=random`} className="h-full w-full object-cover opacity-80 transition-opacity group-hover:opacity-100" alt={sub.name} />
                   </div>
                   <div className="flex-1 overflow-hidden">
                     <div className="truncate text-sm font-medium text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">{sub.name}</div>
-                    {sub.isLive && <div className={`truncate text-xs font-medium ${contentMode === 'dev' ? 'text-blue-500' : 'text-amber-500'}`}>En vivo</div>}
+                    {/* Assume users can be live if property exists, ignoring for now as not in profile usually */}
+                    {/* {sub.isLive && <div className={`truncate text-xs font-medium ${contentMode === 'dev' ? 'text-blue-500' : 'text-amber-500'}`}>En vivo</div>} */}
                   </div>
-                  {sub.isLive && <div className={`h-2 w-2 rounded-full ${contentMode === 'dev' ? 'bg-blue-500' : 'bg-amber-500'}`}></div>}
+                  {/* {sub.isLive && <div className={`h-2 w-2 rounded-full ${contentMode === 'dev' ? 'bg-blue-500' : 'bg-amber-500'}`}></div>} */}
                 </a>
               ))}
+
+              {!user && (
+                <div className="px-2 text-sm text-slate-500">Inicia sesión para ver tus suscripciones.</div>
+              )}
             </div>
           </div>
 

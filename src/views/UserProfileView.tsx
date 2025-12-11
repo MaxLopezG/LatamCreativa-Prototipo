@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, Link as LinkIcon, Calendar, CheckCircle2, UserPlus, Mail, MessageSquare, Layers, Twitter, Instagram, Globe, MoreHorizontal, Briefcase, GraduationCap, UserCheck, Zap, Award, Trophy, Bookmark, Heart, Lock, Plus, Image as ImageIcon, Video, Box, Newspaper, Download, PlayCircle, FileText, Settings, Github, Linkedin, Palette } from 'lucide-react';
 import { PORTFOLIO_ITEMS, BLOG_ITEMS, EDUCATION_ITEMS, ASSET_ITEMS, ARTIST_TIERS, ARTIST_DIRECTORY } from '../data/content';
@@ -11,26 +10,89 @@ import { useAppStore } from '../hooks/useAppStore';
 import { EditProfileModal } from '../components/modals/EditProfileModal';
 import { CreatePostModal } from '../components/modals/CreatePostModal';
 import { useUserArticles } from '../hooks/useFirebase';
+import { usersService } from '../services/modules/users';
+import { api } from '../services/api';
+import { EXPERIENCE, EDUCATION, LOCKED_POSTS } from '../data/profileData';
 
 interface UserProfileViewProps {
+    author?: { name: string; avatar?: string; id?: string } | null;
     authorName?: string;
     onBack: () => void;
     onItemSelect: (id: string, type: 'portfolio' | 'blog' | 'course' | 'asset') => void;
     onOpenChat?: (authorName: string) => void;
 }
 
-import { EXPERIENCE, EDUCATION, LOCKED_POSTS } from '../data/profileData';
-
-export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, onBack, onItemSelect, onOpenChat }) => {
+export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, authorName, onBack, onItemSelect, onOpenChat }) => {
     const { state, actions } = useAppStore();
     const { username } = useParams<{ username: string }>();
+    const [fetchedUser, setFetchedUser] = useState<any>(null); // Store fetched profile data
 
     // Check if the username in URL matches the logged-in user's name
     const isUrlUserMe = state.user && username && decodeURIComponent(username) === state.user.name;
 
     // Determine if viewing own profile or public profile
     // If we are at /profile or /user/me OR if the /user/:name matches logged in user
-    const isOwnProfile = !authorName && (!username || username === 'me' || isUrlUserMe);
+    // Also consider if author is passed but it's actually me
+    const isOwnProfile = (!author && !authorName && (!username || username === 'me' || isUrlUserMe));
+
+    // Fetch real user data if we have an ID or Name
+    useEffect(() => {
+        const fetchUserData = async () => {
+            if (isOwnProfile) return;
+
+            let userData = null;
+
+            // 1. Try by ID
+            if (author?.id && author.id !== 'unknown') {
+                userData = await api.getUserProfile(author.id);
+            }
+
+            // 2. Fallback: Try by Name if no user found by ID
+            if (!userData) {
+                const targetName = author?.name || authorName;
+                if (targetName && targetName !== 'Unknown User') {
+                    // Sanitize name if it's an object/string mess
+                    const cleanName = typeof targetName === 'object'
+                        ? (targetName as any).name || (targetName as any).displayName || ''
+                        : String(targetName);
+
+                    if (cleanName) {
+                        userData = await api.getUserProfileByName(cleanName);
+                    }
+                }
+            }
+
+            if (userData) {
+                setFetchedUser(userData);
+            }
+        };
+        fetchUserData();
+    }, [author?.id, author?.name, authorName, isOwnProfile]);
+
+    // Helper to check if a name is valid/useful
+    const isValidName = (n: any) => {
+        if (!n) return false;
+        const s = String(n).trim();
+        if (s === 'Unknown User' || s === 'unknown user' || s === 'Unknown' || s === '[object Object]') return false;
+        if (s.includes('Unknown User')) return false; // Catch "Unknown User (Mock)" etc
+        return true;
+    };
+
+    const getDisplayName = () => {
+        // 1. Prioritize author passed prop if it's valid (Visual Consistency)
+        if (author?.name && isValidName(author.name)) return author.name;
+
+        // 2. Try fetched user name (if author prop wasn't valid)
+        if (fetchedUser?.name && isValidName(fetchedUser.name)) return fetchedUser.name;
+
+        // 3. Try other props
+        if (authorName && isValidName(authorName)) return authorName;
+        if (username && isValidName(username)) return username;
+
+        return 'Unknown User';
+    };
+
+    const finalName = getDisplayName();
 
     // Safe user object creation
     const displayUser = isOwnProfile ? (state.user || {
@@ -42,18 +104,80 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
         email: '',
         createdAt: new Date().toISOString()
     }) : {
-        name: authorName || username || 'Unknown User',
-        id: 'unknown',
-        avatar: 'https://ui-avatars.com/api/?background=random',
-        role: 'Digital Artist',
-        location: 'Latam',
-        createdAt: undefined
+        name: finalName,
+        id: fetchedUser?.id || author?.id || 'unknown',
+        avatar: fetchedUser?.avatar || author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=random&size=512`,
+        role: fetchedUser?.role || 'Digital Artist',
+        location: fetchedUser?.location || 'Latam',
+        bio: fetchedUser?.bio,
+        createdAt: fetchedUser?.createdAt,
+        skills: fetchedUser?.skills,
+        experience: fetchedUser?.experience,
+        education: fetchedUser?.education,
+        socialLinks: fetchedUser?.socialLinks
     };
 
-    const name = displayUser.name;
+    const sanitizeName = (val: any) => {
+        if (!val) return 'Unknown User';
+        if (typeof val === 'string' && val === '[object Object]') return 'Unknown User';
+        if (typeof val === 'object') {
+            return val.name || val.displayName || val.userName || 'Unknown User';
+        }
+        return String(val);
+    };
+
+    const name = sanitizeName(displayUser.name);
 
     const [activeTab, setActiveTab] = useState<'portfolio' | 'courses' | 'assets' | 'blog' | 'saved' | 'collections' | 'membership'>('portfolio');
     const [isFollowing, setIsFollowing] = useState(false);
+    const [isFollowLoading, setIsFollowLoading] = useState(false);
+    // const { state, actions } = useAppStore(); // Removed duplicate
+
+    // Check initial subscription status
+    useEffect(() => {
+        const checkStatus = async () => {
+            if (state.user && displayUser.id) {
+                const status = await usersService.getSubscriptionStatus(displayUser.id, state.user.id);
+                setIsFollowing(status);
+            }
+        };
+        checkStatus();
+    }, [state.user, displayUser.id]);
+
+    const handleFollowToggle = async () => {
+        if (!state.user) {
+            actions.showToast("Inicia sesión para seguir a creadores", "info");
+            return;
+        }
+
+        try {
+            setIsFollowLoading(true);
+            const targetId = displayUser.id || displayUser.name; // Fallback? UsersService expects ID. 
+            // NOTE: displayUser here might be a constructed object if coming from API or route. 
+            // In UserProfileView, displayUser comes from props or lookup.
+            // If displayUser.id is missing, this will fail. 
+            // Assuming displayUser HAS id as it's fetched from 'usersService.getUserProfile' or 'usersService.getUserProfileByName'
+            if (!targetId) {
+                console.error("No user ID found for follow");
+                return;
+            }
+
+            if (isFollowing) {
+                await usersService.unsubscribeFromUser(targetId, state.user.id);
+                actions.showToast(`Dejaste de seguir a ${name}`, 'success');
+            } else {
+                await usersService.subscribeToUser(targetId, state.user.id);
+                actions.showToast(`Ahora sigues a ${name}`, 'success');
+            }
+            setIsFollowing(!isFollowing);
+            actions.triggerSubscriptionUpdate();
+        } catch (error) {
+            console.error("Follow error:", error);
+            actions.showToast("Error al actualizar seguimiento", "error");
+        } finally {
+            setIsFollowLoading(false);
+        }
+    };
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
 
@@ -213,14 +337,15 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                         {!isOwnProfile && (
                             <>
                                 <button
-                                    onClick={() => setIsFollowing(!isFollowing)}
+                                    onClick={handleFollowToggle}
+                                    disabled={isFollowLoading}
                                     className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${isFollowing
                                         ? 'bg-white/10 text-white hover:bg-white/20'
                                         : 'bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-500/20'
-                                        }`}
+                                        } ${isFollowLoading ? 'opacity-70 cursor-wait' : ''}`}
                                 >
                                     {isFollowing ? <CheckCircle2 className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-                                    {isFollowing ? 'Siguiendo' : 'Seguir'}
+                                    {isFollowLoading ? 'Procesando...' : (isFollowing ? 'Siguiendo' : 'Seguir')}
                                 </button>
 
                                 <button
@@ -243,9 +368,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                             </button>
                         )}
 
-                        <button className="p-3 rounded-xl bg-white/5 text-white hover:bg-white/10 border border-white/10">
-                            <MoreHorizontal className="h-5 w-5" />
-                        </button>
+
                     </div>
                 </div>
             </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowUpDown, Plus, Newspaper, BookOpen, Search, Compass, Bookmark, Loader2 } from 'lucide-react';
+import { ArrowUpDown, Plus, Newspaper, BookOpen, Search, Compass, Bookmark, Loader2, ArrowLeft, ArrowRight, ChevronDown } from 'lucide-react';
 import { useAppStore } from '../hooks/useAppStore';
 import { useArticles } from '../hooks/useFirebase';
 import { BlogCard } from '../components/cards/BlogCard';
@@ -12,9 +12,19 @@ interface BlogViewProps {
 }
 
 export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSelect, onSave, onCreateClick }) => {
-  const { state } = useAppStore();
-  const { articles: blogPosts, loading, hasMore, loadMore } = useArticles();
+  const { state, actions } = useAppStore();
+  const { articles: blogPosts, loading, hasMore, currentPage, nextPage, prevPage } = useArticles();
+  const { sortOption } = state.blogState;
   const [viewMode, setViewMode] = useState<'feed' | 'saved'>('feed');
+
+  // Sync activeCategory (Sidebar) with Sort Option
+  React.useEffect(() => {
+    if (activeCategory === 'Tendencias' && sortOption !== 'popular') {
+      actions.setBlogState({ sortOption: 'popular' });
+    } else if ((activeCategory === 'Nuevos' || activeCategory === 'Home') && sortOption !== 'recent') {
+      actions.setBlogState({ sortOption: 'recent' });
+    }
+  }, [activeCategory, actions, sortOption]);
 
   return (
     <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-0 pb-16 transition-colors animate-fade-in bg-[#0f0f12] min-h-screen">
@@ -95,12 +105,6 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
           >
             <Plus className="h-4 w-4" /> Escribir Artículo
           </button>
-
-          <div className="h-8 w-px bg-white/10 hidden md:block mx-1"></div>
-
-          <button className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 transition-colors backdrop-blur-sm">
-            <span className="text-slate-500 text-xs uppercase font-bold mr-1">Ordenar:</span>Recientes <ArrowUpDown className="h-3.5 w-3.5 ml-1" />
-          </button>
         </div>
       </div>
 
@@ -138,27 +142,31 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
         ))}
       </div>
 
-      {hasMore && (
-        <div className="flex justify-center mt-12 pb-20">
-          <button
-            onClick={() => loadMore()}
-            disabled={loading}
-            className="group flex items-center gap-3 px-8 py-4 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white font-bold transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin text-rose-500" />
-                Cargando más...
-              </>
-            ) : (
-              <>
-                Cargar más artículos
-                <ArrowUpDown className="h-4 w-4 text-slate-400 group-hover:text-white transition-colors" />
-              </>
-            )}
-          </button>
-        </div>
-      )}
+      <div className="flex justify-center items-center gap-6 mt-12 pb-20">
+        <button
+          onClick={prevPage}
+          disabled={currentPage === 1 || loading}
+          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <ArrowLeft className="h-4 w-4" /> Anterior
+        </button>
+
+        <span className="text-slate-400 font-bold bg-white/5 px-4 py-2 rounded-lg border border-white/5">
+          Página {currentPage}
+        </span>
+
+        <button
+          onClick={nextPage}
+          disabled={!hasMore || loading}
+          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold transition-all shadow-lg hover:shadow-rose-500/20 disabled:opacity-50 disabled:bg-white/5 disabled:shadow-none disabled:cursor-not-allowed"
+        >
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>Siguiente <ArrowRight className="h-4 w-4" /></>
+          )}
+        </button>
+      </div>
 
       {!hasMore && blogPosts.length > 0 && (
         <div className="text-center text-slate-500 mt-12 pb-20">

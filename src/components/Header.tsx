@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Menu, Bell, Plus, FileText, Layers, Video, Box, Users, Search, Command, Briefcase, MessageCircleQuestion, CalendarDays, Heart, UserPlus, Check, ShoppingCart, Building2, Aperture } from 'lucide-react';
 import { Notification } from '../types';
 import { ContentMode, useAppStore } from '../hooks/useAppStore';
@@ -13,7 +13,7 @@ interface HeaderProps {
     cartCount?: number;
     onCartClick?: () => void;
     notifications?: Notification[];
-    onMarkRead?: (id: number) => void;
+    onMarkRead?: (id: string | number) => void;
     onMarkAllRead?: () => void;
     contentMode?: ContentMode;
     onLoginClick?: () => void;
@@ -35,6 +35,7 @@ export const Header = ({
 }: HeaderProps) => {
     const { state, actions } = useAppStore();
     const location = useLocation();
+    const navigate = useNavigate();
     const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -191,7 +192,13 @@ export const Header = ({
                                             notifications.map((notif) => (
                                                 <div
                                                     key={notif.id}
-                                                    onClick={() => onMarkRead?.(notif.id)}
+                                                    onClick={() => {
+                                                        onMarkRead?.(notif.id);
+                                                        if (notif.link) {
+                                                            navigate(notif.link);
+                                                            setIsNotificationsOpen(false);
+                                                        }
+                                                    }}
                                                     className={`p-4 border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer flex gap-3 ${!notif.read ? 'bg-amber-50/50 dark:bg-white/[0.03]' : ''}`}
                                                 >
                                                     <div className="relative shrink-0">
@@ -208,7 +215,30 @@ export const Header = ({
                                                         <p className="text-sm text-slate-900 dark:text-white leading-snug">
                                                             <span className="font-bold">{notif.user}</span> {notif.content}
                                                         </p>
-                                                        <p className="text-xs text-slate-500 mt-1">{notif.time}</p>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            {notif.category && (
+                                                                <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10">
+                                                                    {notif.category}
+                                                                </span>
+                                                            )}
+                                                            <p className="text-xs text-slate-400">
+                                                                {(() => {
+                                                                    try {
+                                                                        const date = new Date(notif.time);
+                                                                        const now = new Date();
+                                                                        const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+                                                                        if (diffInSeconds < 60) return 'Hace un momento';
+                                                                        if (diffInSeconds < 3600) return `Hace ${Math.floor(diffInSeconds / 60)} min`;
+                                                                        if (diffInSeconds < 86400) return `Hace ${Math.floor(diffInSeconds / 3600)} h`;
+                                                                        if (diffInSeconds < 604800) return `Hace ${Math.floor(diffInSeconds / 86400)} días`;
+                                                                        return date.toLocaleDateString();
+                                                                    } catch (e) {
+                                                                        return notif.time;
+                                                                    }
+                                                                })()}
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                     {!notif.read && <div className={`h-2 w-2 rounded-full ${accentBg} mt-1.5 shrink-0`}></div>}
                                                 </div>

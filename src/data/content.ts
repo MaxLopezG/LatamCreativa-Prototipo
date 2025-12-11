@@ -1,5 +1,5 @@
 
-import { PortfolioItem, ArticleItem, VideoSuggestion, Comment, CourseItem, AssetItem, CommunityGroup, FreelanceServiceItem, MembershipTier, ForumPost, EventItem, ArtistProfile, ChallengeItem, JobItem, CollectionItem } from '../types';
+import { PortfolioItem, ArticleItem, VideoSuggestion, BlogComment, CourseItem, AssetItem, CommunityGroup, FreelanceServiceItem, MembershipTier, ForumPost, EventItem, ArtistProfile, ChallengeItem, JobItem, CollectionItem } from '../types';
 
 // --- JOB LISTINGS ---
 export const JOB_ITEMS: JobItem[] = [
@@ -610,6 +610,7 @@ export const BLOG_ITEMS: ArticleItem[] = [
     excerpt: 'Analizamos cómo Unreal Engine 5 está cambiando la industria del cine y la animación.',
     image: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=600&fit=crop',
     author: 'Carlos Ruiz',
+    authorId: 'carlos_ruiz',
     authorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&fit=crop',
     date: '12 Oct, 2023',
     readTime: '5 min',
@@ -625,6 +626,7 @@ export const BLOG_ITEMS: ArticleItem[] = [
     excerpt: 'Directores de arte comparten qué buscan exactamente cuando contratan a un artista junior.',
     image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=600&fit=crop',
     author: 'Elena Art',
+    authorId: 'elena_art',
     authorAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&fit=crop',
     date: '05 Nov, 2023',
     readTime: '6 min',
@@ -640,6 +642,7 @@ export const BLOG_ITEMS: ArticleItem[] = [
     excerpt: 'Aprende los fundamentos para crear huesos y controladores para tus personajes.',
     image: 'https://images.unsplash.com/photo-1626785774573-4b799314346d?q=80&w=600&fit=crop',
     author: 'RigDoctor',
+    authorId: 'rig_doctor',
     authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&fit=crop',
     date: '20 Nov, 2023',
     readTime: '10 min',
@@ -655,6 +658,7 @@ export const BLOG_ITEMS: ArticleItem[] = [
     excerpt: 'Un debate sobre el impacto de Midjourney y Stable Diffusion en el trabajo del artista.',
     image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=600&fit=crop',
     author: 'TechDaily',
+    authorId: 'tech_daily',
     authorAvatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=100&fit=crop',
     date: '01 Dic, 2023',
     readTime: '8 min',
@@ -670,6 +674,7 @@ export const BLOG_ITEMS: ArticleItem[] = [
     excerpt: 'Un análisis profundo sobre la adopción masiva de TypeScript en el desarrollo web moderno.',
     image: 'https://images.unsplash.com/photo-1587620962725-abab7fe55159?q=80&w=600&fit=crop',
     author: 'Dev Lead',
+    authorId: 'dev_lead',
     authorAvatar: 'https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?q=80&w=100&fit=crop',
     date: '15 Nov, 2023',
     readTime: '8 min',
@@ -685,6 +690,7 @@ export const BLOG_ITEMS: ArticleItem[] = [
     excerpt: 'Buenas prácticas para reducir el tamaño de tus imágenes y mejorar la seguridad.',
     image: 'https://images.unsplash.com/photo-1605745341112-85968b19335b?q=80&w=600&fit=crop',
     author: 'OpsMaster',
+    authorId: 'ops_master',
     authorAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&fit=crop',
     date: '22 Nov, 2023',
     readTime: '12 min',
@@ -700,6 +706,7 @@ export const BLOG_ITEMS: ArticleItem[] = [
     excerpt: 'Cuándo implementar una arquitectura de microfrontends y cuándo evitarla.',
     image: 'https://images.unsplash.com/photo-1555099962-4199c345e5dd?q=80&w=600&fit=crop',
     author: 'ArchLead',
+    authorId: 'arch_lead',
     authorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&fit=crop',
     date: '10 Dic, 2023',
     readTime: '15 min',
@@ -843,13 +850,14 @@ export const EDUCATION_ITEMS: CourseItem[] = [
 ];
 
 // --- VIDEO / FEED DATA ---
-export const COMMENTS: Comment[] = [
+export const COMMENTS: BlogComment[] = [
   {
     id: '1',
     author: 'David Chen',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=200&auto=format&fit=crop',
     content: "La forma en que explicaste las fuerzas de campo cambió completamente mi flujo de trabajo. ¡Increíble tutorial como siempre!",
     timeAgo: 'hace 2 días',
+    date: new Date().toISOString(),
     likes: 24
   }
 ];

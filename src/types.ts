@@ -37,13 +37,16 @@ export interface Chip {
   active?: boolean;
 }
 
-export interface Comment {
+export interface BlogComment {
   id: string;
   author: string;
   avatar: string;
   content: string;
+  date: string;
   timeAgo: string;
   likes: number;
+  parentId?: string;
+  replies?: BlogComment[];
 }
 
 export interface VideoSuggestion {
@@ -91,6 +94,7 @@ export interface ArticleItem {
   excerpt: string;
   image: string;
   author: string;
+  authorId: string;
   authorAvatar: string;
   date: string;
   readTime: string;
@@ -300,11 +304,13 @@ export interface CartItem {
 }
 
 export interface Notification {
-  id: number;
+  id: string | number;
   type: 'comment' | 'follow' | 'system' | 'like' | 'purchase';
   user: string;
   avatar: string;
   content: string;
+  category?: string;
+  link?: string;
   time: string;
   read: boolean;
 }

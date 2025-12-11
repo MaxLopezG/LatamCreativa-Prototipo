@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { PrimarySidebar, SecondarySidebar } from '../components/Navigation';
 import { Header } from '../components/Header';
@@ -15,9 +15,15 @@ export const MainLayout: React.FC = () => {
     const { state, actions } = useAppStore();
     const navigate = useNavigate();
     const location = useLocation();
+    const mainScrollRef = useRef<HTMLDivElement>(null);
 
     // Sync State with URL on mount and change
     useEffect(() => {
+        // Scroll to top on route change
+        if (mainScrollRef.current) {
+            mainScrollRef.current.scrollTo(0, 0);
+        }
+
         const path = location.pathname;
         if (path === '/') {
             if (state.activeModule !== 'home') actions.handleModuleSelect('home');
@@ -32,6 +38,19 @@ export const MainLayout: React.FC = () => {
             }
         }
     }, [location.pathname]);
+
+    // Fetch notifications on mount/auth (Real-time)
+    useEffect(() => {
+        if (state.user) {
+            actions.subscribeToNotifications(state.user.id);
+        } else {
+            actions.cleanupNotifications();
+        }
+
+        return () => {
+            actions.cleanupNotifications();
+        };
+    }, [state.user?.id]);
 
     const isLearningMode = state.activeModule === 'learning';
     const selectionColor = state.contentMode === 'dev' ? 'selection:bg-blue-500/30' : 'selection:bg-amber-500/30';
@@ -118,7 +137,7 @@ export const MainLayout: React.FC = () => {
                 )}
 
                 {/* Adjusted padding bottom for mobile tab bar, remove padding in learning mode */}
-                <div className={`custom-scrollbar flex-1 overflow-y-auto ${isLearningMode ? 'pt-0' : 'pt-20'} pb-32 md:pb-0`}>
+                <div ref={mainScrollRef} className={`custom-scrollbar flex-1 overflow-y-auto ${isLearningMode ? 'pt-0' : 'pt-20'} pb-32 md:pb-0`}>
                     <div className="flex flex-col min-h-full">
                         <div className="flex-1">
                             {/* REPLACED VideoContent with Outlet */}

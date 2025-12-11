@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useAppStore } from './useAppStore';
 import { api, PaginatedResult } from '../services/api';
-import { PortfolioItem, ArticleItem } from '../types';
+import { PortfolioItem, ArticleItem, BlogComment } from '../types';
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 
 // --- Hook for Infinite Scroll Feed ---
@@ -116,45 +117,113 @@ export const useAllUsers = () => {
     return { users, loading };
 };
 
-// --- Hook for Blog Articles ---
+// --- Hook for Blog Articles (Paged) ---
 export const useArticles = () => {
-    const [articles, setArticles] = useState<ArticleItem[]>([]);
-    const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-    const [loading, setLoading] = useState(false);
+    const { state, actions } = useAppStore();
+    const { articles, pageStack, currentPage, hasMore, loading, lastDoc, sortOption } = state.blogState;
     const [error, setError] = useState<string | null>(null);
-    const [hasMore, setHasMore] = useState(true);
 
-    const loadMore = useCallback(async (reset = false) => {
-        if (loading || (!hasMore && !reset)) return;
+    // Initial Load (only if empty)
+    useEffect(() => {
+        if (articles.length === 0 && !loading) {
+            fetchPage(null);
+        }
+    }, [articles.length]);
 
-        setLoading(true);
+    // Re-fetch when Sort Option changes
+    useEffect(() => {
+        if (!loading) { // Avoid double fetch if already loading
+            // Reset Pagination State on Sort Change
+            actions.setBlogState({
+                pageStack: [],
+                currentPage: 1,
+                lastDoc: null,
+                hasMore: true,
+                articles: [] // Clear current to show loading state or fresh start
+            });
+            fetchPage(null);
+        }
+    }, [sortOption]);
+
+    const fetchPage = async (startAfterDoc: QueryDocumentSnapshot<DocumentData> | null) => {
+        // Prevent race conditions or multi-calls handled by check above, but good to have safety
+        // if (loading) return; 
+        // Note: We intentionally allow re-entry if triggered by sort change logic which might have cleared loading
+
+        actions.setBlogState({ loading: true });
         setError(null);
 
         try {
-            const currentLastDoc = reset ? null : lastDoc;
-            const result = await api.getArticles(currentLastDoc);
+            // Check Sort Option
+            let sortField: 'date' | 'likes' = 'date';
+            let sortDir: 'desc' | 'asc' = 'desc';
 
-            if (reset) {
-                setArticles(result.data);
-            } else {
-                setArticles(prev => [...prev, ...result.data]);
+            if (sortOption === 'popular') {
+                sortField = 'likes';
+                sortDir = 'desc';
+            } else if (sortOption === 'oldest') {
+                sortField = 'date';
+                sortDir = 'asc';
             }
 
-            setLastDoc(result.lastDoc);
-            setHasMore(result.hasMore);
+            const result = await api.getArticles(startAfterDoc, 10, sortField, sortDir);
+            actions.setBlogState({
+                articles: result.data,
+                lastDoc: result.lastDoc,
+                hasMore: result.hasMore,
+                loading: false
+            });
         } catch (err: any) {
             setError(err.message || 'Error loading articles');
-        } finally {
-            setLoading(false);
+            actions.setBlogState({ loading: false });
         }
-    }, [lastDoc, hasMore, loading]);
+    };
 
-    // Initial load
-    useEffect(() => {
-        loadMore(true);
-    }, []);
+    const nextPage = () => {
+        if (!hasMore || loading) return;
+        // Save current lastDoc to stack before moving
+        const currentStack = [...pageStack];
+        if (lastDoc) currentStack.push(lastDoc);
 
-    return { articles, loading, error, hasMore, loadMore };
+        actions.setBlogState({
+            pageStack: currentStack,
+            currentPage: currentPage + 1
+        });
+
+        fetchPage(lastDoc);
+    };
+
+    const prevPage = () => {
+        if (currentPage <= 1 || loading) return;
+        const currentStack = [...pageStack];
+        const newPage = currentPage - 1;
+
+        let targetDoc = null;
+        if (newPage > 1) {
+            targetDoc = currentStack[newPage - 2];
+        }
+
+        const newStack = currentStack.slice(0, newPage - 1);
+
+        actions.setBlogState({
+            pageStack: newStack,
+            currentPage: newPage
+        });
+
+        fetchPage(targetDoc);
+    };
+
+    return {
+        articles,
+        loading,
+        error,
+        hasMore,
+        currentPage,
+        nextPage,
+        prevPage,
+        // Legacy alias to prevent crash during transition
+        loadMore: nextPage
+    };
 };
 
 // --- Hook for Creating Article ---
@@ -233,6 +302,33 @@ export const useArticle = (articleId: string | undefined) => {
     return { article, loading, error };
 };
 
+// --- Hook for Recommended Articles ---
+export const useRecommendedArticles = (currentArticleId: string) => {
+    const [articles, setArticles] = useState<ArticleItem[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const fetch = async () => {
+            setLoading(true);
+            try {
+                // Fetch 4 to safely exclude current one and keep 3
+                const result = await api.getArticles(null, 4);
+                const filtered = result.data
+                    .filter(a => a.id !== currentArticleId)
+                    .slice(0, 3);
+                setArticles(filtered);
+            } catch (e) {
+                console.error(e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        if (currentArticleId) fetch();
+    }, [currentArticleId]);
+
+    return { articles, loading };
+};
+
 // --- Hook for Deleting Article ---
 export const useDeleteArticle = () => {
     const [loading, setLoading] = useState(false);
@@ -273,4 +369,186 @@ export const useUpdateArticle = () => {
     };
 
     return { update, loading, error };
+};
+// --- Hook for Comments ---
+export const useComments = (articleId: string | undefined) => {
+    const [comments, setComments] = useState<BlogComment[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchComments = async () => {
+        if (!articleId) return;
+        setLoading(true);
+        try {
+            const data = await api.getComments(articleId);
+            setComments(data);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchComments();
+    }, [articleId]);
+
+    const removeComment = (commentId: string) => {
+        setComments(prev => prev.filter(c => c.id !== commentId));
+    };
+
+    return { comments, loading, error, refresh: fetchComments, removeComment };
+};
+
+export const useAddComment = () => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const add = async (articleId: string, data: Omit<BlogComment, 'id' | 'timeAgo' | 'likes' | 'replies' | 'date'>) => {
+        setLoading(true);
+        setError(null);
+        try {
+            await api.addComment(articleId, data);
+        } catch (err: any) {
+            setError(err.message);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+    return { add, loading, error };
+};
+
+// --- Hook for Subscriptions ---
+export const useSubscription = (targetUserId: string, currentUserId: string | undefined) => {
+    const [isSubscribed, setIsSubscribed] = useState(false);
+    const [subscriberCount, setSubscriberCount] = useState(0);
+    const [loading, setLoading] = useState(false);
+
+    // Initial check and fetch count
+    const init = async () => {
+        if (!targetUserId) return;
+        setLoading(true);
+        try {
+            // Check if subscribed
+            if (currentUserId) {
+                const subscribed = await api.getSubscriptionStatus(targetUserId, currentUserId);
+                setIsSubscribed(subscribed);
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        init();
+    }, [targetUserId, currentUserId]);
+
+    const toggleSubscription = async () => {
+        if (!currentUserId || !targetUserId) return;
+
+        // Optimistic update: Store previous state for rollback
+        const previousIsSubscribed = isSubscribed;
+        // Calculate new count immediately
+        const offset = previousIsSubscribed ? -1 : 1;
+
+        // Update UI immediately (Optimistic)
+        setIsSubscribed(!previousIsSubscribed);
+        setSubscriberCount(prev => Math.max(0, prev + offset));
+
+        // Don't set loading(true) here to avoid disabling the button, giving instant feedback
+
+        try {
+            if (previousIsSubscribed) {
+                await api.unsubscribeFromUser(targetUserId, currentUserId);
+            } else {
+                await api.subscribeToUser(targetUserId, currentUserId);
+            }
+        } catch (error) {
+            console.error("Error toggling subscription:", error);
+            // Revert state on error
+            setIsSubscribed(previousIsSubscribed);
+            setSubscriberCount(prev => Math.max(0, prev - offset));
+        }
+    };
+
+    return { isSubscribed, loading, toggleSubscription, setSubscriberCount, subscriberCount };
+};
+
+export const useCommentActions = () => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const like = async (articleId: string, commentId: string) => {
+        try {
+            await api.likeComment(articleId, commentId);
+        } catch (err: any) {
+            console.error(err);
+        }
+    };
+
+    const update = async (articleId: string, commentId: string, content: string) => {
+        setLoading(true);
+        try {
+            await api.updateComment(articleId, commentId, content);
+        } catch (err: any) {
+            setError(err.message);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const remove = async (articleId: string, commentId: string) => {
+        setLoading(true);
+        try {
+            await api.deleteComment(articleId, commentId);
+        } catch (err: any) {
+            setError(err.message);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return { like, update, remove, loading, error };
+};
+
+// --- Hook for Article Like ---
+export const useArticleLike = (articleId: string | undefined, userId: string | undefined) => {
+    const [isLiked, setIsLiked] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const checkLike = async () => {
+            if (!articleId || !userId) return;
+            // Optimistic check? Or wait? 
+            // We can assume false initially.
+            const status = await api.getArticleLikeStatus(articleId, userId);
+            setIsLiked(status);
+        };
+        checkLike();
+    }, [articleId, userId]);
+
+    const toggleLike = async () => {
+        if (!articleId || !userId) return;
+
+        // Optimistic update
+        const previousState = isLiked;
+        setIsLiked(!previousState);
+
+        try {
+            const newState = await api.toggleArticleLike(articleId, userId);
+            setIsLiked(newState);
+        } catch (error) {
+            console.error("Error toggling like:", error);
+            setIsLiked(previousState); // Revert on error
+        }
+    };
+
+    return { isLiked, toggleLike, loading };
 };

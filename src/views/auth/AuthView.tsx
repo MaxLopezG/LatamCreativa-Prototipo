@@ -4,7 +4,7 @@ import { useAppStore } from '../../hooks/useAppStore';
 import { Mail, Lock, User, Github, ArrowRight, Loader2, AlertCircle, Globe, Eye, EyeOff } from 'lucide-react';
 import { auth, googleProvider, db } from '../../lib/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signInWithPopup, sendEmailVerification, signOut } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 export const AuthView: React.FC = () => {
     const { state, actions } = useAppStore();
@@ -140,21 +140,41 @@ export const AuthView: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            await signInWithPopup(auth, googleProvider);
-            // Log removed
+            const userCredential = await signInWithPopup(auth, googleProvider);
+            const user = userCredential.user;
+
+            // Check if user exists in Firestore, if not create
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDocSnap = await getDoc(userDocRef);
+
+            if (!userDocSnap.exists()) {
+                const newUser = {
+                    name: user.displayName || 'Usuario',
+                    email: user.email || '',
+                    avatar: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'U'}`,
+                    role: 'Creative Member',
+                    location: 'Latam',
+                    createdAt: new Date().toISOString()
+                };
+                await setDoc(userDocRef, newUser);
+            }
 
             // FORCE STORE UPDATE BEFORE REDIRECT
-            if (auth.currentUser) {
-                const user = auth.currentUser;
+            if (user) {
+                // Fetch latest data (or use what we just created/have)
+                const finalDoc = await getDoc(userDocRef);
+                const userData = finalDoc.exists() ? finalDoc.data() : {};
+
                 const isAdmin = user.email === 'admin@latamcreativa.com';
                 const appUser = {
                     id: user.uid,
-                    name: user.displayName || 'Usuario',
-                    avatar: user.photoURL || 'https://ui-avatars.com/api/?name=' + (user.displayName || 'U'),
-                    role: isAdmin ? 'Administrator' : 'Creative Member',
-                    location: 'Latam',
+                    name: userData.name || user.displayName || 'Usuario',
+                    avatar: userData.avatar || user.photoURL || 'https://ui-avatars.com/api/?name=U',
+                    role: isAdmin ? 'Administrator' : (userData.role || 'Creative Member'),
+                    location: userData.location || 'Latam',
                     email: user.email || '',
-                    isAdmin: isAdmin
+                    isAdmin: isAdmin,
+                    ...userData // Merge other fields
                 };
                 actions.setUser(appUser);
             }

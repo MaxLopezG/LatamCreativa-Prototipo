@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { CartItem, Notification, CollectionItem, PortfolioItem, ArticleItem } from '../types';
 import { USER_COLLECTIONS, PORTFOLIO_ITEMS, BLOG_ITEMS } from '../data/content';
+import { api } from '../services/api';
 
 export interface ExperienceItem {
   id: number | string;
@@ -57,11 +58,13 @@ interface UISlice {
   searchQuery: string;
   toast: ToastState | null;
   isChatOpen: boolean;
+  subscriptionsTimestamp: number;
+  triggerSubscriptionUpdate: () => void;
   chatActiveUser: string | null;
   isSaveModalOpen: boolean;
   isShareModalOpen: boolean;
   itemToSave: { id: string, image: string } | null;
-  viewingAuthorName: string | null;
+  viewingAuthor: { name: string; avatar?: string; id?: string } | null;
 
   // Actions
   setIsSidebarOpen: (isOpen: boolean) => void;
@@ -77,7 +80,7 @@ interface UISlice {
   closeSaveModal: () => void;
   openShareModal: () => void;
   closeShareModal: () => void;
-  setViewingAuthorName: (name: string | null) => void;
+  setViewingAuthor: (author: { name: string; avatar?: string; id?: string } | null) => void;
 }
 
 interface AuthSlice {
@@ -108,6 +111,7 @@ interface AuthSlice {
   collections: CollectionItem[];
   blogPosts: ArticleItem[];
   isLoadingAuth: boolean; // Add this property
+  isLoadingNotifications?: boolean;
 
   // Actions
   addToCart: (item: CartItem) => void;
@@ -116,8 +120,11 @@ interface AuthSlice {
   toggleLike: (itemId: string) => void;
   addCreatedItem: (item: PortfolioItem) => void;
   addBlogPost: (post: ArticleItem) => void;
-  markNotificationRead: (id: number) => void;
+  markNotificationRead: (id: string | number) => void; // Updated type
   markAllNotificationsRead: () => void;
+  subscribeToNotifications: (userId: string) => void; // New Action
+  cleanupNotifications: () => void; // Sync cleanup
+  unsubscribeNotifications: (() => void) | null;
   saveToCollection: (collectionId: string) => void;
   createCollection: (title: string, isPrivate: boolean) => void;
   setUser: (user: AuthSlice['user']) => void;
@@ -128,8 +135,25 @@ interface AuthSlice {
   updateSocialLinks: (links: SocialLinks) => void;
   setLoadingAuth: (loading: boolean) => void; // Add this action definition
 }
+
+// --- Blog Slice (Pagination) ---
+interface BlogSlice {
+  blogState: {
+    articles: ArticleItem[];
+    pageStack: any[]; // Store snapshots (non-serializable, so don't persist)
+    currentPage: number;
+    hasMore: boolean;
+    loading: boolean;
+    lastDoc: any | null; // Current page's last doc
+    sortOption: 'recent' | 'oldest' | 'popular';
+  };
+  // Actions
+  setBlogState: (updates: Partial<BlogSlice['blogState']>) => void;
+  resetBlogState: () => void;
+}
+
 // --- Combine Store ---
-type AppStore = UISlice & AuthSlice;
+type AppStore = UISlice & AuthSlice & BlogSlice;
 
 // --- Zustand Implementation ---
 const useZustandStore = create<AppStore>()(
@@ -149,30 +173,38 @@ const useZustandStore = create<AppStore>()(
         isSaveModalOpen: false,
         isShareModalOpen: false,
         itemToSave: null,
-        viewingAuthorName: null,
+        viewingAuthor: null,
 
         // Auth/User Initial State
         user: null,
         isLoadingAuth: true,
+        isLoadingNotifications: false,
         cartItems: [],
         likedItems: [],
         // Initialize with default or empty, persist will rehydrate
         createdItems: [],
-        notifications: [
-          { id: 1, type: 'comment', user: 'Sarah Jenkins', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=100&fit=crop', content: 'comentó en tu proyecto "Cyberpunk City"', time: 'Hace 2 min', read: false },
-          { id: 2, type: 'follow', user: 'Alex Motion', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&fit=crop', content: 'comenzó a seguirte', time: 'Hace 1 hora', read: false },
-          { id: 3, type: 'system', user: 'Latam Creativa', avatar: 'https://ui-avatars.com/api/?name=LC&background=F59E0B&color=fff', content: 'Tu curso "Blender 101" ha sido aprobado', time: 'Hace 3 horas', read: true },
-          { id: 4, type: 'like', user: 'Diego Lopez', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=100&fit=crop', content: 'le gustó tu artículo', time: 'Ayer', read: true },
-        ],
+        notifications: [], // Initialize empty for real data
         collections: USER_COLLECTIONS,
         blogPosts: [], // Initialize empty, will rely on persist or defaults if needed
+
+        // Blog Slice Initial State
+        blogState: {
+          articles: [],
+          pageStack: [],
+          currentPage: 1,
+          hasMore: true,
+          loading: false,
+          lastDoc: null,
+          sortOption: 'recent'
+        },
+
 
         // --- Actions Implementation ---
 
         setIsSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
         setActiveCategory: (category) => set({ activeCategory: category }),
         setActiveModule: (module) => {
-          set({ activeModule: module, viewingAuthorName: null, createMode: 'none', searchQuery: '' });
+          set({ activeModule: module, viewingAuthor: null, createMode: 'none', searchQuery: '' });
           if (window.innerWidth < 1280) set({ isSidebarOpen: false });
         },
         setContentMode: (mode) => {
@@ -190,20 +222,40 @@ const useZustandStore = create<AppStore>()(
         setIsChatOpen: (isOpen) => set({ isChatOpen: isOpen }),
         setChatActiveUser: (userId) => set({ chatActiveUser: userId }),
 
+        subscriptionsTimestamp: 0,
+        triggerSubscriptionUpdate: () => set((state) => ({ ...state, subscriptionsTimestamp: Date.now() })), // Added Trigger
+
         openSaveModal: (id, image) => set({ isSaveModalOpen: true, itemToSave: { id, image } }),
         closeSaveModal: () => set({ isSaveModalOpen: false, itemToSave: null }),
 
         openShareModal: () => set({ isShareModalOpen: true }),
         closeShareModal: () => set({ isShareModalOpen: false }),
 
-        setViewingAuthorName: (name) => {
-          set({ viewingAuthorName: name });
-          if (window.innerWidth < 1280 && name) set({ isSidebarOpen: false });
+        setViewingAuthor: (author) => {
+          set({ viewingAuthor: author });
+          if (window.innerWidth < 1280 && author) set({ isSidebarOpen: false });
         },
 
         // Auth/User Actions
         setUser: (user) => set({ user, isLoadingAuth: false }),
         setLoadingAuth: (loading) => set({ isLoadingAuth: loading }),
+
+        // Blog Actions
+        setBlogState: (updates) => set((state) => ({
+          blogState: { ...state.blogState, ...updates }
+        })),
+        resetBlogState: () => set({
+          blogState: {
+            articles: [],
+            pageStack: [],
+            currentPage: 1,
+            hasMore: true,
+            loading: false,
+            lastDoc: null,
+            sortOption: 'recent'
+          }
+        }),
+
 
         clearUser: () => set({ user: null }),
 
@@ -261,13 +313,42 @@ const useZustandStore = create<AppStore>()(
           blogPosts: [post, ...state.blogPosts]
         })),
 
-        markNotificationRead: (id) => set((state) => ({
-          notifications: state.notifications.map(n => n.id === id ? { ...n, read: true } : n)
-        })),
+        markNotificationRead: async (id) => {
+          const { user } = get();
+          if (user) await api.markNotificationRead(user.id, id.toString());
+          set((state) => ({
+            notifications: state.notifications.map(n => n.id === id ? { ...n, read: true } : n)
+          }));
+        },
 
         markAllNotificationsRead: () => set((state) => ({
           notifications: state.notifications.map(n => ({ ...n, read: true }))
         })),
+
+        // Real-time subscription
+        subscribeToNotifications: (userId: string) => {
+          // Cleanup previous if exists
+          const { unsubscribeNotifications } = get();
+          if (unsubscribeNotifications) {
+            unsubscribeNotifications();
+          }
+
+          set({ isLoadingNotifications: true });
+
+          const unsubscribe = api.subscribeToNotifications(userId, (notifications) => {
+            set({ notifications, isLoadingNotifications: false });
+          });
+
+          set({ unsubscribeNotifications: unsubscribe });
+        },
+
+        unsubscribeNotifications: null, // Initial state placeholder
+
+        cleanupNotifications: () => {
+          const { unsubscribeNotifications } = get();
+          if (unsubscribeNotifications) unsubscribeNotifications();
+          set({ unsubscribeNotifications: null, notifications: [] });
+        },
 
         saveToCollection: (collectionId) => {
           const { itemToSave, showToast, closeSaveModal } = get();
@@ -333,7 +414,7 @@ export const useAppStore = () => {
       isSidebarOpen: store.isSidebarOpen,
       activeCategory: store.activeCategory,
       activeModule: store.activeModule,
-      viewingAuthorName: store.viewingAuthorName,
+      viewingAuthor: store.viewingAuthor,
       contentMode: store.contentMode,
       createMode: store.createMode,
       searchQuery: store.searchQuery,
@@ -355,11 +436,19 @@ export const useAppStore = () => {
       isSaveModalOpen: store.isSaveModalOpen,
       itemToSave: store.itemToSave,
       isShareModalOpen: store.isShareModalOpen,
-      isLoadingAuth: store.isLoadingAuth
+      subscriptionsTimestamp: store.subscriptionsTimestamp, // Expose timestamp
+      isLoadingAuth: store.isLoadingAuth,
+      isLoadingNotifications: store.isLoadingNotifications,
+
+      // Blog State
+      blogState: store.blogState
     },
     actions: {
       setUser: store.setUser,
       setLoadingAuth: store.setLoadingAuth, // Expose action
+      // ...
+      setBlogState: store.setBlogState,
+      resetBlogState: store.resetBlogState,
       clearUser: store.clearUser,
       updateUserProfile: store.updateUserProfile,
       addSkill: store.addSkill,
@@ -367,7 +456,7 @@ export const useAppStore = () => {
       updateSocialLinks: store.updateSocialLinks,
       setIsSidebarOpen: store.setIsSidebarOpen,
       setActiveCategory: store.setActiveCategory,
-      setViewingAuthorName: store.setViewingAuthorName,
+      setViewingAuthor: store.setViewingAuthor,
 
       setContentMode: store.setContentMode,
       toggleContentMode: () => store.setContentMode(store.contentMode === 'creative' ? 'dev' : 'creative'),
@@ -375,7 +464,7 @@ export const useAppStore = () => {
       setChatActiveUser: store.setChatActiveUser,
       setIsChatOpen: store.setIsChatOpen,
       handleModuleSelect: store.setActiveModule,
-      handleSubscriptionSelect: store.setViewingAuthorName,
+      handleSubscriptionSelect: (name: string) => store.setViewingAuthor(name ? { name } : null),
 
       // Complex Logic Mapped
       handleCreateAction: (actionId: string) => {
@@ -442,12 +531,16 @@ export const useAppStore = () => {
 
       markNotificationRead: store.markNotificationRead,
       markAllNotificationsRead: store.markAllNotificationsRead,
+      subscribeToNotifications: store.subscribeToNotifications,
+      cleanupNotifications: store.cleanupNotifications,
+      unsubscribeNotifications: store.unsubscribeNotifications,
       openSaveModal: store.openSaveModal,
       closeSaveModal: store.closeSaveModal,
       saveToCollection: store.saveToCollection,
       createCollection: store.createCollection,
       openShareModal: store.openShareModal,
       closeShareModal: store.closeShareModal,
+      triggerSubscriptionUpdate: store.triggerSubscriptionUpdate, // Expose action
       showToast: store.showToast
     }
   };
