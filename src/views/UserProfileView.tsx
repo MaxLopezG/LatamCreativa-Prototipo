@@ -10,6 +10,7 @@ import { AssetCard } from '../components/cards/AssetCard';
 import { useAppStore } from '../hooks/useAppStore';
 import { EditProfileModal } from '../components/modals/EditProfileModal';
 import { CreatePostModal } from '../components/modals/CreatePostModal';
+import { useUserArticles } from '../hooks/useFirebase';
 
 interface UserProfileViewProps {
     authorName?: string;
@@ -112,19 +113,10 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
         return assets;
     }, [name]);
 
-    // 4. Blog
-    const userArticles = useMemo(() => {
-        // We look for posts where author is "Latam Creativa" (if official) or matches current profile name
-        // For the "Admin" use case, we probably want to see ALL posts if we are admin, but let's stick to name matching for now
-        // or finding posts by this author.
-        // Actually, if I post as "Latam Creativa", it might not show up in "Diego Lopez" profile unless I view "Latam Creativa" profile.
-        // BUT, the user wants to create them.
-        // Let's make sure we see posts created by "Latam Creativa" if we are viewing "Latam Creativa" (which might be the case later)
-        // OR if we just want to see *my* articles.
 
-        // Revised logic: Filter from state.blogPosts
-        return state.blogPosts.filter(b => b.author === name || (name === 'Latam Creativa' && b.author === 'Latam Creativa'));
-    }, [name, state.blogPosts]);
+    // 4. Blog
+    const { articles: userArticles, loading: articlesLoading, error: articlesError } = useUserArticles(name);
+
 
     // 5. Saved Items (Likes)
     const savedItems = useMemo(() => {
@@ -605,6 +597,25 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ authorName, on
                     {/* TAB: BLOG */}
                     {activeTab === 'blog' && (
                         <>
+                            {articlesError && (
+                                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/50 rounded-xl text-red-500 flex items-center gap-3">
+                                    <div className="shrink-0 p-2 bg-red-500/20 rounded-lg">
+                                        <Lock className="h-5 w-5" />
+                                    </div>
+                                    <div className="text-sm break-words flex-1">
+                                        <p className="font-bold">Error cargando artículos</p>
+                                        <p className="opacity-80">
+                                            {articlesError.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+                                                part.match(/^https?:\/\//) ? (
+                                                    <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline font-bold hover:text-red-400 block mt-1">
+                                                        ➡️ Haz clic aquí para crear el índice necesario
+                                                    </a>
+                                                ) : part
+                                            )}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
                             {/* Header Actions for Blog */}
                             {isOwnProfile && (
                                 <div className="mb-8 flex justify-end">

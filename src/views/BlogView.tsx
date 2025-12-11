@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
-import { ArrowUpDown, Plus, Newspaper, BookOpen, Search, Compass, Bookmark } from 'lucide-react';
+import { ArrowUpDown, Plus, Newspaper, BookOpen, Search, Compass, Bookmark, Loader2 } from 'lucide-react';
 import { useAppStore } from '../hooks/useAppStore';
-import { Pagination } from '../components/common/Pagination';
+import { useArticles } from '../hooks/useFirebase';
 import { BlogCard } from '../components/cards/BlogCard';
 
 interface BlogViewProps {
@@ -14,7 +13,7 @@ interface BlogViewProps {
 
 export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSelect, onSave, onCreateClick }) => {
   const { state } = useAppStore();
-  const blogPosts = state.blogPosts;
+  const { articles: blogPosts, loading, hasMore, loadMore } = useArticles();
   const [viewMode, setViewMode] = useState<'feed' | 'saved'>('feed');
 
   return (
@@ -72,8 +71,8 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
           <button
             onClick={() => setViewMode('feed')}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${viewMode === 'feed'
-                ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/20'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+              ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/20'
+              : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
           >
             <Compass className="h-4 w-4" /> Explorar
@@ -81,8 +80,8 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
           <button
             onClick={() => setViewMode('saved')}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${viewMode === 'saved'
-                ? 'bg-rose-600 text-white shadow-lg'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
+              ? 'bg-rose-600 text-white shadow-lg'
+              : 'text-slate-400 hover:text-white hover:bg-white/5'
               }`}
           >
             <Bookmark className="h-4 w-4" /> Guardados
@@ -126,9 +125,46 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
             onSave={onSave}
           />
         ))}
+
+        {loading && blogPosts.length === 0 && Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="animate-pulse flex flex-col gap-4">
+            <div className="aspect-[4/3] w-full bg-white/5 rounded-2xl"></div>
+            <div className="space-y-2">
+              <div className="h-4 w-20 bg-white/5 rounded"></div>
+              <div className="h-6 w-full bg-white/5 rounded"></div>
+              <div className="h-4 w-2/3 bg-white/5 rounded"></div>
+            </div>
+          </div>
+        ))}
       </div>
 
-      <Pagination currentPage={1} onPageChange={() => { }} />
+      {hasMore && (
+        <div className="flex justify-center mt-12 pb-20">
+          <button
+            onClick={() => loadMore()}
+            disabled={loading}
+            className="group flex items-center gap-3 px-8 py-4 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white font-bold transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin text-rose-500" />
+                Cargando más...
+              </>
+            ) : (
+              <>
+                Cargar más artículos
+                <ArrowUpDown className="h-4 w-4 text-slate-400 group-hover:text-white transition-colors" />
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {!hasMore && blogPosts.length > 0 && (
+        <div className="text-center text-slate-500 mt-12 pb-20">
+          <p>Has llegado al final. ¡Vuelve pronto por más!</p>
+        </div>
+      )}
     </div>
   );
 };

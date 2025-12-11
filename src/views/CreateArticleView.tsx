@@ -1,9 +1,10 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Image as ImageIcon, Type, Youtube, X, ChevronUp, ChevronDown, Plus, Trash2, GripVertical, Eye, Edit3, Tag as TagIcon, Hash, Layers, Check } from 'lucide-react';
+import { Image as ImageIcon, Type, Youtube, X, ChevronUp, ChevronDown, Plus, Trash2, GripVertical, Eye, Edit3, Tag as TagIcon, Hash, Layers, Check, Bold, Italic, Underline } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { CreatePageLayout } from '../components/layout/CreatePageLayout';
 import { useAppStore } from '../hooks/useAppStore';
 import { NAV_SECTIONS, NAV_SECTIONS_DEV } from '../data/navigation';
+import { useCreateArticle, useArticle, useUpdateArticle } from '../hooks/useFirebase';
 
 interface CreateArticleViewProps {
   onBack: () => void;
@@ -17,13 +18,150 @@ interface ContentBlock {
   content: string;
 }
 
+// Helper Component to fix cursor jumping issues
+const RichTextEditor = ({
+  initialContent,
+  onChange,
+  placeholder
+}: {
+  initialContent: string,
+  onChange: (content: string) => void,
+  placeholder?: string
+}) => {
+  const contentEditableRef = useRef<HTMLDivElement>(null);
+
+  // Initialize content on mount or if external change occurs (while not focused)
+  useEffect(() => {
+    if (contentEditableRef.current && contentEditableRef.current.innerHTML !== initialContent) {
+      if (document.activeElement !== contentEditableRef.current) {
+        contentEditableRef.current.innerHTML = initialContent;
+      }
+    }
+  }, [initialContent]);
+
+  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
+    onChange(e.currentTarget.innerHTML);
+  };
+
+  return (
+    <div className="relative group/text">
+      {/* Toolbar */}
+      <div className="absolute -top-12 left-0 bg-slate-800 rounded-lg flex items-center gap-1 p-1 border border-white/10 opacity-0 group-hover/text:opacity-100 transition-opacity z-10 shadow-xl">
+        <button
+          onMouseDown={(e) => { e.preventDefault(); document.execCommand('bold'); }}
+          className="p-1.5 hover:bg-white/10 rounded text-slate-300 hover:text-white transition-colors"
+          title="Negrita"
+        >
+          <Bold className="h-4 w-4" />
+        </button>
+        <button
+          onMouseDown={(e) => { e.preventDefault(); document.execCommand('italic'); }}
+          className="p-1.5 hover:bg-white/10 rounded text-slate-300 hover:text-white transition-colors"
+          title="Cursiva"
+        >
+          <Italic className="h-4 w-4" />
+        </button>
+        <button
+          onMouseDown={(e) => { e.preventDefault(); document.execCommand('underline'); }}
+          className="p-1.5 hover:bg-white/10 rounded text-slate-300 hover:text-white transition-colors"
+          title="Subrayado"
+        >
+          <Underline className="h-4 w-4" />
+        </button>
+        <div className="w-px h-4 bg-white/10 mx-1"></div>
+        {['😊', '😂', '❤️', '🔥', '👍', '🎉', '🚀'].map(emoji => (
+          <button
+            key={emoji}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              document.execCommand('insertText', false, emoji);
+            }}
+            className="p-1.5 hover:bg-white/10 rounded text-lg leading-none transition-colors"
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
+
+      <div
+        ref={contentEditableRef}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={handleInput}
+        onBlur={handleInput}
+        className="w-full bg-transparent border-none text-lg leading-relaxed text-slate-700 dark:text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-0 min-h-[1.5em] font-serif"
+      />
+      {!initialContent && placeholder && (
+        <div className="absolute top-0 left-0 text-slate-400 text-lg font-serif pointer-events-none">
+          {placeholder}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) => {
   const { actions, state } = useAppStore();
+
+  // Edit Mode Logic
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
+  const isEditMode = !!editId;
+
+  const { article: existingArticle, loading: isLoadingExisting } = useArticle(editId || undefined);
+
+  const { create } = useCreateArticle();
+  const { update } = useUpdateArticle();
+
+  const [isPublishing, setIsPublishing] = useState(false);
   const [blocks, setBlocks] = useState<ContentBlock[]>([
     { id: '1', type: 'text', content: '' }
   ]);
   const [title, setTitle] = useState('');
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+
+  // Pre-fill data if editing
+  useEffect(() => {
+    if (existingArticle && isEditMode) {
+      setTitle(existingArticle.title);
+      setCategory(existingArticle.category);
+      setTags(existingArticle.tags || []);
+      setCoverImage(existingArticle.image);
+
+      // Parse content back to blocks (simple heuristic: split by \n\n)
+      // Ideally we would store blocks structure in DB, but for now we reconstruct
+      // This assumes the plain text structure we saved. 
+      // FUTURE TODO: Save 'blocks' JSON in Firestore for perfect fidelity.
+
+      // For now, let's treat the whole content as one text block if strict structure is lost, 
+      // or try to split if we saved with specific delimiters. 
+      // Since we saved as .join('\n\n'), we can try to split, but images/videos 
+      // might be hard to distinguish exactly without parsing.
+
+      // Let's rely on the regex we used in BlogPostView to detect media
+      const splitContent = existingArticle.content.split('\n\n');
+      const reconstructedBlocks: ContentBlock[] = splitContent.map((chunk, index) => {
+        const getYoutubeId = (url: string) => {
+          const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+          const match = url.match(regExp);
+          return (match && match[2].length === 11) ? match[2] : null;
+        };
+
+        if (getYoutubeId(chunk.trim())) {
+          return { id: `restored-${index}`, type: 'video', content: chunk.trim() };
+        }
+        if (chunk.trim().match(/^https?:\/\/.*\.(jpeg|jpg|gif|png|webp)$/i)) {
+          return { id: `restored-${index}`, type: 'image', content: chunk.trim() };
+        }
+        return { id: `restored-${index}`, type: 'text', content: chunk };
+      });
+
+      if (reconstructedBlocks.length > 0) {
+        setBlocks(reconstructedBlocks);
+      }
+    }
+  }, [existingArticle, isEditMode]);
 
   // UX State
   const [category, setCategory] = useState('');
@@ -96,6 +234,11 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, onSuccess: (url: string) => void) => {
     const file = e.target.files?.[0];
     if (file) {
+      // If this is for the cover (we check if onSuccess is setCoverImage), save the file
+      if (onSuccess === setCoverImage) {
+        setCoverImageFile(file);
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         onSuccess(reader.result as string);
@@ -104,7 +247,7 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
     }
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!title.trim()) {
       actions.showToast('Por favor escribe un título', 'error');
       return;
@@ -118,27 +261,70 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
       return;
     }
 
+    setIsPublishing(true);
+
+    // Helper to strip HTML tags for excerpt
+    const stripHtml = (html: string) => {
+      const tmp = document.createElement("DIV");
+      tmp.innerHTML = html;
+      return tmp.textContent || tmp.innerText || "";
+    };
+
+    const firstTextBlock = blocks.find(b => b.type === 'text')?.content || '';
+    const plainTextExcerpt = stripHtml(firstTextBlock);
+
     // Construct the article item
-    const newArticle = {
-      id: Date.now().toString(),
+    const articleData = {
       title,
-      excerpt: blocks.find(b => b.type === 'text')?.content.substring(0, 150) + '...' || '',
+      excerpt: plainTextExcerpt.substring(0, 150) + (plainTextExcerpt.length > 150 ? '...' : '') || '',
       image: coverImage || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?q=80&w=1000&auto=format&fit=crop',
       author: state.user?.name || 'Usuario Anónimo',
       authorAvatar: state.user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop',
-      date: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }),
+      // keep original date if editing
+      date: isEditMode && existingArticle ? existingArticle.date : new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }),
       readTime: Math.ceil((blocks.filter(b => b.type === 'text').reduce((acc, curr) => acc + curr.content.length, 0) / 500)) + ' min',
       category: category,
-      likes: 0,
-      comments: 0,
+      // keep original stats
+      likes: isEditMode && existingArticle ? existingArticle.likes : 0,
+      comments: isEditMode && existingArticle ? existingArticle.comments : 0,
       content: blocks.map(b => b.content).join('\n\n'),
       tags: tags,
       domain: state.contentMode
     };
 
-    actions.addBlogPost(newArticle);
-    actions.showToast('Artículo publicado correctamente', 'success');
-    onBack();
+    try {
+      if (isEditMode && editId) {
+        // UPDATE MODE
+        await update(editId, articleData, coverImageFile || undefined);
+        actions.showToast('Artículo actualizado correctamente', 'success');
+      } else {
+        // CREATE MODE
+        // Attempt 1: Try with image (if exists)
+        await Promise.race([
+          create(articleData, coverImageFile || undefined),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000))
+        ]);
+        actions.showToast('Artículo publicado correctamente', 'success');
+      }
+      onBack();
+    } catch (error: any) {
+      console.warn("Publish/Update failed:", error);
+
+      // Retry logic logic only for CREATE (for now), generic error for update
+      if (!isEditMode && coverImageFile) {
+        try {
+          actions.showToast('Error al subir imagen. Reintentando solo texto...', 'info');
+          await create(articleData, undefined);
+          actions.showToast('Publicado sin imagen de portada', 'info');
+          onBack();
+          return;
+        } catch (retryError) { }
+      }
+
+      actions.showToast(error.message || 'Error al guardar el artículo', 'error');
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const handleAddTag = (e: React.KeyboardEvent) => {
@@ -161,21 +347,33 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
 
   return (
     <CreatePageLayout
-      title={isPreview ? "Vista Previa" : "Escribir Artículo"}
+      title={isPreview ? "Vista Previa" : (isEditMode ? "Editar Artículo" : "Escribir Artículo")}
       onBack={onBack}
       onAction={handlePublish}
+      actionLabel={isEditMode ? "Guardar Cambios" : "Publicar"}
       actionColorClass="bg-blue-500 hover:bg-blue-600 text-white"
+      isLoading={isPublishing}
     >
       <div className="space-y-8 max-w-4xl mx-auto pb-20">
 
+        {/* Loading Overlay if fetching existing data */}
+        {isLoadingExisting && (
+          <div className="absolute inset-0 bg-slate-900/50 z-50 flex items-center justify-center rounded-2xl">
+            <div className="text-white font-bold animate-pulse">Cargando artículo...</div>
+          </div>
+        )}
+
         {/* Toggle Preview Button */}
-        <div className="flex justify-end sticky top-20 z-20">
+        <div className="flex justify-between items-center sticky top-20 z-20">
+          <h2 className="text-2xl font-bold dark:text-white">
+            {isEditMode ? 'Editar Artículo' : 'Nuevo Artículo'}
+          </h2>
           <button
             onClick={() => setIsPreview(!isPreview)}
             className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 rounded-full shadow-lg border border-slate-200 dark:border-white/10 text-sm font-medium hover:scale-105 transition-transform"
           >
             {isPreview ? (
-              <> <Edit3 className="h-4 w-4" /> Editar </>
+              <> <Edit3 className="h-4 w-4" /> Volver a Editar </>
             ) : (
               <> <Eye className="h-4 w-4" /> Vista Previa </>
             )}
@@ -412,21 +610,15 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
               <div className="w-full">
                 {block.type === 'text' && (
                   isPreview ? (
-                    <p className="text-lg leading-relaxed text-slate-700 dark:text-slate-300 whitespace-pre-wrap font-serif">
-                      {block.content}
-                    </p>
+                    <div
+                      className="text-lg leading-relaxed text-slate-700 dark:text-slate-300 font-serif whitespace-pre-wrap"
+                      dangerouslySetInnerHTML={{ __html: block.content }}
+                    />
                   ) : (
-                    <textarea
-                      value={block.content}
-                      onChange={(e) => updateBlock(block.id, e.target.value)}
+                    <RichTextEditor
+                      initialContent={block.content}
+                      onChange={(newContent) => updateBlock(block.id, newContent)}
                       placeholder="Escribe aquí..."
-                      className="w-full bg-transparent border-none text-lg leading-relaxed text-slate-700 dark:text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-0 resize-none overflow-hidden font-serif"
-                      rows={1}
-                      onInput={(e) => {
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        target.style.height = target.scrollHeight + 'px';
-                      }}
                     />
                   )
                 )}

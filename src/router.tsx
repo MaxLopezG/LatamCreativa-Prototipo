@@ -260,11 +260,17 @@ function AboutWrapper() {
 
 function UserProfileWrapper() {
   const { actions } = useAppStore();
+  const navigate = useNavigate();
   return (
     <Suspended>
       <UserProfileView
         onBack={() => window.history.back()}
-        onItemSelect={(id, type) => { /* Selection handled */ }}
+        onItemSelect={(id, type) => {
+          if (type === 'blog') navigate(`/blog/${id}`);
+          else if (type === 'portfolio') navigate(`/portfolio/${id}`);
+          else if (type === 'course') navigate(`/education/${id}`);
+          else if (type === 'asset') navigate(`/market/${id}`);
+        }}
         onOpenChat={actions.openChatWithUser}
       />
     </Suspended>
@@ -273,9 +279,16 @@ function UserProfileWrapper() {
 
 function BlogPostWrapper() {
   const { actions } = useAppStore();
+  const navigate = useNavigate();
   return (
     <Suspended>
-      <BlogPostView onBack={() => window.history.back()} onArticleSelect={() => { }} onShare={actions.openShareModal} onSave={actions.openSaveModal} />
+      <BlogPostView
+        onBack={() => window.history.back()}
+        onArticleSelect={(id) => navigate(`/blog/${id}`)}
+        onShare={actions.openShareModal}
+        onSave={actions.openSaveModal}
+        onAuthorClick={(name) => navigate(`/user/${encodeURIComponent(name)}`)}
+      />
     </Suspended>
   );
 }

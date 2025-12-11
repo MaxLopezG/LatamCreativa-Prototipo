@@ -368,7 +368,7 @@ export const useAppStore = () => {
       setIsSidebarOpen: store.setIsSidebarOpen,
       setActiveCategory: store.setActiveCategory,
       setViewingAuthorName: store.setViewingAuthorName,
-      setViewingAuthorName: store.setViewingAuthorName,
+
       setContentMode: store.setContentMode,
       toggleContentMode: () => store.setContentMode(store.contentMode === 'creative' ? 'dev' : 'creative'),
       setCreateMode: store.setCreateMode,
