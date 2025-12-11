@@ -14,37 +14,42 @@ import { db, storage } from '../../lib/firebase';
 import { PortfolioItem } from '../../types';
 import { PaginatedResult } from './utils';
 
-export const projectsService = {
-    getProjects: async (lastDoc: QueryDocumentSnapshot<DocumentData> | null = null, pageSize = 10): Promise<PaginatedResult<PortfolioItem>> => {
-        try {
-            let q = query(
+
+const getProjects = async (lastDoc: QueryDocumentSnapshot<DocumentData> | null = null, pageSize = 10): Promise<PaginatedResult<PortfolioItem>> => {
+    try {
+        let q = query(
+            collection(db, 'projects'),
+            orderBy('createdAt', 'desc'),
+            limit(pageSize)
+        );
+
+        if (lastDoc) {
+            q = query(
                 collection(db, 'projects'),
                 orderBy('createdAt', 'desc'),
+                startAfter(lastDoc),
                 limit(pageSize)
             );
-
-            if (lastDoc) {
-                q = query(
-                    collection(db, 'projects'),
-                    orderBy('createdAt', 'desc'),
-                    startAfter(lastDoc),
-                    limit(pageSize)
-                );
-            }
-
-            const snapshot = await getDocs(q);
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PortfolioItem));
-
-            return {
-                data,
-                lastDoc: snapshot.docs[snapshot.docs.length - 1] || null,
-                hasMore: snapshot.docs.length === pageSize
-            };
-        } catch (error) {
-            console.error("Error fetching projects:", error);
-            throw error;
         }
-    },
+
+        const snapshot = await getDocs(q);
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PortfolioItem));
+
+        return {
+            data,
+            lastDoc: snapshot.docs[snapshot.docs.length - 1] || null,
+            hasMore: snapshot.docs.length === pageSize
+        };
+    } catch (error) {
+        console.error("Error fetching projects:", error);
+        throw error;
+    }
+};
+
+export const projectsService = {
+    getProjects,
+
+    getFeed: getProjects,
 
     createProject: async (projectData: Omit<PortfolioItem, 'id'>, imageFile?: File): Promise<string> => {
         try {

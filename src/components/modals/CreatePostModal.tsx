@@ -73,6 +73,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClos
             const author = isOfficialPost ? OFFICIAL_PROFILE : {
                 name: user?.name || 'Anonymous',
                 id: user?.id || 'anon',
+                authorId: user?.id || 'anon',
                 avatar: user?.avatar || '',
                 role: user?.role || 'Member'
             };
@@ -83,6 +84,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClos
                 excerpt: content.substring(0, 120) + '...',
                 content,
                 author: author.name,
+                authorId: author.id,
                 authorAvatar: author.avatar,
                 role: author.role,
                 date: new Date().toISOString(),

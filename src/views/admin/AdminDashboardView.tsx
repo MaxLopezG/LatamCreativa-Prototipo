@@ -28,7 +28,7 @@ export const AdminDashboardView: React.FC = () => {
         }
 
         // if (!confirm(...)) return; // Removed for debugging/UX
-        console.log("Toggling admin for:", userId, userName);
+
 
         setActionLoading(userId);
         try {

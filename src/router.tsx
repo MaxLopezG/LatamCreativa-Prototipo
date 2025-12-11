@@ -1,582 +1,89 @@
 
-import React, { Suspense, lazy } from 'react';
-import { createBrowserRouter, useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
+import React from 'react';
+import { createBrowserRouter } from 'react-router-dom';
 import { MainLayout } from './layouts/MainLayout';
-import { useAppStore } from './hooks/useAppStore';
-import { Loader } from './components/common/Loader';
-
-// --- Lazy Load Views (Optimized for named exports) ---
-const HomeView = lazy(() => import('./views/HomeView').then(module => ({ default: module.HomeView })));
-const FeedView = lazy(() => import('./views/FeedView').then(module => ({ default: module.FeedView })));
-const PortfolioView = lazy(() => import('./views/PortfolioView').then(module => ({ default: module.PortfolioView })));
-const PortfolioPostView = lazy(() => import('./views/PortfolioPostView').then(module => ({ default: module.PortfolioPostView })));
-const BlogView = lazy(() => import('./views/BlogView').then(module => ({ default: module.BlogView })));
-const BlogPostView = lazy(() => import('./views/BlogPostView').then(module => ({ default: module.BlogPostView })));
-const EducationView = lazy(() => import('./views/EducationView').then(module => ({ default: module.EducationView })));
-const CourseDetailView = lazy(() => import('./views/CourseDetailView').then(module => ({ default: module.CourseDetailView })));
-const CoursePlayerView = lazy(() => import('./views/CoursePlayerView').then(module => ({ default: module.CoursePlayerView })));
-const AssetsView = lazy(() => import('./views/AssetsView').then(module => ({ default: module.AssetsView })));
-const AssetDetailView = lazy(() => import('./views/AssetDetailView').then(module => ({ default: module.AssetDetailView })));
-const FreelanceView = lazy(() => import('./views/FreelanceView').then(module => ({ default: module.FreelanceView })));
-const ServiceDetailView = lazy(() => import('./views/ServiceDetailView').then(module => ({ default: module.ServiceDetailView })));
-const JobsView = lazy(() => import('./views/JobsView').then(module => ({ default: module.JobsView })));
-const JobDetailView = lazy(() => import('./views/JobDetailView').then(module => ({ default: module.JobDetailView })));
-const CommunityView = lazy(() => import('./views/CommunityView').then(module => ({ default: module.CommunityView })));
-const ProjectDetailView = lazy(() => import('./views/ProjectDetailView').then(module => ({ default: module.ProjectDetailView })));
-const ChallengesView = lazy(() => import('./views/ChallengesView').then(module => ({ default: module.ChallengesView })));
-const ChallengeDetailView = lazy(() => import('./views/ChallengeDetailView').then(module => ({ default: module.ChallengeDetailView })));
-const EventsView = lazy(() => import('./views/EventsView').then(module => ({ default: module.EventsView })));
-const EventDetailView = lazy(() => import('./views/EventDetailView').then(module => ({ default: module.EventDetailView })));
-const ForumView = lazy(() => import('./views/ForumView').then(module => ({ default: module.ForumView })));
-const ForumDetailView = lazy(() => import('./views/ForumDetailView').then(module => ({ default: module.ForumDetailView })));
-const PeopleView = lazy(() => import('./views/PeopleView').then(module => ({ default: module.PeopleView })));
-const UserProfileView = lazy(() => import('./views/UserProfileView').then(module => ({ default: module.UserProfileView })));
-const CartView = lazy(() => import('./views/CartView').then(module => ({ default: module.CartView })));
-const SettingsView = lazy(() => import('./views/SettingsView').then(module => ({ default: module.SettingsView })));
-const ProUpgradeView = lazy(() => import('./views/ProUpgradeView').then(module => ({ default: module.ProUpgradeView })));
-const EarningsView = lazy(() => import('./views/EarningsView').then(module => ({ default: module.EarningsView })));
-const SalesListView = lazy(() => import('./views/SalesListView').then(module => ({ default: module.SalesListView })));
-
-const ServicesHomeView = lazy(() => import('./views/ServicesHomeView').then(module => ({ default: module.ServicesHomeView })));
-const AboutView = lazy(() => import('./views/AboutView').then(module => ({ default: module.AboutView })));
-const InfoView = lazy(() => import('./views/InfoView').then(module => ({ default: module.InfoView })));
-const SearchResultsView = lazy(() => import('./views/SearchResultsView').then(module => ({ default: module.SearchResultsView })));
-
-// Search Wrapper
-function SearchResultsWrapper() {
-  const [searchParams] = useSearchParams();
-  const query = searchParams.get('q') || '';
-  const navigate = useNavigate();
-
-  const handleItemSelect = (id: string, type: string) => {
-    if (type === 'portfolio') navigate(`/portfolio/${id}`);
-    if (type === 'course') navigate(`/education/${id}`);
-    if (type === 'asset') navigate(`/market/${id}`);
-    if (type === 'blog') navigate(`/blog/${id}`);
-    // Add other types if necessary
-  };
-
-  return (
-    <Suspended>
-      <SearchResultsView query={query} onItemSelect={handleItemSelect} />
-    </Suspended>
-  );
-}
-
-const ComingSoonView = lazy(() => import('./views/ComingSoonView'));
-const SuccessView = lazy(() => import('./views/SuccessView').then(module => ({ default: module.SuccessView })));
-const CollectionsView = lazy(() => import('./views/CollectionsView').then(module => ({ default: module.CollectionsView })));
-const CollectionDetailView = lazy(() => import('./views/CollectionDetailView').then(module => ({ default: module.CollectionDetailView })));
-const AuthView = lazy(() => import('./views/auth/AuthView').then(module => ({ default: module.AuthView })));
-
-// Lazy Load Create Views
-const CreateProjectView = lazy(() => import('./views/CreateProjectView').then(module => ({ default: module.CreateProjectView })));
-const CreateArticleView = lazy(() => import('./views/CreateArticleView').then(module => ({ default: module.CreateArticleView })));
-const CreatePortfolioView = lazy(() => import('./views/CreatePortfolioView').then(module => ({ default: module.CreatePortfolioView })));
-const CreateCourseView = lazy(() => import('./views/CreateCourseView').then(module => ({ default: module.CreateCourseView })));
-const CreateAssetView = lazy(() => import('./views/CreateAssetView').then(module => ({ default: module.CreateAssetView })));
-const CreateServiceView = lazy(() => import('./views/CreateServiceView').then(module => ({ default: module.CreateServiceView })));
-const CreateForumPostView = lazy(() => import('./views/CreateForumPostView').then(module => ({ default: module.CreateForumPostView })));
-const CreateEventView = lazy(() => import('./views/CreateEventView').then(module => ({ default: module.CreateEventView })));
-
-// Helper to wrap components in Suspense
-const Suspended = ({ children }: { children?: React.ReactNode }) => (
-  <Suspense fallback={<Loader />}>{children}</Suspense>
-);
-
-// Wrappers for injections
-function PortfolioWrapper() {
-  const { state, actions } = useAppStore();
-  const navigate = useNavigate();
-
-  // Helper for Auth Guard
-  const handleCreateClick = (path: string) => {
-    if (!state.user) {
-      actions.showToast('Debes iniciar sesión para crear contenido', 'info');
-      navigate('/auth'); // Or just show toast? User preferred "remember to be logged in". Redirect is better.
-      return;
-    }
-    navigate(path);
-  };
-
-  return (
-    <Suspended>
-      <PortfolioView
-        activeCategory={state.activeCategory}
-        onItemSelect={(id) => navigate(`/portfolio/${id}`)}
-        onCreateClick={() => handleCreateClick('/create/portfolio')}
-        onSave={actions.openSaveModal}
-        contentMode={state.contentMode}
-      />
-    </Suspended>
-  );
-}
-
-function PortfolioPostWrapper() {
-  const { actions } = useAppStore();
-  const navigate = useNavigate();
-  return (
-    <Suspended>
-      <PortfolioPostView
-        onBack={() => window.history.back()}
-        onShare={actions.openShareModal}
-        onSave={actions.openSaveModal}
-        onAuthorClick={(name) => navigate(`/user/${encodeURIComponent(name)}`)}
-      />
-    </Suspended>
-  );
-}
-
-function FeedWrapper() {
-  const { state, actions } = useAppStore();
-  const navigate = useNavigate();
-
-  const handleItemSelect = (id: string, type: string) => {
-    if (type === 'portfolio') navigate(`/portfolio/${id}`);
-    if (type === 'course') navigate(`/education/${id}`);
-    if (type === 'asset') navigate(`/market/${id}`);
-    if (type === 'blog') navigate(`/blog/${id}`);
-  };
-
-  return (
-    <Suspended>
-      <FeedView
-        onNavigateToModule={(mod) => navigate(mod === 'home' ? '/' : `/${mod}`)}
-        onItemSelect={handleItemSelect}
-        contentMode={state.contentMode}
-      />
-    </Suspended>
-  );
-}
-
-function EducationWrapper() {
-  const { state, actions } = useAppStore();
-  const navigate = useNavigate();
-
-  const handleCreateClick = (path: string) => {
-    if (!state.user) {
-      actions.showToast('Debes iniciar sesión para crear contenido', 'info');
-      navigate('/auth');
-      return;
-    }
-    navigate(path);
-  };
-
-  return (
-    <Suspended>
-      <EducationView
-        activeCategory={state.activeCategory}
-        onCourseSelect={(id) => navigate(`/education/${id}`)}
-        onCreateClick={() => handleCreateClick('/create/course')}
-        contentMode={state.contentMode}
-      />
-    </Suspended>
-  );
-}
-
-function CartViewWrapper() {
-  const { state, actions } = useAppStore();
-  return (
-    <Suspended>
-      <CartView items={state.cartItems} onRemove={actions.removeFromCart} onContinueShopping={() => { }} />
-    </Suspended>
-  );
-}
-
-function AssetDetailWrapper() {
-  const { actions } = useAppStore();
-  return (
-    <Suspended>
-      <AssetDetailView onBack={() => window.history.back()} onAddToCart={actions.addToCart} onBuyNow={actions.handleBuyNow} onSave={actions.openSaveModal} onShare={actions.openShareModal} />
-    </Suspended>
-  );
-}
-
-function CourseDetailWrapper() {
-  const { actions } = useAppStore();
-  const navigate = useNavigate();
-  return (
-    <Suspended>
-      <CourseDetailView
-        onBack={() => window.history.back()}
-        onAddToCart={actions.addToCart}
-        onBuyNow={actions.handleBuyNow}
-        onStartCourse={(id) => navigate(`/learning/${id}`)}
-        onShare={actions.openShareModal}
-      />
-    </Suspended>
-  );
-}
-
-function ProjectDetailWrapper() {
-  const { actions } = useAppStore();
-  return (
-    <Suspended>
-      <ProjectDetailView onBack={() => window.history.back()} onShare={actions.openShareModal} />
-    </Suspended>
-  );
-}
-
-function EventDetailWrapper() {
-  const { actions } = useAppStore();
-  return (
-    <Suspended>
-      <EventDetailView onBack={() => window.history.back()} onShare={actions.openShareModal} />
-    </Suspended>
-  );
-}
-
-
-
-function ServicesHomeWrapper() {
-  const { actions } = useAppStore();
-  const navigate = useNavigate();
-
-  const handleNavigate = (moduleId: string) => {
-    if (moduleId === 'about') navigate('/about');
-    else {
-      actions.handleModuleSelect(moduleId);
-      if (moduleId === 'education') navigate('/education');
-      else if (moduleId === 'market') navigate('/market');
-      else navigate(`/${moduleId}`);
-    }
-  };
-
-  return (
-    <Suspended>
-      <ServicesHomeView onNavigate={handleNavigate} />
-    </Suspended>
-  );
-}
-
-function AboutWrapper() {
-  const navigate = useNavigate();
-  return (
-    <Suspended>
-      <AboutView onNavigate={(path) => navigate(path)} />
-    </Suspended>
-  );
-}
-
-function UserProfileWrapper() {
-  const { actions } = useAppStore();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const authorFromState = location.state?.author;
-
-  return (
-    <Suspended>
-      <UserProfileView
-        author={authorFromState}
-        onBack={() => window.history.back()}
-        onItemSelect={(id, type) => {
-          if (type === 'blog') navigate(`/blog/${id}`);
-          else if (type === 'portfolio') navigate(`/portfolio/${id}`);
-          else if (type === 'course') navigate(`/education/${id}`);
-          else if (type === 'asset') navigate(`/market/${id}`);
-        }}
-        onOpenChat={actions.openChatWithUser}
-      />
-    </Suspended>
-  );
-}
-
-function BlogPostWrapper() {
-  const { actions } = useAppStore();
-  const navigate = useNavigate();
-  return (
-    <Suspended>
-      <BlogPostView
-        onBack={() => window.history.back()}
-        onArticleSelect={(id) => navigate(`/blog/${id}`)}
-        onShare={actions.openShareModal}
-        onSave={actions.openSaveModal}
-        onAuthorClick={(author: any) => {
-          const name = typeof author === 'object' ? author.name : author;
-          navigate(`/user/${encodeURIComponent(name)}`, { state: { author: typeof author === 'object' ? author : { name: author } } });
-        }}
-      />
-    </Suspended>
-  );
-}
-
-function SalesListWrapper() {
-  const { type } = useParams<{ type: string }>();
-  return (
-    <Suspended>
-      <SalesListView type={type || 'asset'} onBack={() => window.history.back()} />
-    </Suspended>
-  );
-}
-
-function CollectionsWrapper() {
-  const { state, actions } = useAppStore();
-  const navigate = useNavigate();
-
-  const handleCreateClick = () => {
-    if (!state.user) {
-      actions.showToast('Debes iniciar sesión para crear colecciones', 'info');
-      navigate('/auth');
-      return;
-    }
-    actions.openSaveModal('', '');
-  };
-
-  return (
-    <Suspended>
-      <CollectionsView
-        onCreateClick={handleCreateClick}
-        onCollectionSelect={(id) => navigate(`/collections/${id}`)}
-      />
-    </Suspended>
-  );
-}
-
-function CollectionDetailWrapper() {
-  const { id } = useParams<{ id: string }>();
-  const { actions } = useAppStore();
-  const navigate = useNavigate();
-
-  const handleItemSelect = (itemId: string) => {
-    navigate(`/portfolio/${itemId}`);
-  };
-
-  return (
-    <Suspended>
-      <CollectionDetailView
-        collectionId={id || ''}
-        onBack={() => window.history.back()}
-        onItemSelect={handleItemSelect}
-        onShare={actions.openShareModal}
-      />
-    </Suspended>
-  );
-}
-
-function CreateWrapper({ Component }: { Component: React.FC<{ onBack: () => void }> }) {
-  return (
-    <Suspended>
-      <Component onBack={() => window.history.back()} />
-    </Suspended>
-  );
-}
-
-// Additional Wrappers
-function BlogWrapper() {
-  const { state, actions } = useAppStore();
-  const navigate = useNavigate();
-
-  const handleCreateClick = (path: string) => {
-    if (!state.user) {
-      actions.showToast('Debes iniciar sesión para escribir un artículo', 'info');
-      navigate('/auth');
-      return;
-    }
-    navigate(path);
-  };
-
-  return (
-    <Suspended>
-      <BlogView
-        activeCategory={state.activeCategory}
-        onArticleSelect={(id) => navigate(`/blog/${id}`)}
-        onCreateClick={() => handleCreateClick('/create/article')}
-        onSave={actions.openSaveModal}
-      />
-    </Suspended>
-  );
-}
-
-function MarketWrapper() {
-  const { state, actions } = useAppStore();
-  const navigate = useNavigate();
-
-  const handleCreateClick = (path: string) => {
-    if (!state.user) {
-      actions.showToast('Debes iniciar sesión para vender un asset', 'info');
-      navigate('/auth');
-      return;
-    }
-    navigate(path);
-  };
-
-  return (
-    <Suspended>
-      <AssetsView
-        activeCategory={state.activeCategory}
-        onAssetSelect={(id) => navigate(`/market/${id}`)}
-        onCreateClick={() => handleCreateClick('/create/asset')}
-        onSave={actions.openSaveModal}
-      />
-    </Suspended>
-  );
-}
-
-function FreelanceWrapper() {
-  const { state, actions } = useAppStore();
-  const navigate = useNavigate();
-
-  const handleCreateClick = (path: string) => {
-    if (!state.user) {
-      actions.showToast('Debes iniciar sesión para ofrecer un servicio', 'info');
-      navigate('/auth');
-      return;
-    }
-    navigate(path);
-  };
-
-  return (
-    <Suspended>
-      <FreelanceView
-        activeCategory={state.activeCategory}
-        onServiceSelect={(id) => navigate(`/freelance/${id}`)}
-        onCreateClick={() => handleCreateClick('/create/service')}
-      />
-    </Suspended>
-  );
-}
-
-function JobsWrapper() {
-  const { state, actions } = useAppStore();
-  const navigate = useNavigate();
-
-  const handleCreateClick = (path: string) => {
-    if (!state.user) {
-      actions.showToast('Debes iniciar sesión para publicar un empleo', 'info');
-      navigate('/auth');
-      return;
-    }
-    navigate(path);
-  };
-
-  return (
-    <Suspended>
-      <JobsView
-        onJobSelect={(id) => navigate(`/jobs/${id}`)}
-        onCreateClick={() => handleCreateClick('/create/service')} // Assuming service create for jobs?
-      />
-    </Suspended>
-  );
-}
-
-function CommunityWrapper() {
-  const { state, actions } = useAppStore();
-  const navigate = useNavigate();
-
-  const handleCreateClick = (path: string) => {
-    if (!state.user) {
-      actions.showToast('Debes iniciar sesión para crear un proyecto', 'info');
-      navigate('/auth');
-      return;
-    }
-    navigate(path);
-  };
-
-  return (
-    <Suspended>
-      <CommunityView
-        onProjectSelect={(id) => navigate(`/community/${id}`)}
-        onCreateProjectClick={() => handleCreateClick('/create/project')}
-      />
-    </Suspended>
-  );
-}
-
-function ChallengesWrapper() {
-  const navigate = useNavigate();
-  return (
-    <Suspended>
-      <ChallengesView
-        onChallengeSelect={(id) => navigate(`/challenges/${id}`)}
-      />
-    </Suspended>
-  );
-}
-
-function EventsWrapper() {
-  const { state, actions } = useAppStore();
-  const navigate = useNavigate();
-
-  const handleCreateClick = (path: string) => {
-    if (!state.user) {
-      actions.showToast('Debes iniciar sesión para publicar un evento', 'info');
-      navigate('/auth');
-      return;
-    }
-    navigate(path);
-  };
-
-  return (
-    <Suspended>
-      <EventsView
-        onEventSelect={(id) => navigate(`/events/${id}`)}
-        onCreateClick={() => handleCreateClick('/create/event')}
-      />
-    </Suspended>
-  );
-}
-
-function ForumWrapper() {
-  const { state, actions } = useAppStore();
-  const navigate = useNavigate();
-
-  const handleCreateClick = (path: string) => {
-    if (!state.user) {
-      actions.showToast('Debes iniciar sesión para preguntar en el foro', 'info');
-      navigate('/auth');
-      return;
-    }
-    navigate(path);
-  };
-
-  return (
-    <Suspended>
-      <ForumView
-        onPostSelect={(id) => navigate(`/forum/${id}`)}
-        onCreateClick={() => handleCreateClick('/create/forum')}
-      />
-    </Suspended>
-  );
-}
-
-function PeopleWrapper() {
-  const { actions } = useAppStore();
-  const navigate = useNavigate();
-  // Assuming PeopleView has onProfileSelect
-  return (
-    <Suspended>
-      <PeopleView
-        onProfileSelect={(name) => {
-          // Construct a partial author object since we only have the name from PeopleView
-          // This ensures compatibility with the store's expected type
-          actions.setViewingAuthor({ name });
-          navigate(`/user/${encodeURIComponent(name)}`);
-        }}
-      />
-    </Suspended>
-  );
-}
-
-// Simple wrappers for views that don't need prop injection but need Suspense
-const SuspendedView = ({ Component, ...props }: { Component: React.FC<any>, [key: string]: any }) => (
-  <Suspended><Component {...props} /></Suspended>
-);
+import {
+  HomeView,
+  CoursePlayerView,
+  ServiceDetailView,
+  JobDetailView,
+  ChallengeDetailView,
+  ForumDetailView,
+  SuccessView,
+  SettingsView,
+  ProUpgradeView,
+  EarningsView,
+  InfoView,
+  ComingSoonView,
+  AdminDashboardView,
+  // Wrappers
+  SearchResultsWrapper,
+  PortfolioWrapper,
+  PortfolioPostWrapper,
+  FeedWrapper,
+  EducationWrapper,
+  CartViewWrapper,
+  AssetDetailWrapper,
+  CourseDetailWrapper,
+  ProjectDetailWrapper,
+  EventDetailWrapper,
+  ServicesHomeWrapper,
+  AboutWrapper,
+  UserProfileWrapper,
+  BlogPostWrapper,
+  SalesListWrapper,
+  CollectionsWrapper,
+  CollectionDetailWrapper,
+  CreateWrapper,
+  BlogWrapper,
+  MarketWrapper,
+  FreelanceWrapper,
+  JobsWrapper,
+  CommunityWrapper,
+  ChallengesWrapper,
+  EventsWrapper,
+  ForumWrapper,
+  PeopleWrapper,
+  Suspended,
+  SuspendedView
+} from './router/RouteWrappers';
 
 // --- Admin Views ---
-const AdminLayoutView = lazy(() => import('./layouts/AdminLayout').then(module => ({ default: module.AdminLayout })));
-const AdminDashboard = lazy(() => import('./views/admin/AdminDashboardView').then(module => ({ default: module.AdminDashboardView })));
+// Keeping AdminLayout inline lazy load or move too? 
+// Let's keep it consistent, though it was lazy loaded in original. 
+// RouteWrappers handled the lazy loading for views. AdminLayout is a layout.
+const AdminLayoutView = React.lazy(() => import('./layouts/AdminLayout').then(module => ({ default: module.AdminLayout })));
+
+// Lazy Load Create Views (passed to CreateWrapper)
+// These were lazy loaded in router originally, now we need to import them to pass to CreateWrapper?
+// Actually CreateWrapper took "Component".
+// In RouteWrappers I didn't export CreatePortfolioView etc. I should check RouteWrappers again.
+// Wait, I didn't export the underlying Create views in RouteWrappers. 
+// I need to export them or import them here.
+// Let's use the ones from RouteWrappers if I exported them? I didn't. 
+// I should probably add them to RouteWrappers exports or import them here.
+// The cleanest is to import them here using the new paths.
+
+const CreateProjectView = React.lazy(() => import('./views/community/CreateProjectView').then(module => ({ default: module.CreateProjectView })));
+const CreateArticleView = React.lazy(() => import('./views/blog/CreateArticleView').then(module => ({ default: module.CreateArticleView })));
+const CreatePortfolioView = React.lazy(() => import('./views/portfolio/CreatePortfolioView').then(module => ({ default: module.CreatePortfolioView })));
+const CreateCourseView = React.lazy(() => import('./views/education/CreateCourseView').then(module => ({ default: module.CreateCourseView })));
+const CreateAssetView = React.lazy(() => import('./views/market/CreateAssetView').then(module => ({ default: module.CreateAssetView })));
+const CreateServiceView = React.lazy(() => import('./views/services/CreateServiceView').then(module => ({ default: module.CreateServiceView })));
+const CreateForumPostView = React.lazy(() => import('./views/community/CreateForumPostView').then(module => ({ default: module.CreateForumPostView })));
+const CreateEventView = React.lazy(() => import('./views/community/CreateEventView').then(module => ({ default: module.CreateEventView })));
 
 export const router = createBrowserRouter([
   {
     path: '/auth',
-    element: <Suspended><AuthView /></Suspended>
+    element: <SuspendedView Component={React.lazy(() => import('./views/auth/AuthView').then(m => ({ default: m.AuthView })))} />
   },
   {
     path: 'admin',
     element: <Suspended><AdminLayoutView /></Suspended>,
     children: [
-      { index: true, element: <Suspended><AdminDashboard /></Suspended> },
-      { path: 'users', element: <Suspended><AdminDashboard /></Suspended> }, // Reuse for now
+      { index: true, element: <Suspended><AdminDashboardView /></Suspended> },
+      { path: 'users', element: <Suspended><AdminDashboardView /></Suspended> },
     ]
   },
   {
@@ -668,3 +175,4 @@ export const router = createBrowserRouter([
     element: <Suspended><CoursePlayerView onBack={() => window.history.back()} /></Suspended>
   }
 ]);
+

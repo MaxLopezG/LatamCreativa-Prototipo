@@ -4,9 +4,9 @@ import { api } from '../services/api';
 export const useFeed = () => {
   return useInfiniteQuery({
     queryKey: ['feed'],
-    queryFn: api.getFeed,
-    initialPageParam: 0,
-    getNextPageParam: (lastPage) => lastPage.nextPage,
+    queryFn: ({ pageParam }) => api.getFeed(pageParam as any),
+    initialPageParam: null,
+    getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.lastDoc : undefined,
     staleTime: 1000 * 60 * 5, // 5 minutos
     refetchOnWindowFocus: false,
   });

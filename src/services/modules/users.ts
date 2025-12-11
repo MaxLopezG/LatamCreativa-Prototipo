@@ -113,5 +113,22 @@ export const usersService = {
             console.error("Error checking subscription:", error);
             return false;
         }
+    },
+
+    // --- Chat Methods (Mock/Placeholder) ---
+    getChatMessages: async (friendId: string): Promise<any[]> => {
+        // Return empty array or mock data for now
+        return [];
+    },
+
+    sendMessage: async ({ friendId, text }: { friendId: string, text: string }): Promise<void> => {
+
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 500));
+    },
+
+    getArtistDirectory: async (): Promise<any[]> => {
+
+        return [];
     }
 };
