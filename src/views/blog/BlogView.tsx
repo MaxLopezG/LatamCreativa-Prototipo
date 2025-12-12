@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowUpDown, Plus, Newspaper, BookOpen, Search, Loader2, ArrowLeft, ArrowRight, ChevronDown } from 'lucide-react';
+import { Plus, Newspaper, Search, Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
 import { useArticles } from '../../hooks/useFirebase';
 import { BlogCard } from '../../components/cards/BlogCard';
