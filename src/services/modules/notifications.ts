@@ -6,6 +6,7 @@ import {
     getDocs,
     addDoc,
     updateDoc,
+    deleteDoc,
     doc,
     onSnapshot,
     Unsubscribe
@@ -51,6 +52,15 @@ export const notificationsService = {
             await updateDoc(ref, { read: true });
         } catch (error) {
             console.error("Error marking notification read:", error);
+        }
+    },
+
+    deleteNotification: async (userId: string, notificationId: string): Promise<void> => {
+        try {
+            const ref = doc(db, 'users', userId, 'notifications', notificationId);
+            await deleteDoc(ref);
+        } catch (error) {
+            console.error("Error deleting notification:", error);
         }
     }
 };

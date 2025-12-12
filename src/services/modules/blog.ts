@@ -14,7 +14,8 @@ import {
     increment,
     QueryDocumentSnapshot,
     DocumentData,
-    setDoc
+    setDoc,
+    documentId
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../lib/firebase';
@@ -145,6 +146,21 @@ export const blogService = {
         }
     },
 
+    getRecentArticles: async (limitCount = 4): Promise<ArticleItem[]> => {
+        try {
+            const q = query(
+                collection(db, 'articles'),
+                orderBy('date', 'desc'),
+                limit(limitCount)
+            );
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ArticleItem));
+        } catch (error) {
+            console.error("Error fetching recent articles:", error);
+            return [];
+        }
+    },
+
     getUserArticles: async (authorName: string): Promise<ArticleItem[]> => {
         try {
             const q = query(
@@ -157,6 +173,58 @@ export const blogService = {
         } catch (error) {
             console.error("Error fetching user articles:", error);
             throw error;
+        }
+    },
+
+    getArticlesByCategories: async (categories: string[], limitCount = 4): Promise<ArticleItem[]> => {
+        try {
+            if (!categories || categories.length === 0) return [];
+
+            // Firestore 'in' query supports max 10 values
+            const limitedCategories = categories.slice(0, 10);
+
+            const q = query(
+                collection(db, 'articles'),
+                where('category', 'in', limitedCategories),
+                limit(limitCount)
+            );
+
+            const snapshot = await getDocs(q);
+            const articles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ArticleItem));
+
+            // Client-side sort since we effectively only have a few items and want to avoid complex Firestore indexes for now
+            return articles.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        } catch (error) {
+            console.error("Error fetching articles by categories:", error);
+            // Fallback: return empty to avoid breaking the view
+            return [];
+        }
+    },
+
+    getArticlesByIds: async (ids: string[]): Promise<ArticleItem[]> => {
+        if (!ids || ids.length === 0) return [];
+
+        // Firestore 'in' query limit is 10
+        const chunks = [];
+        for (let i = 0; i < ids.length; i += 10) {
+            chunks.push(ids.slice(i, i + 10));
+        }
+
+        try {
+            const results = await Promise.all(chunks.map(async chunk => {
+                const q = query(
+                    collection(db, 'articles'),
+                    where(documentId(), 'in', chunk)
+                );
+                const snapshot = await getDocs(q);
+                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ArticleItem));
+            }));
+
+            return results.flat();
+        } catch (error) {
+            console.error("Error fetching articles by IDs:", error);
+            // Return empty rules out partial failures? For now:
+            return [];
         }
     },
 

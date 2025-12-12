@@ -301,10 +301,7 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
       } else {
         // CREATE MODE
         // Attempt 1: Try with image (if exists)
-        await Promise.race([
-          create(articleData, coverImageFile || undefined),
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000))
-        ]);
+        await create(articleData, coverImageFile || undefined);
         actions.showToast('Artículo publicado correctamente', 'success');
       }
       onBack();

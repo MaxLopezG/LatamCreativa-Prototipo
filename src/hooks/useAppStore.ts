@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { CartItem, Notification, CollectionItem, PortfolioItem, ArticleItem } from '../types';
-import { USER_COLLECTIONS, PORTFOLIO_ITEMS, BLOG_ITEMS } from '../data/content';
+import { PORTFOLIO_ITEMS, BLOG_ITEMS } from '../data/content';
 import { api } from '../services/api';
+import { notificationsService } from '../services/modules/notifications';
 
 export interface ExperienceItem {
   id: number | string;
@@ -63,7 +64,7 @@ interface UISlice {
   chatActiveUser: string | null;
   isSaveModalOpen: boolean;
   isShareModalOpen: boolean;
-  itemToSave: { id: string, image: string } | null;
+  itemToSave: { id: string, image: string, type: 'project' | 'article' } | null;
   viewingAuthor: { name: string; avatar?: string; id?: string } | null;
 
   // Actions
@@ -76,7 +77,7 @@ interface UISlice {
   showToast: (message: string, type?: ToastType) => void;
   setIsChatOpen: (isOpen: boolean) => void;
   setChatActiveUser: (userId: string | null) => void;
-  openSaveModal: (id: string, image: string) => void;
+  openSaveModal: (id: string, image: string, type: 'project' | 'article') => void;
   closeSaveModal: () => void;
   openShareModal: () => void;
   closeShareModal: () => void;
@@ -120,13 +121,16 @@ interface AuthSlice {
   toggleLike: (itemId: string) => void;
   addCreatedItem: (item: PortfolioItem) => void;
   addBlogPost: (post: ArticleItem) => void;
-  markNotificationRead: (id: string | number) => void; // Updated type
+  markNotificationRead: (id: string | number) => void;
+  deleteNotification: (id: string | number) => void;
   markAllNotificationsRead: () => void;
   subscribeToNotifications: (userId: string) => void; // New Action
   cleanupNotifications: () => void; // Sync cleanup
   unsubscribeNotifications: (() => void) | null;
-  saveToCollection: (collectionId: string) => void;
-  createCollection: (title: string, isPrivate: boolean) => void;
+  fetchCollections: () => Promise<void>;
+  saveToCollection: (collectionId: string) => Promise<void>;
+  createCollection: (title: string, isPrivate: boolean) => Promise<void>;
+  deleteCollection: (collectionId: string) => Promise<void>;
   setUser: (user: AuthSlice['user']) => void;
   clearUser: () => void;
   updateUserProfile: (updates: Partial<AuthSlice['user']>) => void;
@@ -184,7 +188,7 @@ const useZustandStore = create<AppStore>()(
         // Initialize with default or empty, persist will rehydrate
         createdItems: [],
         notifications: [], // Initialize empty for real data
-        collections: USER_COLLECTIONS,
+        collections: [],
         blogPosts: [], // Initialize empty, will rely on persist or defaults if needed
 
         // Blog Slice Initial State
@@ -225,7 +229,7 @@ const useZustandStore = create<AppStore>()(
         subscriptionsTimestamp: 0,
         triggerSubscriptionUpdate: () => set((state) => ({ ...state, subscriptionsTimestamp: Date.now() })), // Added Trigger
 
-        openSaveModal: (id, image) => set({ isSaveModalOpen: true, itemToSave: { id, image } }),
+        openSaveModal: (id, image, type) => set({ isSaveModalOpen: true, itemToSave: { id, image, type } }),
         closeSaveModal: () => set({ isSaveModalOpen: false, itemToSave: null }),
 
         openShareModal: () => set({ isShareModalOpen: true }),
@@ -321,6 +325,16 @@ const useZustandStore = create<AppStore>()(
           }));
         },
 
+        deleteNotification: async (id) => {
+          const { user } = get();
+          if (!user) return;
+          // Optimistic update
+          set((state) => ({
+            notifications: state.notifications.filter((n) => n.id !== id),
+          }));
+          await notificationsService.deleteNotification(user.id, String(id));
+        },
+
         markAllNotificationsRead: () => set((state) => ({
           notifications: state.notifications.map(n => ({ ...n, read: true }))
         })),
@@ -350,41 +364,103 @@ const useZustandStore = create<AppStore>()(
           set({ unsubscribeNotifications: null, notifications: [] });
         },
 
-        saveToCollection: (collectionId) => {
-          const { itemToSave, showToast, closeSaveModal } = get();
-          if (!itemToSave) return;
 
-          set((state) => ({
-            collections: state.collections.map(col => {
-              if (col.id === collectionId) {
-                return {
-                  ...col,
-                  itemCount: col.itemCount + 1,
-                  thumbnails: [itemToSave.image, ...col.thumbnails.slice(0, 3)]
-                };
-              }
-              return col;
-            })
-          }));
-          showToast("Guardado en colección", 'success');
-          closeSaveModal();
+        fetchCollections: async () => {
+          const { user } = get();
+          if (!user) return;
+          const collections = await api.getUserCollections(user.id);
+          set({ collections });
         },
 
-        createCollection: (title, isPrivate) => {
-          const { itemToSave, showToast, closeSaveModal } = get();
-          if (!itemToSave) return;
+        saveToCollection: async (collectionId) => {
+          const { itemToSave, showToast, closeSaveModal, user } = get();
+          if (!itemToSave || !user) return;
 
-          const newCol: CollectionItem = {
-            id: Date.now().toString(),
-            title,
-            isPrivate,
-            itemCount: 1,
-            thumbnails: [itemToSave.image]
-          };
+          try {
+            const sanitizedItem = {
+              id: String(itemToSave.id),
+              type: itemToSave.type || (itemToSave.type === 'article' ? 'article' : 'project'),
+              image: String(itemToSave.image || ''),
+            };
 
-          set((state) => ({ collections: [newCol, ...state.collections] }));
-          showToast("Nueva colección creada y guardada", 'success');
-          closeSaveModal();
+            await api.addToCollection(user.id, collectionId, sanitizedItem as any);
+
+            set((state) => ({
+              collections: state.collections.map(col => {
+                if (col.id === collectionId) {
+                  return {
+                    ...col,
+                    itemCount: (col.itemCount || 0) + 1,
+                    thumbnails: [itemToSave.image, ...(col.thumbnails || []).slice(0, 3)],
+                    items: [...(col.items || []), { id: itemToSave.id, type: itemToSave.type || 'project', addedAt: new Date().toISOString() }]
+                  };
+                }
+                return col;
+              })
+            }));
+            showToast("Guardado en colección", 'success');
+            closeSaveModal();
+          } catch (error) {
+            console.error(error);
+            showToast("Error al guardar", 'error');
+          }
+        },
+
+        createCollection: async (title, isPrivate) => {
+          const { itemToSave, showToast, closeSaveModal, user } = get();
+          if (!user) return;
+
+          try {
+            // Create empty collection
+            console.log("Action: Creating collection...", { title, isPrivate, userId: user.id });
+            const newCol = await api.createCollection(user.id, title, isPrivate);
+
+            if (newCol) {
+              console.log("Action: Collection created, checking itemToSave:", itemToSave);
+              // If there's an item to save, add it immediately
+              if (itemToSave) {
+                console.log("Action: Adding item to new collection...", itemToSave);
+
+                // Sanitize the item to ensure no custom objects or undefined values are passed to Firestore
+                const sanitizedItem = {
+                  id: String(itemToSave.id),
+                  type: itemToSave.type || (itemToSave.type === 'article' ? 'article' : 'project'),
+                  image: String(itemToSave.image || ''),
+                  addedAt: new Date().toISOString()
+                };
+
+                // The service expects the reference object now
+                await api.addToCollection(user.id, newCol.id, sanitizedItem as any);
+
+                // Update local object to reflect the change immediately
+                newCol.itemCount = 1;
+                newCol.thumbnails = [sanitizedItem.image];
+                newCol.items = [sanitizedItem as any];
+              }
+
+              set((state) => ({ collections: [newCol, ...state.collections] }));
+              showToast("Colección creada correctamente", 'success');
+              closeSaveModal();
+            }
+          } catch (error) {
+            console.error("Action Error [createCollection]:", error);
+            showToast("Error al crear colección", 'error');
+          }
+        },
+
+        deleteCollection: async (collectionId) => {
+          const { user, showToast } = get();
+          if (!user) return;
+          try {
+            await api.deleteCollection(user.id, collectionId);
+            set((state) => ({
+              collections: state.collections.filter(c => c.id !== collectionId)
+            }));
+            showToast("Colección eliminada", 'success');
+          } catch (error) {
+            console.error("Action error:", error);
+            showToast("Error al eliminar colección", 'error');
+          }
         }
       }),
       {
@@ -538,9 +614,12 @@ export const useAppStore = () => {
       closeSaveModal: store.closeSaveModal,
       saveToCollection: store.saveToCollection,
       createCollection: store.createCollection,
+      deleteCollection: store.deleteCollection,
+      fetchCollections: store.fetchCollections,
       openShareModal: store.openShareModal,
       closeShareModal: store.closeShareModal,
       triggerSubscriptionUpdate: store.triggerSubscriptionUpdate, // Expose action
+      deleteNotification: store.deleteNotification, // Expose action
       showToast: store.showToast
     }
   };

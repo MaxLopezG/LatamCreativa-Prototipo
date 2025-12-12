@@ -2,6 +2,7 @@ import { projectsService } from './modules/projects';
 import { blogService } from './modules/blog';
 import { usersService } from './modules/users';
 import { notificationsService } from './modules/notifications';
+import { collectionsService } from './modules/collections';
 
 // Re-export shared types for backward compatibility
 export type { PaginatedResult } from './modules/utils';
@@ -19,5 +20,8 @@ export const api = {
   ...usersService,
 
   // Notifications
-  ...notificationsService
+  ...notificationsService,
+
+  // Collections
+  ...collectionsService
 };

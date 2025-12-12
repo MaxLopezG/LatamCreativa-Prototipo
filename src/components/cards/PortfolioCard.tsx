@@ -7,10 +7,11 @@ import { useAppStore } from '../../hooks/useAppStore';
 interface PortfolioCardProps {
   item: PortfolioItem;
   onClick?: () => void;
-  onSave?: (id: string, image: string) => void;
+  onSave?: (id: string, image: string, type: 'project' | 'article') => void; // Updated signature
+  itemType?: 'project' | 'article'; // New prop
 }
 
-export const PortfolioCard: React.FC<PortfolioCardProps> = ({ item, onClick, onSave }) => {
+export const PortfolioCard: React.FC<PortfolioCardProps> = ({ item, onClick, onSave, itemType = 'project' }) => {
   const { state, actions } = useAppStore();
   const isLiked = state.likedItems.includes(item.id);
 
@@ -21,14 +22,14 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({ item, onClick, onS
 
   // Helper to display likes count
   const getDisplayLikes = () => {
-    if (item.likes.includes('k')) return item.likes;
-    const baseLikes = parseInt(item.likes, 10) || 0;
+    if (typeof item.likes === 'string' && item.likes.includes('k')) return item.likes;
+    const baseLikes = parseInt(String(item.likes), 10) || 0;
     return isLiked ? baseLikes + 1 : baseLikes;
   };
 
   const handleSave = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onSave?.(item.id, item.image);
+    onSave?.(item.id, item.image, itemType);
   };
 
   return (

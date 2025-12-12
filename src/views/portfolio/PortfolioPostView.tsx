@@ -1,26 +1,42 @@
 
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { ArrowLeft, Heart, Share2, MessageSquare, Briefcase, UserPlus, CheckCircle2, Maximize2, X, Bookmark } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Heart, Share2, MessageSquare, Briefcase, UserPlus, CheckCircle2, Maximize2, X, Bookmark, Trash2, Edit } from 'lucide-react';
 import { PORTFOLIO_ITEMS } from '../../data/content';
 import { useAppStore } from '../../hooks/useAppStore';
+import { useDeleteProject, useProject } from '../../hooks/useFirebase';
+import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
 
 interface PortfolioPostViewProps {
   itemId?: string;
   onBack: () => void;
   onAuthorClick?: (authorName: string) => void;
-  onSave?: (id: string, image: string) => void;
+  onSave?: (id: string, image: string, type?: string) => void;
   onShare?: () => void;
 }
 
 export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, onBack, onAuthorClick, onSave, onShare }) => {
-  const { state } = useAppStore();
+  const { state, actions } = useAppStore();
+  const navigate = useNavigate();
   const createdItems = state.createdItems || [];
   const allItems = [...createdItems, ...PORTFOLIO_ITEMS];
 
   const { id: paramId } = useParams<{ id: string }>();
   const id = itemId || paramId;
-  const item = allItems.find(p => p.id === id);
+
+  const { deleteProject, loading: isDeleting } = useDeleteProject();
+  const { project: fetchedProject, loading: isFetching } = useProject(id);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const item = allItems.find(p => p.id === id) || fetchedProject;
+
+  if (isFetching) {
+    return (
+      <div className="min-h-screen bg-[#030304] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
+      </div>
+    );
+  }
 
   if (!item) {
     return (
@@ -33,6 +49,24 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
       </div>
     );
   }
+
+  const handleDeleteClick = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!item) return;
+    try {
+      await deleteProject(item.id);
+      actions.showToast('Proyecto eliminado correctamente', 'success');
+      setIsDeleteModalOpen(false);
+      onBack();
+    } catch (error) {
+      console.error("Error deleting project:", error);
+      actions.showToast('Error al eliminar el proyecto', 'error');
+      setIsDeleteModalOpen(false);
+    }
+  };
 
   const relatedItems = allItems.filter(p => p.id !== id && p.category === item.category).slice(0, 4);
 
@@ -117,7 +151,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
           {/* Action Buttons */}
           <div className="flex bg-white/5 rounded-full p-1 border border-white/5">
             <button
-              onClick={() => onSave?.(item.id, item.image)}
+              onClick={() => onSave?.(item.id, item.image, 'project')}
               className="p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
               title="Guardar en colección"
             >
@@ -131,6 +165,27 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
             >
               <Share2 className="h-4 w-4" />
             </button>
+
+            {/* Author Actions */}
+            {state.user?.name === item.artist && (
+              <>
+                <div className="w-px bg-white/10 my-1 mx-1"></div>
+                <button
+                  onClick={() => navigate(`/create?edit=${item.id}`)}
+                  className="p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-blue-500 transition-colors"
+                  title="Editar Proyecto"
+                >
+                  <Edit className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={handleDeleteClick}
+                  className="p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-red-500 transition-colors"
+                  title="Eliminar Proyecto"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -374,6 +429,18 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
           Contactar
         </button>
       </div>
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Proyecto"
+        message="¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        type="danger"
+        loading={isDeleting}
+      />
 
     </div>
   );

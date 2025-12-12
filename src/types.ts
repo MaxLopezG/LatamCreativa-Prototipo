@@ -349,12 +349,20 @@ export interface JobItem {
 }
 
 // --- COLLECTIONS / MOODBOARDS INTERFACE ---
+export interface SavedItemReference {
+  id: string;
+  type: 'project' | 'article';
+  addedAt: string;
+}
+
 export interface CollectionItem {
   id: string;
   title: string;
   itemCount: number;
   thumbnails: string[];
   isPrivate: boolean;
+  items?: SavedItemReference[];
+  createdAt?: string;
 }
 
 // --- SALES & EARNINGS INTERFACE ---

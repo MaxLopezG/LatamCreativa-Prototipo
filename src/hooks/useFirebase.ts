@@ -93,6 +93,54 @@ export const useCreateProject = () => {
     return { create, loading, error };
 };
 
+// --- Hook for Deleting Project ---
+export const useDeleteProject = () => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const deleteProject = async (id: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            await api.deleteProject(id);
+        } catch (err: any) {
+            setError(err.message);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return { deleteProject, loading, error };
+};
+
+// --- Hook for Fetching Single Project ---
+export const useProject = (id: string | undefined) => {
+    const [project, setProject] = useState<PortfolioItem | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!id) return;
+
+        const fetchProject = async () => {
+            setLoading(true);
+            try {
+                const data = await api.getProject(id);
+                setProject(data);
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProject();
+    }, [id]);
+
+    return { project, loading, error };
+};
+
 // --- Hook for Admin: All Users ---
 export const useAllUsers = () => {
     const [users, setUsers] = useState<any[]>([]);
@@ -423,6 +471,7 @@ export const useAddComment = () => {
 
 // --- Hook for Subscriptions ---
 export const useSubscription = (targetUserId: string, currentUserId: string | undefined) => {
+    const { actions } = useAppStore();
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [subscriberCount, setSubscriberCount] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -437,6 +486,10 @@ export const useSubscription = (targetUserId: string, currentUserId: string | un
                 const subscribed = await api.getSubscriptionStatus(targetUserId, currentUserId);
                 setIsSubscribed(subscribed);
             }
+
+            // Fetch subscriber count
+            const followers = await api.getFollowers(targetUserId);
+            setSubscriberCount(followers.length);
         } catch (error) {
             console.error(error);
         } finally {
@@ -468,6 +521,8 @@ export const useSubscription = (targetUserId: string, currentUserId: string | un
             } else {
                 await api.subscribeToUser(targetUserId, currentUserId);
             }
+            // Trigger global update for sidebar
+            actions.triggerSubscriptionUpdate();
         } catch (error) {
             console.error("Error toggling subscription:", error);
             // Revert state on error
@@ -478,6 +533,7 @@ export const useSubscription = (targetUserId: string, currentUserId: string | un
 
     return { isSubscribed, loading, toggleSubscription, setSubscriberCount, subscriberCount };
 };
+
 
 export const useCommentActions = () => {
     const [loading, setLoading] = useState(false);
@@ -521,15 +577,15 @@ export const useCommentActions = () => {
 // --- Hook for Article Like ---
 export const useArticleLike = (articleId: string | undefined, userId: string | undefined) => {
     const [isLiked, setIsLiked] = useState(false);
+    const [initialIsLiked, setInitialIsLiked] = useState(false);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const checkLike = async () => {
             if (!articleId || !userId) return;
-            // Optimistic check? Or wait? 
-            // We can assume false initially.
             const status = await api.getArticleLikeStatus(articleId, userId);
             setIsLiked(status);
+            setInitialIsLiked(status);
         };
         checkLike();
     }, [articleId, userId]);
@@ -544,11 +600,13 @@ export const useArticleLike = (articleId: string | undefined, userId: string | u
         try {
             const newState = await api.toggleArticleLike(articleId, userId);
             setIsLiked(newState);
+            // Verify if we need to update initial logic? No, initial logic is "was it liked when loaded".
+            // If API fails, we revert.
         } catch (error) {
             console.error("Error toggling like:", error);
             setIsLiked(previousState); // Revert on error
         }
     };
 
-    return { isLiked, toggleLike, loading };
+    return { isLiked, initialIsLiked, toggleLike, loading };
 };

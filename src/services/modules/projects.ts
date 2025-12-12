@@ -6,8 +6,13 @@ import {
     startAfter,
     getDocs,
     addDoc,
+    deleteDoc,
+    doc,
     QueryDocumentSnapshot,
-    DocumentData
+    DocumentData,
+    where,
+    documentId,
+    getDoc
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../../lib/firebase';
@@ -74,6 +79,57 @@ export const projectsService = {
             return docRef.id;
         } catch (error) {
             console.error("Error creating project:", error);
+            throw error;
+        }
+    },
+
+    deleteProject: async (id: string): Promise<void> => {
+        try {
+            await deleteDoc(doc(db, 'projects', id));
+        } catch (error) {
+            console.error("Error deleting project:", error);
+            throw error;
+        }
+    },
+
+    getProjectsByIds: async (ids: string[]): Promise<PortfolioItem[]> => {
+        if (!ids || ids.length === 0) return [];
+        try {
+            // Firestore 'in' query limit is 10. Split into chunks.
+            const chunks = [];
+            for (let i = 0; i < ids.length; i += 10) {
+                chunks.push(ids.slice(i, i + 10));
+            }
+
+            const results: PortfolioItem[] = [];
+            for (const chunk of chunks) {
+                const q = query(
+                    collection(db, 'projects'),
+                    where(documentId(), 'in', chunk)
+                );
+                const snapshot = await getDocs(q);
+                console.log(`[getProjectsByIds] Chunk results for ${chunk}:`, snapshot.docs.map(d => d.id));
+                snapshot.forEach(doc => results.push({ id: doc.id, ...doc.data() } as PortfolioItem));
+            }
+            return results;
+        } catch (error) {
+            console.error("Error fetching projects by IDs:", error);
+            return [];
+        }
+    },
+
+    getProject: async (id: string): Promise<PortfolioItem | null> => {
+        try {
+            const docRef = doc(db, 'projects', id);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                return { id: docSnap.id, ...docSnap.data() } as PortfolioItem;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error("Error fetching project:", error);
             throw error;
         }
     }

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Menu, Bell, Plus, FileText, Layers, Video, Box, Users, Search, Command, Briefcase, MessageCircleQuestion, CalendarDays, Heart, UserPlus, Check, ShoppingCart, Building2, Aperture } from 'lucide-react';
+import { Menu, Bell, Plus, FileText, Layers, Video, Box, Users, Search, Command, Briefcase, MessageCircleQuestion, CalendarDays, Heart, UserPlus, Check, ShoppingCart, Building2, Aperture, Trash2 } from 'lucide-react';
 import { Notification } from '../types';
 import { ContentMode, useAppStore } from '../hooks/useAppStore';
 
@@ -105,11 +105,12 @@ export const Header = ({
 
             {/* LEFT: Logo & Mobile Menu */}
             <div className="flex items-center gap-3 md:gap-5 flex-1 md:w-1/3 md:flex-none">
-                {location.pathname !== '/' && (
-                    <button onClick={onMenuClick} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5">
-                        <Menu className="h-6 w-6" />
-                    </button>
-                )}
+                <button
+                    onClick={onMenuClick}
+                    className={`text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/5 ${location.pathname === '/' ? 'md:hidden' : ''}`}
+                >
+                    <Menu className="h-6 w-6" />
+                </button>
                 <button onClick={onLogoClick} className="flex flex-col hover:opacity-80 transition-opacity text-left">
                     <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white leading-none">Latam<span className={accentText}>.</span>Creativa</span>
                 </button>
@@ -199,7 +200,7 @@ export const Header = ({
                                                             setIsNotificationsOpen(false);
                                                         }
                                                     }}
-                                                    className={`p-4 border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer flex gap-3 ${!notif.read ? 'bg-amber-50/50 dark:bg-white/[0.03]' : ''}`}
+                                                    className={`relative p-4 border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer flex gap-3 group ${!notif.read ? 'bg-amber-50/50 dark:bg-white/[0.03]' : ''}`}
                                                 >
                                                     <div className="relative shrink-0">
                                                         <img src={notif.avatar} className="h-10 w-10 rounded-full object-cover" alt="" />
@@ -240,7 +241,21 @@ export const Header = ({
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    {!notif.read && <div className={`h-2 w-2 rounded-full ${accentBg} mt-1.5 shrink-0`}></div>}
+                                                    <div className="flex flex-col items-end gap-1 shrink-0">
+                                                        {!notif.read && <div className={`h-2 w-2 rounded-full ${accentBg} mt-1.5 mb-1`}></div>}
+
+                                                        {/* Delete Button */}
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                actions.deleteNotification(notif.id);
+                                                            }}
+                                                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                                                            title="Eliminar notificación"
+                                                        >
+                                                            <Trash2 className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             ))
                                         )}

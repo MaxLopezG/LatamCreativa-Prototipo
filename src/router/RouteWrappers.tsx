@@ -303,7 +303,7 @@ export function CollectionsWrapper() {
       navigate('/auth');
       return;
     }
-    actions.openSaveModal('', '');
+    actions.openSaveModal('', '', 'collection');
   };
 
   return (
@@ -321,8 +321,12 @@ export function CollectionDetailWrapper() {
   const { actions } = useAppStore();
   const navigate = useNavigate();
 
-  const handleItemSelect = (itemId: string) => {
-    navigate(`/portfolio/${itemId}`);
+  const handleItemSelect = (itemId: string, type: string = 'project') => {
+    if (type === 'article') {
+      navigate(`/blog/${itemId}`);
+    } else {
+      navigate(`/portfolio/${itemId}`);
+    }
   };
 
   return (

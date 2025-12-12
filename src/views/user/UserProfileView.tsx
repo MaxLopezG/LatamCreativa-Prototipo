@@ -62,7 +62,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
 
             // 2. Fallback: Try by Name if no user found by ID
             if (!userData) {
-                const targetName = author?.name || authorName;
+                const targetName = author?.name || authorName || (username ? decodeURIComponent(username) : '');
                 if (targetName && targetName !== 'Unknown User') {
                     // Sanitize name if it's an object/string mess
                     const cleanName = typeof targetName === 'object'

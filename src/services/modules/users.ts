@@ -10,6 +10,7 @@ import {
     limit
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import { notificationsService } from './notifications';
 
 export const usersService = {
     getUserProfile: async (userId: string): Promise<any> => {
@@ -88,6 +89,21 @@ export const usersService = {
             await setDoc(doc(db, 'users', currentUserId, 'following', targetUserId), {
                 since: new Date().toISOString()
             });
+
+            // Create Notification
+            const currentUserProfile = await usersService.getUserProfile(currentUserId);
+            if (currentUserProfile) {
+                await notificationsService.createNotification(targetUserId, {
+                    type: 'follow',
+                    user: currentUserProfile.name || 'Usuario',
+                    avatar: currentUserProfile.avatar || '',
+                    content: 'comenzó a seguirte',
+                    link: `/user/${encodeURIComponent(currentUserProfile.name)}`,
+                    time: new Date().toISOString(),
+                    read: false
+                });
+            }
+
         } catch (error) {
             console.error("Error subscribing:", error);
             throw error;
