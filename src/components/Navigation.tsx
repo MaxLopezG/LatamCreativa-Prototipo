@@ -440,7 +440,7 @@ export const SecondarySidebar = ({
                   onClick={(e) => {
                     e.preventDefault();
                     onSubscriptionSelect?.(sub.name);
-                    navigate(`/user/${encodeURIComponent(sub.name)}`, { state: { author: sub } });
+                    navigate(`/user/${encodeURIComponent(sub.username || sub.name)}`, { state: { author: sub } });
                     onClose?.();
                   }}
                   className="group flex items-center gap-4 px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors"

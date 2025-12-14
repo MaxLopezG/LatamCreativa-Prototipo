@@ -37,31 +37,30 @@ export const OnboardingModal: React.FC = () => {
         const isIncomplete = user.location === 'Latam' || !user.location;
         const shouldShow = isIncomplete && !hasSkipped;
 
-        let timeoutId: NodeJS.Timeout;
+        if (shouldShow && !isOpen) {
+            // Directly open if conditions met. 
+            // We use a small heuristic: if data is incomplete, just show it.
+            // No timeout needed if we trust the 'user' object from store is valid.
+            setIsOpen(true);
 
-        if (shouldShow) {
-            // Delay opening by 2000ms to allow Firestore to sync the full profile
-            // This prevents the modal from flashing for existing users with slow connections
-            timeoutId = setTimeout(() => {
-                setIsOpen(true);
-                // Pre-fill only when we actually open
-                setName(user.name || '');
-                setRole(user.role || '');
-                setLocation('');
-                setBio(user.bio || '');
-                setSkills(user.skills || []);
-                setSocialLinks(user.socialLinks || {});
-            }, 2000);
-        } else {
-            // If the user IS complete (or skipped), close immediately.
-            // This fixes the case where data loads LATER than the timeout.
-            setIsOpen(false);
+            // Pre-fill
+            if (user) {
+                // Only set fields if they are currently empty in local state to avoid overwriting user input
+                // But since this effect runs on mount/updates, we should be careful.
+                // Actually, just setting them initially is fine.
+                setName(prev => prev || user.name || '');
+                setRole(prev => prev || user.role || '');
+                setLocation(prev => prev || ''); // Location is forced empty to require selection
+                setBio(prev => prev || user.bio || '');
+                setSkills(prev => prev.length ? prev : user.skills || []);
+                setSocialLinks(prev => Object.keys(prev).length ? prev : user.socialLinks || {});
+            }
+        } else if (!shouldShow && isOpen) {
+            // Optional: Close if it suddenly becomes complete external to this modal?
+            // No, that might be annoying while typing.
         }
 
-        return () => {
-            if (timeoutId) clearTimeout(timeoutId);
-        };
-    }, [user]);
+    }, [user?.id, user?.location, user?.name, user?.role, isOpen]); // Depend on fields that determine 'shouldShow'
 
     if (!isOpen || !user) return null;
 

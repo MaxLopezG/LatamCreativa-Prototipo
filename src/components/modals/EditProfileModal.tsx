@@ -7,6 +7,8 @@ import { TagInput } from '../ui/TagInput';
 import { COMMON_TAGS } from '../../data/tags';
 import { COMMON_ROLES } from '../../data/roles';
 
+import { useNavigate } from 'react-router-dom';
+
 interface EditProfileModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -15,6 +17,7 @@ interface EditProfileModalProps {
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) => {
     const { state, actions } = useAppStore();
     const user = state.user;
+    const navigate = useNavigate();
 
     const [activeTab, setActiveTab] = useState<'general' | 'experience' | 'education' | 'social'>('general');
 
@@ -31,6 +34,9 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     const [socialLinks, setSocialLinks] = useState<SocialLinks>({});
     const [availableForWork, setAvailableForWork] = useState(false);
     const [newSkill, setNewSkill] = useState('');
+    const [username, setUsername] = useState('');
+    const [usernameError, setUsernameError] = useState('');
+    const [isCheckingUsername, setIsCheckingUsername] = useState(false);
 
     // Suggestions State
     const [showRoleSuggestions, setShowRoleSuggestions] = useState(false);
@@ -46,6 +52,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                     const userData = dbUser || user; // Fallback to local user if DB fails
 
                     setName(userData.name || '');
+                    setUsername(userData.username || '');
                     setRole(userData.role || '');
                     setLocation(userData.location || '');
                     setBio(userData.bio || '');
@@ -87,6 +94,24 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
     const handleSave = async () => {
         try {
+            // Validate Username
+            const usernameRegex = /^(?![0-9]+$)(?![0-9])(?![-_])(?!.*[-_]$)[a-zA-Z0-9-_]{3,63}$/;
+            if (username && !usernameRegex.test(username)) {
+                setUsernameError('Nombre de usuario inválido (3-63 caracteres, sin espacios, no puede empezar con números)');
+                return;
+            }
+
+            // Check Availability if changed
+            if (username && username !== user?.username) {
+                setIsCheckingUsername(true);
+                const isAvailable = await usersService.checkUsernameAvailability(username);
+                setIsCheckingUsername(false);
+                if (!isAvailable) {
+                    setUsernameError('Este nombre de usuario ya está en uso');
+                    return;
+                }
+            }
+
             // Determine Content Mode based on Role
             const devKeywords = ['developer', 'desarrollador', 'engineer', 'ingeniero', 'coder', 'programmer', 'programador', 'software', 'tech', 'web', 'app', 'mobile', 'backend', 'frontend', 'fullstack', 'devops', 'data', 'ai'];
             const lowerRole = role.toLowerCase();
@@ -95,7 +120,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
             // Construct update object
             const combinedLocation = `${city}, ${country}`;
-            const updates = {
+            const updates: any = {
                 name,
                 role,
                 location: combinedLocation,
@@ -108,6 +133,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                 socialLinks,
                 availableForWork
             };
+
+            if (username) updates.username = username;
 
             const updatedUser = { ...user, ...updates };
 
@@ -126,6 +153,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             }
 
             onClose();
+
+            // Redirect if username changed or just to ensure URL is correct
+            if (username) {
+                navigate(`/user/${username}`);
+            }
         } catch (error) {
             console.error("Error updating profile:", error);
             actions.showToast('Error al actualizar el perfil', 'error');
@@ -285,6 +317,25 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                         )}
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nombre de Usuario</label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-3 text-slate-400 font-bold">@</span>
+                                    <input
+                                        type="text"
+                                        value={username}
+                                        onChange={(e) => {
+                                            setUsername(e.target.value.toLowerCase());
+                                            setUsernameError('');
+                                        }}
+                                        className={`w-full pl-8 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border ${usernameError ? 'border-red-500' : 'border-slate-200 dark:border-white/10'} focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white`}
+                                        placeholder="username"
+                                    />
+                                </div>
+                                {usernameError && <p className="text-xs text-red-500">{usernameError}</p>}
+                                <p className="text-[10px] text-slate-500">latamcreativa.com/user/{username || 'username'}</p>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">

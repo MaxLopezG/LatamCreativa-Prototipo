@@ -161,15 +161,47 @@ export const blogService = {
         }
     },
 
-    getUserArticles: async (authorName: string): Promise<ArticleItem[]> => {
+    getUserArticles: async (authorName: string, authorId?: string): Promise<ArticleItem[]> => {
         try {
-            const q = query(
-                collection(db, 'articles'),
-                where('author', '==', authorName),
-                orderBy('date', 'desc')
-            );
-            const snapshot = await getDocs(q);
-            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ArticleItem));
+            // Strategy: Dual Query to support old (Name-only) and new (ID-based) items
+            const queries = [];
+
+            // 1. Query by author name (Legacy/Fallback)
+            if (authorName) {
+                queries.push(query(
+                    collection(db, 'articles'),
+                    where('author', '==', authorName),
+                    orderBy('date', 'desc')
+                ));
+            }
+
+            // 2. Query by authorId (New Robust Method)
+            if (authorId) {
+                queries.push(query(
+                    collection(db, 'articles'),
+                    where('authorId', '==', authorId),
+                    orderBy('date', 'desc')
+                ));
+            }
+
+            if (queries.length === 0) return [];
+
+            const snapshots = await Promise.all(queries.map(q => getDocs(q)));
+
+            // Merge and Deduplicate
+            const articlesMap = new Map<string, ArticleItem>();
+
+            snapshots.forEach(snap => {
+                snap.forEach(doc => {
+                    articlesMap.set(doc.id, { id: doc.id, ...doc.data() } as ArticleItem);
+                });
+            });
+
+            // Convert back to array and sort
+            return Array.from(articlesMap.values()).sort((a, b) => {
+                return new Date(b.date).getTime() - new Date(a.date).getTime();
+            });
+
         } catch (error) {
             console.error("Error fetching user articles:", error);
             throw error;

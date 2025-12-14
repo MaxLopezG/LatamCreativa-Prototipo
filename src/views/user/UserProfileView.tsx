@@ -9,7 +9,7 @@ import { AssetCard } from '../../components/cards/AssetCard';
 import { useAppStore } from '../../hooks/useAppStore';
 import { EditProfileModal } from '../../components/modals/EditProfileModal';
 import { CreatePostModal } from '../../components/modals/CreatePostModal';
-import { useUserArticles } from '../../hooks/useFirebase';
+import { useUserArticles, useUserProjects } from '../../hooks/useFirebase';
 import { usersService } from '../../services/modules/users';
 import { api } from '../../services/api';
 import { EXPERIENCE, EDUCATION, LOCKED_POSTS } from '../../data/profileData';
@@ -36,9 +36,13 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
         if (state.user) {
             const currentName = state.user.name;
             const currentId = state.user.id;
+            const currentUsername = state.user.username;
 
             // Check ID match (if author prop has ID)
             if (author?.id && author.id === currentId) return true;
+
+            // Check Username match
+            if (username && currentUsername && username.toLowerCase() === currentUsername.toLowerCase()) return true;
 
             // Check Name match (author prop, authorName prop, or URL param)
             const targetName = author?.name || authorName || (username ? decodeURIComponent(username) : '');
@@ -60,7 +64,13 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
                 userData = await api.getUserProfile(author.id);
             }
 
-            // 2. Fallback: Try by Name if no user found by ID
+            // 2. Try by Username (if param exists)
+            if (!userData && username) {
+                // Try fetching by username first (exact match)
+                userData = await usersService.getUserProfileByUsername(username);
+            }
+
+            // 3. Fallback: Try by Name if no user found by ID or Username
             if (!userData) {
                 const targetName = author?.name || authorName || (username ? decodeURIComponent(username) : '');
                 if (targetName && targetName !== 'Unknown User') {
@@ -127,7 +137,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
         skills: fetchedUser?.skills,
         experience: fetchedUser?.experience,
         education: fetchedUser?.education,
-        socialLinks: fetchedUser?.socialLinks
+        socialLinks: fetchedUser?.socialLinks,
+        username: fetchedUser?.username
     };
 
     const sanitizeName = (val: any) => {
@@ -231,11 +242,18 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
     // --- Dynamic Content Logic ---
 
     // 1. Portfolio / Creations
+    const { projects: fetchedProjects, loading: projectsLoading } = useUserProjects(displayUser.id === 'unknown' ? undefined : displayUser.id, name);
+
+    // Merge local created items (for immediate feedback) with fetched items
     const userPortfolio = useMemo(() => {
-        if (isOwnProfile) return state.createdItems;
-        // FUTURE: Fetch real user projects here
-        return [];
-    }, [isOwnProfile, state.createdItems, name]);
+        // If own profile, prioritize local state for immediate updates, but merge with fetched
+        if (isOwnProfile) {
+            const localIds = new Set(state.createdItems.map(p => p.id));
+            const newFetched = fetchedProjects.filter(p => !localIds.has(p.id));
+            return [...state.createdItems, ...newFetched];
+        }
+        return fetchedProjects;
+    }, [isOwnProfile, state.createdItems, fetchedProjects]);
 
     // 2. Courses
     const userCourses = useMemo(() => {
@@ -249,9 +267,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
         return [];
     }, [name]);
 
-
     // 4. Blog
-    const { articles: userArticles, loading: articlesLoading, error: articlesError } = useUserArticles(name);
+    const { articles: userArticles, loading: articlesLoading, error: articlesError } = useUserArticles(name, displayUser.id === 'unknown' ? undefined : displayUser.id);
 
 
     // 5. Saved Items (Likes)

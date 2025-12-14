@@ -107,7 +107,10 @@ export function PortfolioPostWrapper() {
         onBack={() => window.history.back()}
         onShare={actions.openShareModal}
         onSave={actions.openSaveModal}
-        onAuthorClick={(name) => navigate(`/user/${encodeURIComponent(name)}`)}
+        onAuthorClick={(user: any) => {
+          const name = user.username || user.name || user;
+          navigate(`/user/${encodeURIComponent(name)}`);
+        }}
       />
     </Suspended>
   );
@@ -277,7 +280,8 @@ export function BlogPostWrapper() {
         onSave={actions.openSaveModal}
         onAuthorClick={(author: any) => {
           const name = typeof author === 'object' ? author.name : author;
-          navigate(`/user/${encodeURIComponent(name)}`, { state: { author: typeof author === 'object' ? author : { name: author } } });
+          const target = typeof author === 'object' ? (author.username || author.name) : author;
+          navigate(`/user/${encodeURIComponent(target)}`, { state: { author: typeof author === 'object' ? author : { name: author } } });
         }}
       />
     </Suspended>
@@ -532,8 +536,9 @@ export function PeopleWrapper() {
   return (
     <Suspended>
       <PeopleView
-        onProfileSelect={(name) => {
-          actions.setViewingAuthor({ name });
+        onProfileSelect={(user: any) => {
+          const name = user.username || user.name || user;
+          actions.setViewingAuthor(user);
           navigate(`/user/${encodeURIComponent(name)}`);
         }}
       />

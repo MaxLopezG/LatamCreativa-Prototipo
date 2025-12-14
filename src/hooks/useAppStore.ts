@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { CartItem, Notification, CollectionItem, PortfolioItem, ArticleItem } from '../types';
+import { CartItem, Notification, CollectionItem, PortfolioItem, ArticleItem, ItemType, CreateMode } from '../types';
 
 import { api } from '../services/api';
 import { notificationsService } from '../services/modules/notifications';
@@ -39,7 +39,6 @@ export interface UserStats {
 }
 
 // --- Types ---
-export type CreateMode = 'none' | 'project' | 'article' | 'portfolio' | 'course' | 'asset' | 'service' | 'forum' | 'event';
 export type ContentMode = 'creative' | 'dev';
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -64,7 +63,7 @@ interface UISlice {
   chatActiveUser: string | null;
   isSaveModalOpen: boolean;
   isShareModalOpen: boolean;
-  itemToSave: { id: string, image: string, type: 'project' | 'article' } | null;
+  itemToSave: { id: string, image: string, type: ItemType } | null;
   viewingAuthor: { name: string; avatar?: string; id?: string } | null;
 
   // Actions
@@ -77,7 +76,7 @@ interface UISlice {
   showToast: (message: string, type?: ToastType) => void;
   setIsChatOpen: (isOpen: boolean) => void;
   setChatActiveUser: (userId: string | null) => void;
-  openSaveModal: (id: string, image: string, type: 'project' | 'article') => void;
+  openSaveModal: (id: string, image: string, type: ItemType) => void;
   closeSaveModal: () => void;
   openShareModal: () => void;
   closeShareModal: () => void;
@@ -88,6 +87,7 @@ interface AuthSlice {
   user: {
     name: string;
     id: string;
+    username?: string;
     avatar: string;
     role: string;
     location: string;

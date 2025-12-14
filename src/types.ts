@@ -37,6 +37,9 @@ export interface Chip {
   active?: boolean;
 }
 
+export type ItemType = 'project' | 'article' | 'portfolio' | 'course' | 'asset' | 'service' | 'job' | 'event' | 'forum' | 'collection';
+export type CreateMode = 'none' | ItemType; // CreateMode tracks ItemType roughly
+
 export interface BlogComment {
   id: string;
   author: string;
@@ -75,6 +78,7 @@ export interface PortfolioItem {
   id: string;
   title: string;
   artist: string;
+  artistId?: string; // Made optional for backward compatibility, but should be populated for new items
   artistAvatar: string;
   image: string;
   views: string;
@@ -351,7 +355,7 @@ export interface JobItem {
 // --- COLLECTIONS / MOODBOARDS INTERFACE ---
 export interface SavedItemReference {
   id: string;
-  type: 'project' | 'article';
+  type: ItemType;
   addedAt: string;
 }
 

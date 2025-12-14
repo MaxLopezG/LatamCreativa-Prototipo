@@ -61,6 +61,34 @@ export const usersService = {
         }
     },
 
+    getUserProfileByUsername: async (username: string) => {
+        try {
+            if (!username) return null;
+            const q = query(collection(db, 'users'), where('username', '==', username), limit(1));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                const doc = querySnapshot.docs[0];
+                return { id: doc.id, ...doc.data() };
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching user profile by username:', error);
+            return null;
+        }
+    },
+
+    checkUsernameAvailability: async (username: string): Promise<boolean> => {
+        try {
+            if (!username) return false;
+            const q = query(collection(db, 'users'), where('username', '==', username), limit(1));
+            const querySnapshot = await getDocs(q);
+            return querySnapshot.empty;
+        } catch (error) {
+            console.error("Error checking username availability:", error);
+            return false;
+        }
+    },
+
     getUserProfileByName: async (name: string) => {
         try {
             if (!name || name === 'Unknown User') return null;
@@ -129,7 +157,7 @@ export const usersService = {
                     user: currentUserProfile.name || 'Usuario',
                     avatar: currentUserProfile.avatar || '',
                     content: 'comenzó a seguirte',
-                    link: `/user/${encodeURIComponent(currentUserProfile.name)}`,
+                    link: `/user/${encodeURIComponent(currentUserProfile.username || currentUserProfile.name)}`,
                     time: new Date().toISOString(),
                     read: false
                 });

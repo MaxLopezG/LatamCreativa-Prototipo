@@ -3,8 +3,8 @@ import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from 'react-router-dom';
 import { router } from './router';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 import { useAppStore } from './hooks/useAppStore';
 
@@ -26,24 +26,13 @@ const App: React.FC = () => {
 
       if (firebaseUser) {
         try {
-          // Check if user exists in Firestore
           const userDocRef = doc(db, 'users', firebaseUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
 
-          let userRole = 'Creative Member';
-          let userLocation = 'Latam';
-          let isAdminFromStore = false;
-          let userData: any = {};
-
-          if (userDocSnap.exists()) {
-            // User exists, get role and location from Firestore
-            userData = userDocSnap.data();
-            userRole = userData.role || 'Creative Member';
-            userLocation = userData.location || 'Latam';
-            isAdminFromStore = userData.isAdmin || false;
-            // User found
-          } else {
-            // User doesn't exist, create new document
+          // 1. Initial Check & Creation
+          // We do this BEFORE setting up the listener to ensure the doc exists (for new users)
+          // preventing the listener from firing 'not exists' immediately and logging them out during sign up.
+          const initialSnap = await getDoc(userDocRef);
+          if (!initialSnap.exists()) {
             const newUser = {
               name: firebaseUser.displayName || 'Usuario',
               email: firebaseUser.email || '',
@@ -52,59 +41,54 @@ const App: React.FC = () => {
               location: 'Latam',
               createdAt: new Date().toISOString()
             };
-
             await setDoc(userDocRef, newUser);
-            userData = newUser;
-            // New user created
           }
 
-          // Map to App user with data from Firestore (or defaults)
-          const isAdmin = firebaseUser.email === 'admin@latamcreativa.com';
+          // 2. Real-time Listener for Updates & Session Validation
+          const unsubscribeSnapshot = onSnapshot(userDocRef, (userDocSnap) => {
+            if (userDocSnap.exists()) {
+              const userData = userDocSnap.data();
+              const userRole = userData.role || 'Creative Member';
+              const userLocation = userData.location || 'Latam';
+              const isAdminFromStore = userData.isAdmin || false;
+              const isAdmin = firebaseUser.email === 'admin@latamcreativa.com';
 
-          const appUser = {
-            id: firebaseUser.uid,
-            name: userData.name || firebaseUser.displayName || 'Usuario',
-            avatar: userData.avatar || firebaseUser.photoURL || 'https://ui-avatars.com/api/?name=' + (firebaseUser.displayName || 'U'),
-            role: isAdmin ? 'Administrator' : userRole,
-            location: userLocation,
-            email: firebaseUser.email || '',
-            isAdmin: isAdminFromStore || isAdmin,
-            createdAt: userDocSnap.exists() ? userDocSnap.data().createdAt : (firebaseUser.metadata.creationTime || new Date().toISOString()),
-            ...userData // Merge all other fields (skills, socialLinks, experience, education, country, city, bio)
-          };
+              const appUser = {
+                id: firebaseUser.uid,
+                name: userData.name || firebaseUser.displayName || 'Usuario',
+                avatar: userData.avatar || firebaseUser.photoURL || 'https://ui-avatars.com/api/?name=' + (firebaseUser.displayName || 'U'),
+                role: isAdmin ? 'Administrator' : userRole,
+                location: userLocation,
+                email: firebaseUser.email || '',
+                isAdmin: isAdminFromStore || isAdmin,
+                createdAt: userData.createdAt || (firebaseUser.metadata.creationTime || new Date().toISOString()),
+                ...userData
+              };
 
-          // User state updated
-          actions.setUser(appUser);
+              actions.setUser(appUser);
 
-          // Restore Content Mode based on Role
-          const devKeywords = ['developer', 'desarrollador', 'engineer', 'ingeniero', 'coder', 'programmer', 'programador', 'software', 'tech', 'web', 'app', 'mobile', 'backend', 'frontend', 'fullstack', 'devops', 'data', 'ai'];
-          const userRoleName = (appUser.role || '').toLowerCase();
-          const isDevRole = devKeywords.some(k => userRoleName.includes(k));
-          const initialMode = isDevRole ? 'dev' : 'creative';
+              // Restore Content Mode Logic
+              const devKeywords = ['developer', 'desarrollador', 'engineer', 'ingeniero', 'coder', 'programmer', 'programador', 'software', 'tech', 'web', 'app', 'mobile', 'backend', 'frontend', 'fullstack', 'devops', 'data', 'ai'];
+              const userRoleName = (appUser.role || '').toLowerCase();
+              const isDevRole = devKeywords.some(k => userRoleName.includes(k));
+              const inferredMode = isDevRole ? 'dev' : 'creative';
+              // actions.setContentMode(inferredMode); // Let store persistence handle this, or set if needed.
 
-          // Only force set if it's different from default to avoid jitter, but logical correctness requires setting it.
-          // We set it to ensure consistency with the user's persona.
-          actions.setContentMode(initialMode);
+            } else {
+              // Document deleted -> Invalidate Session
+              console.warn("User document deleted. Logging out.");
+              signOut(auth);
+              actions.setUser(null);
+            }
+          });
+
+          return () => unsubscribeSnapshot();
 
         } catch (error) {
           console.error("Error fetching/creating user profile:", error);
-          // Fallback if Firestore fails: use basic auth data
-          const isAdmin = firebaseUser.email === 'admin@latamcreativa.com';
-          const appUser = {
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || 'Usuario',
-            avatar: firebaseUser.photoURL || 'https://ui-avatars.com/api/?name=' + (firebaseUser.displayName || 'U'),
-            role: isAdmin ? 'Administrator' : 'Creative Member',
-            location: 'Latam',
-            email: firebaseUser.email || '',
-            isAdmin: isAdmin,
-            createdAt: firebaseUser.metadata.creationTime || new Date().toISOString()
-          };
-          actions.setUser(appUser);
         }
       } else {
         actions.setUser(null);
-        // Ensure loading is set to false even if no user
         actions.setLoadingAuth(false);
       }
     });

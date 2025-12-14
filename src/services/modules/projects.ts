@@ -56,6 +56,7 @@ export const projectsService = {
 
     getFeed: getProjects,
 
+    // Updated: Accept artistId implicitly in projectData (Omit<PortfolioItem, 'id'>)
     createProject: async (projectData: Omit<PortfolioItem, 'id'>, imageFile?: File): Promise<string> => {
         try {
             let imageUrl = projectData.image;
@@ -67,7 +68,7 @@ export const projectsService = {
                 imageUrl = await getDownloadURL(uploadResult.ref);
             }
 
-            // 2. Save Document
+            // 2. Save Document with artistId if present
             const docRef = await addDoc(collection(db, 'projects'), {
                 ...projectData,
                 image: imageUrl,
@@ -89,6 +90,55 @@ export const projectsService = {
         } catch (error) {
             console.error("Error deleting project:", error);
             throw error;
+        }
+    },
+
+    getUserProjects: async (userId: string, userName: string): Promise<PortfolioItem[]> => {
+        try {
+            // Strategy: Dual Query to support old (Name-only) and new (ID-based) items
+            // 1. Query by artistId (New Robust Method)
+            const qId = query(
+                collection(db, 'projects'),
+                where('artistId', '==', userId),
+                orderBy('createdAt', 'desc')
+            );
+
+            // 2. Query by artist name (Legacy Method - prone to changes)
+            const qName = query(
+                collection(db, 'projects'),
+                where('artist', '==', userName),
+                orderBy('createdAt', 'desc')
+            );
+
+            const [snapId, snapName] = await Promise.all([
+                getDocs(qId),
+                getDocs(qName)
+            ]);
+
+            // Merge and Deduplicate
+            const projectsMap = new Map<string, PortfolioItem>();
+
+            snapId.forEach(doc => {
+                projectsMap.set(doc.id, { id: doc.id, ...doc.data() } as PortfolioItem);
+            });
+
+            snapName.forEach(doc => {
+                if (!projectsMap.has(doc.id)) {
+                    projectsMap.set(doc.id, { id: doc.id, ...doc.data() } as PortfolioItem);
+                }
+            });
+
+            // Convert back to array and sort
+            return Array.from(projectsMap.values()).sort((a, b) => {
+                // Assuming createdAt exists and is ISO string
+                const dateA = (a as any).createdAt || '';
+                const dateB = (b as any).createdAt || '';
+                return dateB.localeCompare(dateA);
+            });
+
+        } catch (error) {
+            console.error("Error fetching user projects:", error);
+            return []; // Fail gracefully
         }
     },
 

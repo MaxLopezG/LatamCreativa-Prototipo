@@ -326,18 +326,18 @@ export const useCreateArticle = () => {
 };
 
 // --- Hook for User Articles ---
-export const useUserArticles = (authorName: string | undefined) => {
+export const useUserArticles = (authorName: string | undefined, authorId?: string | undefined) => {
     const [articles, setArticles] = useState<ArticleItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!authorName) return;
+        if (!authorName && !authorId) return;
 
         const fetchArticles = async () => {
             setLoading(true);
             try {
-                const data = await api.getUserArticles(authorName);
+                const data = await api.getUserArticles(authorName || '', authorId);
                 setArticles(data);
             } catch (err: any) {
                 setError(err.message);
@@ -347,9 +347,36 @@ export const useUserArticles = (authorName: string | undefined) => {
         };
 
         fetchArticles();
-    }, [authorName]);
+    }, [authorName, authorId]);
 
     return { articles, loading, error };
+};
+
+// --- Hook for User Projects ---
+export const useUserProjects = (userId: string | undefined, userName: string | undefined) => {
+    const [projects, setProjects] = useState<PortfolioItem[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!userId && !userName) return;
+
+        const fetchProjects = async () => {
+            setLoading(true);
+            try {
+                const data = await api.getUserProjects(userId || '', userName || '');
+                setProjects(data);
+            } catch (err: any) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProjects();
+    }, [userId, userName]);
+
+    return { projects, loading, error };
 };
 
 // --- Hook for Single Article ---

@@ -116,6 +116,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
     const projectData = {
       title,
       artist: state.user?.name || 'Usuario Anónimo',
+      artistId: state.user?.id, // Added artistId
       artistAvatar: state.user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop',
       image: coverImage,
       views: '0',
