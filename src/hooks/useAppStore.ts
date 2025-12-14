@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { CartItem, Notification, CollectionItem, PortfolioItem, ArticleItem } from '../types';
-import { PORTFOLIO_ITEMS, BLOG_ITEMS } from '../data/content';
+
 import { api } from '../services/api';
 import { notificationsService } from '../services/modules/notifications';
 
@@ -91,6 +91,8 @@ interface AuthSlice {
     avatar: string;
     role: string;
     location: string;
+    country?: string;
+    city?: string;
     email?: string;
     bio?: string;
     experience?: ExperienceItem[];

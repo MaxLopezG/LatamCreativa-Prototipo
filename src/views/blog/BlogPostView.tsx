@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, MessageSquare, Heart, Share2, Bookmark, CheckCircle2, ThumbsUp, Edit, Trash2, UserPlus, UserCheck } from 'lucide-react';
-import { BLOG_ITEMS } from '../../data/content';
+
 import { useArticle, useDeleteArticle, useRecommendedArticles, useSubscription, useArticleLike } from '../../hooks/useFirebase';
 import { useAppStore } from '../../hooks/useAppStore';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
@@ -23,23 +23,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
     const { state, actions } = useAppStore();
     const navigate = useNavigate();
 
-    const { article: fetchedArticle, loading: articleLoading } = useArticle(id);
-
-    const article = React.useMemo(() => {
-        if (!fetchedArticle) return null;
-
-        if (!fetchedArticle.authorId) {
-            const staticArticle = BLOG_ITEMS.find(i => i.id === id);
-            if (staticArticle?.authorId) {
-                return { ...fetchedArticle, authorId: staticArticle.authorId };
-            }
-            if (fetchedArticle.author) {
-                const generatedId = fetchedArticle.author.toLowerCase().replace(/\s+/g, '_');
-                return { ...fetchedArticle, authorId: generatedId };
-            }
-        }
-        return fetchedArticle;
-    }, [fetchedArticle, id]);
+    const { article, loading: articleLoading } = useArticle(id);
 
     const { deletePost, loading: isDeleting } = useDeleteArticle();
     const { articles: recArticles } = useRecommendedArticles(id || '');

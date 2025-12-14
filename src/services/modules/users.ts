@@ -7,7 +7,8 @@ import {
     setDoc,
     deleteDoc,
     where,
-    limit
+    limit,
+    updateDoc
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { notificationsService } from './notifications';
@@ -26,6 +27,36 @@ export const usersService = {
             }
         } catch (error) {
             console.error("Error fetching user profile:", error);
+            throw error;
+        }
+    },
+
+    updateUserProfile: async (userId: string, data: any): Promise<void> => {
+        try {
+            const userRef = doc(db, 'users', userId);
+
+            // Recursive function to remove undefined values
+            const sanitizeData = (obj: any): any => {
+                if (Array.isArray(obj)) {
+                    return obj.map(v => sanitizeData(v)).filter(v => v !== undefined);
+                }
+                if (obj !== null && typeof obj === 'object') {
+                    return Object.entries(obj).reduce((acc, [key, value]) => {
+                        const sanitizedValue = sanitizeData(value);
+                        if (sanitizedValue !== undefined) {
+                            acc[key] = sanitizedValue;
+                        }
+                        return acc;
+                    }, {} as any);
+                }
+                return obj;
+            };
+
+            const sanitizedData = sanitizeData(data);
+
+            await updateDoc(userRef, sanitizedData);
+        } catch (error) {
+            console.error("Error updating user profile:", error);
             throw error;
         }
     },

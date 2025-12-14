@@ -61,13 +61,14 @@ const App: React.FC = () => {
 
           const appUser = {
             id: firebaseUser.uid,
-            name: firebaseUser.displayName || 'Usuario',
-            avatar: firebaseUser.photoURL || 'https://ui-avatars.com/api/?name=' + (firebaseUser.displayName || 'U'),
+            name: userData.name || firebaseUser.displayName || 'Usuario',
+            avatar: userData.avatar || firebaseUser.photoURL || 'https://ui-avatars.com/api/?name=' + (firebaseUser.displayName || 'U'),
             role: isAdmin ? 'Administrator' : userRole,
             location: userLocation,
             email: firebaseUser.email || '',
             isAdmin: isAdminFromStore || isAdmin,
-            createdAt: userDocSnap.exists() ? userDocSnap.data().createdAt : (firebaseUser.metadata.creationTime || new Date().toISOString())
+            createdAt: userDocSnap.exists() ? userDocSnap.data().createdAt : (firebaseUser.metadata.creationTime || new Date().toISOString()),
+            ...userData // Merge all other fields (skills, socialLinks, experience, education, country, city, bio)
           };
 
           // User state updated

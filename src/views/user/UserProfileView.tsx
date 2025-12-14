@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { ArrowLeft, MapPin, Link as LinkIcon, Calendar, CheckCircle2, UserPlus, Mail, MessageSquare, Layers, Twitter, Instagram, Globe, MoreHorizontal, Briefcase, GraduationCap, UserCheck, Zap, Award, Trophy, Bookmark, Heart, Lock, Plus, Image as ImageIcon, Video, Box, Newspaper, Download, PlayCircle, FileText, Settings, Github, Linkedin, Palette } from 'lucide-react';
-import { PORTFOLIO_ITEMS, BLOG_ITEMS, EDUCATION_ITEMS, ASSET_ITEMS, ARTIST_TIERS, ARTIST_DIRECTORY } from '../../data/content';
+import { ARTIST_DIRECTORY, ARTIST_TIERS } from '../../data/content';
 import { PortfolioCard } from '../../components/cards/PortfolioCard';
 import { BlogCard } from '../../components/cards/BlogCard';
 import { EducationCard } from '../../components/cards/EducationCard';
@@ -199,24 +199,22 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
     const artistLevel = isOwnProfile ? (displayUser.role === 'Creative Member' ? 'Novice' : 'Pro') : (directoryArtist?.level || 'Pro');
 
     // --- Dynamic Data for Own Profile vs Demo Profile ---
-    const showMockData = !isOwnProfile && name !== 'Usuario Nuevo';
+    const showMockData = false; // DISABLED: We want real data or empty state
 
     // Stats
-    const stats = showMockData ? { views: '125k', likes: '4.2k', followers: '8.5k' } : { views: 0, likes: 0, followers: 0 };
+    const stats = (displayUser['stats'] as any) || { views: 0, likes: 0, followers: 0 };
 
     // About
-    const aboutText = showMockData
-        ? "Apasionado por crear mundos inmersivos y contar historias a través del entorno. Especializado en Hard Surface y Diseño de Niveles para videojuegos AAA. Siempre buscando optimizar flujos de trabajo con herramientas procedimentales."
-        : (displayUser['bio'] || "¡Hola! Soy un nuevo miembro de la comunidad creativa.");
+    const aboutText = displayUser['bio'] || "¡Hola! Soy un miembro de la comunidad creativa.";
 
     // Experience & Education
-    const experienceList = showMockData ? EXPERIENCE : (isOwnProfile ? (displayUser['experience'] || []) : []);
-    const educationList = showMockData ? EDUCATION : (isOwnProfile ? (displayUser['education'] || []) : []);
+    const experienceList = displayUser['experience'] || [];
+    const educationList = displayUser['education'] || [];
 
     // Extended Profile Data
-    const skills = showMockData ? ['ZBrush', 'Maya', 'Substance Painter', 'Unreal Engine 5'] : (displayUser['skills'] || []);
-    const socialLinks = isOwnProfile ? (displayUser['socialLinks'] || {}) : {};
-    const availableForWork = showMockData ? true : (displayUser['availableForWork'] || false);
+    const skills = displayUser['skills'] || [];
+    const socialLinks = displayUser['socialLinks'] || {};
+    const availableForWork = displayUser['availableForWork'] || false;
 
     const getLevelFrameClass = (level?: string) => {
         switch (level) {
@@ -235,19 +233,20 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
     // 1. Portfolio / Creations
     const userPortfolio = useMemo(() => {
         if (isOwnProfile) return state.createdItems;
-        return PORTFOLIO_ITEMS.filter(p => p.artist === name);
+        // FUTURE: Fetch real user projects here
+        return [];
     }, [isOwnProfile, state.createdItems, name]);
 
     // 2. Courses
     const userCourses = useMemo(() => {
-        const courses = EDUCATION_ITEMS.filter(c => c.instructor === name);
-        return courses;
+        // FUTURE: Fetch real courses
+        return [];
     }, [name]);
 
     // 3. Assets
     const userAssets = useMemo(() => {
-        const assets = ASSET_ITEMS.filter(a => a.creator === name);
-        return assets;
+        // FUTURE: Fetch real assets
+        return [];
     }, [name]);
 
 
@@ -257,15 +256,10 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
 
     // 5. Saved Items (Likes)
     const savedItems = useMemo(() => {
-        if (!isOwnProfile) return [];
-
-        const portfolioLikes = PORTFOLIO_ITEMS.filter(i => state.likedItems.includes(i.id));
-        const educationLikes = EDUCATION_ITEMS.filter(i => state.likedItems.includes(i.id));
-        const assetLikes = ASSET_ITEMS.filter(i => state.likedItems.includes(i.id));
-        const blogLikes = BLOG_ITEMS.filter(i => state.likedItems.includes(i.id));
-
-        return [...portfolioLikes, ...educationLikes, ...assetLikes, ...blogLikes];
-    }, [isOwnProfile, state.likedItems]);
+        // FUTURE: Implement real fetching of liked items by ID from Firebase
+        // Currently disabling static fallback to avoid ghost data
+        return [];
+    }, []);
 
     // 6. Collections
     const userCollections = useMemo(() => {

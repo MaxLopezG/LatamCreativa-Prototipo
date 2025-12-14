@@ -6,7 +6,7 @@ import {
   Building2, Terminal, Camera, Layout, Music, Video, Shirt, BookOpen, Aperture, Bitcoin, Wifi, Activity,
   Glasses, ServerCog, Bot, PenLine
 } from 'lucide-react';
-import { PORTFOLIO_ITEMS, EDUCATION_ITEMS, ASSET_ITEMS, BLOG_ITEMS } from '../../data/content';
+import { EDUCATION_ITEMS, ASSET_ITEMS } from '../../data/content';
 import { SUBSCRIPTIONS } from '../../data/navigation';
 import { PortfolioCard } from '../../components/cards/PortfolioCard';
 import { EducationCard } from '../../components/cards/EducationCard';
@@ -28,9 +28,9 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
   // Filter content based on mode (default 'creative')
   const mode = contentMode || 'creative';
 
-  // Merge static and created items
-  const allPortfolioItems = [...(state.createdItems || []), ...PORTFOLIO_ITEMS];
-  const allBlogItems = [...(state.blogPosts || []), ...BLOG_ITEMS];
+  // Use real items only
+  const allPortfolioItems = state.createdItems || [];
+  const allBlogItems = state.blogPosts || [];
 
   // Increased slice to fill new grid
   const displayPortfolio = allPortfolioItems.filter(i => (i.domain || 'creative') === mode).slice(0, 6);

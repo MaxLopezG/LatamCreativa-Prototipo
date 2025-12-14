@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../hooks/useAppStore';
-import { Mail, Lock, User, Github, ArrowRight, Loader2, AlertCircle, Globe, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, Github, ArrowRight, Loader2, AlertCircle, Globe, Eye, EyeOff, MapPin } from 'lucide-react';
 import { auth, googleProvider, db } from '../../lib/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signInWithPopup, sendEmailVerification, signOut } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -23,6 +23,8 @@ export const AuthView: React.FC = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
+    const [country, setCountry] = useState('');
+    const [city, setCity] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -71,7 +73,9 @@ export const AuthView: React.FC = () => {
                         email: userCredential.user.email || '',
                         avatar: userCredential.user.photoURL || 'https://ui-avatars.com/api/?name=' + (firstName || 'U'),
                         role: 'Creative Member',
-                        location: 'Latam',
+                        location: `${city}, ${country}`,
+                        country: country,
+                        city: city,
                         firstName: firstName,
                         lastName: lastName,
                         createdAt: new Date().toISOString()
@@ -239,7 +243,6 @@ export const AuthView: React.FC = () => {
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
 
-                            {/* Name Fields (Register Only) */}
                             {!isLogin && (
                                 <div className="grid grid-cols-2 gap-4 animate-fade-in">
                                     <div className="space-y-1.5">
@@ -265,6 +268,41 @@ export const AuthView: React.FC = () => {
                                                 onChange={(e) => setLastName(e.target.value)}
                                                 placeholder="Pérez"
                                                 className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
+                                                required={!isLogin}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+
+                            {/* Location Fields (Register Only) */}
+                            {!isLogin && (
+                                <div className="grid grid-cols-2 gap-4 animate-fade-in">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">País</label>
+                                        <div className="relative">
+                                            <Globe className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                value={country}
+                                                onChange={(e) => setCountry(e.target.value)}
+                                                placeholder="Colombia"
+                                                className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
+                                                required={!isLogin}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Ciudad</label>
+                                        <div className="relative">
+                                            <MapPin className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                value={city}
+                                                onChange={(e) => setCity(e.target.value)}
+                                                placeholder="Bogotá"
+                                                className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
                                                 required={!isLogin}
                                             />
                                         </div>

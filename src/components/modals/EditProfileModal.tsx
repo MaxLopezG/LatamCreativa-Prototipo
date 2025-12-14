@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Plus, Trash2, Briefcase, GraduationCap, User, MapPin } from 'lucide-react';
+import { X, Save, Plus, Trash2, Briefcase, GraduationCap, User, MapPin, Globe } from 'lucide-react';
 import { useAppStore, ExperienceItem, EducationItem, SocialLinks } from '../../hooks/useAppStore';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { usersService } from '../../services/modules/users';
 import { TagInput } from '../ui/TagInput';
 import { COMMON_TAGS } from '../../data/tags';
 import { COMMON_ROLES } from '../../data/roles';
@@ -23,6 +22,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     const [name, setName] = useState('');
     const [role, setRole] = useState('');
     const [location, setLocation] = useState('');
+    const [country, setCountry] = useState('');
+    const [city, setCity] = useState('');
     const [bio, setBio] = useState('');
     const [experience, setExperience] = useState<ExperienceItem[]>([]);
     const [education, setEducation] = useState<EducationItem[]>([]);
@@ -37,18 +38,50 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
     // Initialize state from User Store when modal opens
     useEffect(() => {
-        if (isOpen && user) {
-            setName(user.name || '');
-            setRole(user.role || '');
-            setLocation(user.location || '');
-            setBio(user.bio || '');
-            setExperience(user.experience || []);
-            setEducation(user.education || []);
-            setSkills(user.skills || []);
-            setSocialLinks(user.socialLinks || {});
-            setAvailableForWork(user.availableForWork || false);
-        }
-    }, [isOpen, user]);
+        const fetchUserData = async () => {
+            if (isOpen && user) {
+                try {
+                    // Fetch latest from DB to ensure no staleness
+                    const dbUser = await usersService.getUserProfile(user.id);
+                    const userData = dbUser || user; // Fallback to local user if DB fails
+
+                    setName(userData.name || '');
+                    setRole(userData.role || '');
+                    setLocation(userData.location || '');
+                    setBio(userData.bio || '');
+                    setExperience(userData.experience || []);
+                    setEducation(userData.education || []);
+                    setSkills(userData.skills || []);
+                    setSocialLinks(userData.socialLinks || {});
+                    setAvailableForWork(userData.availableForWork || false);
+
+                    // Granular Location Logic
+                    if (userData.country && userData.city) {
+                        setCountry(userData.country);
+                        setCity(userData.city);
+                    } else if (userData.location && userData.location.includes(',')) {
+                        // Attempt to split "City, Country"
+                        const parts = userData.location.split(',');
+                        if (parts.length >= 2) {
+                            setCity(parts[0].trim());
+                            setCountry(parts[1].trim());
+                        } else {
+                            setCity(userData.location);
+                        }
+                    } else {
+                        setCity(userData.location || '');
+                    }
+                } catch (err) {
+                    console.error("Error fetching fresh profile:", err);
+                    // Fallback to local state
+                    setName(user.name || '');
+                    // ... (rest of fallback assignment if needed, but simple console log is enough as we default to 'user' above)
+                }
+            }
+        };
+
+        fetchUserData();
+    }, [isOpen, user?.id]); // Only trigger if ID changes or opens
 
     if (!isOpen || !user) return null;
 
@@ -60,11 +93,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             const isDevRole = devKeywords.some(k => lowerRole.includes(k));
             const newMode: 'dev' | 'creative' = isDevRole ? 'dev' : 'creative';
 
-            const updatedUser = {
-                ...user,
+            // Construct update object
+            const combinedLocation = `${city}, ${country}`;
+            const updates = {
                 name,
                 role,
-                location,
+                location: combinedLocation,
+                country,
+                city,
                 bio,
                 experience,
                 education,
@@ -73,21 +109,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                 availableForWork
             };
 
-            // Update Firestore
-            const userRef = doc(db, 'users', user.id);
-            await updateDoc(userRef, {
-                name,
-                role,
-                location,
-                bio,
-                experience,
-                education,
-                skills,
-                socialLinks,
-                availableForWork
-            });
+            const updatedUser = { ...user, ...updates };
 
-            // Update Local
+            // Update via Service (Handles sanitization and Firestore)
+            await usersService.updateUserProfile(user.id, updates);
+
+            // Update Local Store
             actions.setUser(updatedUser);
 
             // Switch Mode if needed
@@ -260,17 +287,32 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Ubicación</label>
-                                <div className="relative">
-                                    <MapPin className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                                    <input
-                                        type="text"
-                                        value={location}
-                                        onChange={(e) => setLocation(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
-                                        placeholder="Ciudad, País"
-                                    />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">País</label>
+                                    <div className="relative">
+                                        <Globe className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            value={country}
+                                            onChange={(e) => setCountry(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
+                                            placeholder="País"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Ciudad</label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            value={city}
+                                            onChange={(e) => setCity(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
+                                            placeholder="Ciudad"
+                                        />
+                                    </div>
                                 </div>
                             </div>
 

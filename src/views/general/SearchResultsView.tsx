@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Search, ArrowRight } from 'lucide-react';
-import { PORTFOLIO_ITEMS, EDUCATION_ITEMS, ASSET_ITEMS, BLOG_ITEMS, FREELANCE_SERVICES } from '../../data/content';
+import { EDUCATION_ITEMS, ASSET_ITEMS, FREELANCE_SERVICES } from '../../data/content';
+import { useAppStore } from '../../hooks/useAppStore';
 import { PortfolioCard } from '../../components/cards/PortfolioCard';
 import { EducationCard } from '../../components/cards/EducationCard';
 import { AssetCard } from '../../components/cards/AssetCard';
@@ -14,26 +15,27 @@ interface SearchResultsViewProps {
 }
 
 export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ query, onItemSelect }) => {
+  const { state } = useAppStore();
   const lowerQuery = query.toLowerCase();
 
   // Filter Data
-  const portfolioResults = PORTFOLIO_ITEMS.filter(item => 
+  const portfolioResults = (state.createdItems || []).filter(item =>
     item.title.toLowerCase().includes(lowerQuery) || item.category.toLowerCase().includes(lowerQuery) || item.artist.toLowerCase().includes(lowerQuery)
   );
-  
-  const courseResults = EDUCATION_ITEMS.filter(item => 
+
+  const courseResults = EDUCATION_ITEMS.filter(item =>
     item.title.toLowerCase().includes(lowerQuery) || item.category.toLowerCase().includes(lowerQuery)
   );
 
-  const assetResults = ASSET_ITEMS.filter(item => 
+  const assetResults = ASSET_ITEMS.filter(item =>
     item.title.toLowerCase().includes(lowerQuery) || item.category.toLowerCase().includes(lowerQuery)
   );
 
-  const blogResults = BLOG_ITEMS.filter(item => 
+  const blogResults = (state.blogPosts || []).filter(item =>
     item.title.toLowerCase().includes(lowerQuery) || item.category.toLowerCase().includes(lowerQuery)
   );
 
-  const serviceResults = FREELANCE_SERVICES.filter(item => 
+  const serviceResults = FREELANCE_SERVICES.filter(item =>
     item.title.toLowerCase().includes(lowerQuery) || item.category.toLowerCase().includes(lowerQuery)
   );
 
