@@ -304,7 +304,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                     </div>
 
                     <div className="flex flex-wrap gap-2 mt-12 mb-16 pt-8 border-t border-slate-200 dark:border-white/10">
-                        {['3D', 'Tutorial', 'Industria', 'Career'].map(tag => (
+                        {(article.tags && article.tags.length > 0 ? article.tags : []).map(tag => (
                             <span key={tag} className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 text-sm font-bold hover:bg-amber-500/10 hover:text-amber-500 cursor-pointer transition-colors border border-transparent hover:border-amber-500/20">
                                 #{tag}
                             </span>

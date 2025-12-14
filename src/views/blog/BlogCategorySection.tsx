@@ -33,7 +33,9 @@ export const BlogCategorySection: React.FC<BlogCategorySectionProps> = ({
 
                 if (categories && categories.length > 0) {
                     // Fetch by specific categories (increased limit for carousel)
-                    fetched = await blogService.getArticlesByCategories(categories, 10);
+                    // Update: getArticlesByCategories now returns PaginatedResult
+                    const result = await blogService.getArticlesByCategories(categories, null, 10);
+                    fetched = result.data;
                 } else {
                     // Fetch recent (top 10 globally)
                     fetched = await blogService.getRecentArticles(10);

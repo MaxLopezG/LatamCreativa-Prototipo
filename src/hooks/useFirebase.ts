@@ -3,6 +3,7 @@ import { useAppStore } from './useAppStore';
 import { api, PaginatedResult } from '../services/api';
 import { PortfolioItem, ArticleItem, BlogComment } from '../types';
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { NAV_SECTIONS, NAV_SECTIONS_DEV } from '../data/navigation';
 
 // --- Hook for Infinite Scroll Feed ---
 export const useProjects = () => {
@@ -181,17 +182,17 @@ export const useArticles = () => {
     // Re-fetch when Sort Option changes
     useEffect(() => {
         if (!loading) { // Avoid double fetch if already loading
-            // Reset Pagination State on Sort Change
+            // Reset Pagination State on Sort Change or Category Change
             actions.setBlogState({
                 pageStack: [],
                 currentPage: 1,
                 lastDoc: null,
                 hasMore: true,
-                articles: [] // Clear current to show loading state or fresh start
+                articles: []
             });
             fetchPage(null);
         }
-    }, [sortOption]);
+    }, [sortOption, state.activeCategory]);
 
     const fetchPage = async (startAfterDoc: QueryDocumentSnapshot<DocumentData> | null) => {
         // Prevent race conditions or multi-calls handled by check above, but good to have safety
@@ -214,7 +215,35 @@ export const useArticles = () => {
                 sortDir = 'asc';
             }
 
-            const result = await api.getArticles(startAfterDoc, 10, sortField, sortDir);
+            let result;
+            const category = state.activeCategory;
+            const isHome = category === 'Home' || category === 'Todas';
+            const isTrending = category === 'Tendencias';
+            const isNew = category === 'Nuevos';
+
+            // 1. If Category Selected (not Home/Trending/New special cases)
+            if (!isHome && !isTrending && !isNew) {
+
+                // Identify if 'category' is actually a Tag (Sub-item in nav)
+                // We check all sections to see if this label exists as a subItem
+                const isTag = NAV_SECTIONS.some(section =>
+                    section.items.some(item => item.subItems?.includes(category))
+                ) || NAV_SECTIONS_DEV.some(section =>
+                    section.items.some(item => item.subItems?.includes(category))
+                );
+
+                if (isTag) {
+                    result = await api.getArticlesByTag(category, startAfterDoc, 10);
+                } else {
+                    // We treat categories as a list, but activeCategory is a string
+                    result = await api.getArticlesByCategories([category], startAfterDoc, 10);
+                }
+
+            } else {
+                // 2. Default / Home / Sort-Based Fetching
+                const resultFetch = await api.getArticles(startAfterDoc, 10, sortField, sortDir);
+                result = resultFetch;
+            }
             actions.setBlogState({
                 articles: result.data,
                 lastDoc: result.lastDoc,

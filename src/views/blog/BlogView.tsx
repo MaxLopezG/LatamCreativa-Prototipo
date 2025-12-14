@@ -18,19 +18,13 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
   const { articles: blogPosts, loading, hasMore, currentPage, nextPage, prevPage } = useArticles();
   const { sortOption } = state.blogState;
 
-  // Sync activeCategory (Sidebar) with Sort Option
-  React.useEffect(() => {
-    if (activeCategory === 'Tendencias' && sortOption !== 'popular') {
-      actions.setBlogState({ sortOption: 'popular' });
-    } else if ((activeCategory === 'Nuevos' || activeCategory === 'Home') && sortOption !== 'recent') {
-      actions.setBlogState({ sortOption: 'recent' });
-    }
-  }, [activeCategory, actions, sortOption]);
 
   const isHomeView = activeCategory === 'Home';
 
   return (
-    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-0 pb-16 transition-colors animate-fade-in bg-[#0f0f12] min-h-screen">
+    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-0 pb-16 transition-colors animate-fade-in bg-[#0f0f12] min-h-screen relative">
+
+
 
       {/* Cinematic Hero Banner */}
       <div className="relative -mx-6 md:-mx-10 2xl:-mx-16 min-h-[450px] md:h-[500px] flex items-center justify-center overflow-hidden mb-8 md:mb-12">

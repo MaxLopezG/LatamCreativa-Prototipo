@@ -176,28 +176,78 @@ export const blogService = {
         }
     },
 
-    getArticlesByCategories: async (categories: string[], limitCount = 4): Promise<ArticleItem[]> => {
+    getArticlesByCategories: async (categories: string[], lastDoc: QueryDocumentSnapshot<DocumentData> | null = null, limitCount = 10): Promise<PaginatedResult<ArticleItem>> => {
         try {
-            if (!categories || categories.length === 0) return [];
+            if (!categories || categories.length === 0) return { data: [], lastDoc: null, hasMore: false };
 
             // Firestore 'in' query supports max 10 values
             const limitedCategories = categories.slice(0, 10);
 
-            const q = query(
+            let q = query(
                 collection(db, 'articles'),
                 where('category', 'in', limitedCategories),
+                orderBy('date', 'desc'), // Requires composite index usually
                 limit(limitCount)
             );
 
-            const snapshot = await getDocs(q);
-            const articles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ArticleItem));
+            if (lastDoc) {
+                q = query(
+                    collection(db, 'articles'),
+                    where('category', 'in', limitedCategories),
+                    orderBy('date', 'desc'),
+                    startAfter(lastDoc),
+                    limit(limitCount)
+                );
+            }
 
-            // Client-side sort since we effectively only have a few items and want to avoid complex Firestore indexes for now
-            return articles.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            const snapshot = await getDocs(q);
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ArticleItem));
+
+            return {
+                data,
+                lastDoc: snapshot.docs[snapshot.docs.length - 1] || null,
+                hasMore: snapshot.docs.length === limitCount
+            };
         } catch (error) {
             console.error("Error fetching articles by categories:", error);
-            // Fallback: return empty to avoid breaking the view
-            return [];
+            return {
+                data: [],
+                lastDoc: null,
+                hasMore: false
+            };
+        }
+    },
+
+    getArticlesByTag: async (tag: string, lastDoc: QueryDocumentSnapshot<DocumentData> | null = null, limitCount = 10): Promise<PaginatedResult<ArticleItem>> => {
+        try {
+            let q = query(
+                collection(db, 'articles'),
+                where('tags', 'array-contains', tag),
+                orderBy('date', 'desc'),
+                limit(limitCount)
+            );
+
+            if (lastDoc) {
+                q = query(
+                    collection(db, 'articles'),
+                    where('tags', 'array-contains', tag),
+                    orderBy('date', 'desc'),
+                    startAfter(lastDoc),
+                    limit(limitCount)
+                );
+            }
+
+            const snapshot = await getDocs(q);
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ArticleItem));
+
+            return {
+                data,
+                lastDoc: snapshot.docs[snapshot.docs.length - 1] || null,
+                hasMore: snapshot.docs.length === limitCount
+            };
+        } catch (error) {
+            console.error("Error fetching articles by tag:", error);
+            return { data: [], lastDoc: null, hasMore: false };
         }
     },
 

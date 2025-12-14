@@ -350,10 +350,13 @@ export const SecondarySidebar = ({
                     const hasSubItems = item.subItems && item.subItems.length > 0;
                     const isExpanded = expandedItems.includes(item.label);
 
+                    // DEBUG RENDER
+
+
                     return (
                       <div key={item.label}>
-                        <a
-                          href="#"
+                        <button
+                          type="button"
                           onClick={(e) => {
                             e.preventDefault();
                             if (hasSubItems) {
@@ -364,7 +367,7 @@ export const SecondarySidebar = ({
                               onClose?.();
                             }
                           }}
-                          className={`group flex items-center gap-3 rounded-xl p-2.5 px-3 transition-all cursor-pointer ${isActive
+                          className={`w-full group flex items-center gap-3 rounded-xl p-2.5 px-3 transition-all cursor-pointer ${isActive
                             ? activeItemClass
                             : 'hover:bg-slate-100 dark:hover:bg-white/[0.04] text-slate-600 dark:text-slate-400'
                             }`}
@@ -373,7 +376,7 @@ export const SecondarySidebar = ({
                             }`}>
                             <item.icon className="h-4 w-4" strokeWidth={2} />
                           </div>
-                          <div className="flex flex-1 flex-col min-w-0">
+                          <div className="flex flex-1 flex-col min-w-0 text-left">
                             <h4 className={`text-sm font-medium truncate ${isActive ? 'text-slate-900 dark:text-white' : 'group-hover:text-slate-900 dark:group-hover:text-white'}`}>
                               {item.label}
                             </h4>
@@ -386,7 +389,7 @@ export const SecondarySidebar = ({
                               {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                             </div>
                           )}
-                        </a>
+                        </button>
 
                         {/* Sub Items Menu */}
                         {isExpanded && hasSubItems && (

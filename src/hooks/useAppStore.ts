@@ -206,12 +206,49 @@ const useZustandStore = create<AppStore>()(
         // --- Actions Implementation ---
 
         setIsSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
-        setActiveCategory: (category) => set({ activeCategory: category }),
+        setActiveCategory: (category) => {
+          if (typeof window !== 'undefined') {
+            (window as any)._debugActions = (window as any)._debugActions || [];
+            (window as any)._debugActions.push({
+              action: 'setActiveCategory',
+              category: category,
+              stack: new Error().stack
+            });
+          }
+          set((state) => {
+            const updates: any = { activeCategory: category };
+
+            // Sync sort option with category
+            if (category === 'Tendencias') {
+              updates.blogState = { ...state.blogState, sortOption: 'popular' };
+            } else if (category === 'Home' || category === 'Nuevos') {
+              updates.blogState = { ...state.blogState, sortOption: 'recent' };
+            }
+
+            return updates;
+          });
+        },
         setActiveModule: (module) => {
           set({ activeModule: module, viewingAuthor: null, createMode: 'none', searchQuery: '' });
           if (window.innerWidth < 1280) set({ isSidebarOpen: false });
         },
         setContentMode: (mode) => {
+          const currentMode = get().contentMode;
+          const currentCategory = get().activeCategory;
+
+          if (typeof window !== 'undefined') {
+            (window as any)._debugActions = (window as any)._debugActions || [];
+            (window as any)._debugActions.push({
+              action: 'setContentMode',
+              mode: mode,
+              currentMode: currentMode,
+              currentCategory: currentCategory,
+              stack: new Error().stack
+            });
+          }
+
+          if (currentMode === mode) return;
+
           set({ contentMode: mode, activeCategory: 'Home' });
           get().showToast(mode === 'dev' ? 'Modo Desarrollador Activado 👨‍💻' : 'Modo Creativo Activado 🎨', 'info');
         },
