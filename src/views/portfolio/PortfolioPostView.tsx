@@ -27,6 +27,9 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
   const { deleteProject, loading: isDeleting } = useDeleteProject();
   const { project: fetchedProject, loading: isFetching } = useProject(id);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
   const item = allItems.find(p => p.id === id) || fetchedProject;
 
@@ -70,9 +73,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
 
   const relatedItems = allItems.filter(p => p.id !== id && p.category === item.category).slice(0, 4);
 
-  const [isLiked, setIsLiked] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+
 
   const projectImages = item.images && item.images.length > 0
     ? item.images

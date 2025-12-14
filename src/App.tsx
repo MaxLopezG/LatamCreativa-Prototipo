@@ -33,10 +33,11 @@ const App: React.FC = () => {
           let userRole = 'Creative Member';
           let userLocation = 'Latam';
           let isAdminFromStore = false;
+          let userData: any = {};
 
           if (userDocSnap.exists()) {
             // User exists, get role and location from Firestore
-            const userData = userDocSnap.data();
+            userData = userDocSnap.data();
             userRole = userData.role || 'Creative Member';
             userLocation = userData.location || 'Latam';
             isAdminFromStore = userData.isAdmin || false;
@@ -53,6 +54,7 @@ const App: React.FC = () => {
             };
 
             await setDoc(userDocRef, newUser);
+            userData = newUser;
             // New user created
           }
 
