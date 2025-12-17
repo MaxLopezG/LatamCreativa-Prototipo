@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Link as LinkIcon, Calendar, CheckCircle2, UserPlus, Mail, MessageSquare, Layers, Twitter, Instagram, Globe, MoreHorizontal, Briefcase, GraduationCap, UserCheck, Zap, Award, Trophy, Bookmark, Heart, Lock, Plus, Image as ImageIcon, Video, Box, Newspaper, Download, PlayCircle, FileText, Settings, Github, Linkedin, Palette } from 'lucide-react';
 import { ARTIST_DIRECTORY, ARTIST_TIERS } from '../../data/content';
 import { PortfolioCard } from '../../components/cards/PortfolioCard';
@@ -25,6 +25,7 @@ interface UserProfileViewProps {
 export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, authorName, onBack, onItemSelect, onOpenChat }) => {
     const { state, actions } = useAppStore();
     const { username } = useParams<{ username: string }>();
+    const navigate = useNavigate();
     const [fetchedUser, setFetchedUser] = useState<any>(null); // Store fetched profile data
 
     // Robust check for Own Profile
@@ -51,6 +52,19 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
 
         return false;
     }, [state.user, author, authorName, username]);
+
+    // Force canonical URL (username) for own profile
+    useEffect(() => {
+        if (isOwnProfile && state.user?.username) {
+            // If current 'username' param is missing OR different from actual username
+            if (username !== state.user.username) {
+                // Avoid redirect loop if they are equivalent (e.g. case sensitivity handled by router usually but good to be safe)
+                // But generally users want the exact casing they set.
+                console.log("Redirecting to canonical profile URL:", state.user.username);
+                navigate(`/user/${state.user.username}`, { replace: true });
+            }
+        }
+    }, [isOwnProfile, state.user?.username, username, navigate]);
 
     // Fetch real user data if we have an ID or Name
     useEffect(() => {

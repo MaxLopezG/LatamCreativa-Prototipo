@@ -7,6 +7,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 import { useAppStore } from './hooks/useAppStore';
+import { usersService } from './services/modules/users';
 
 // Initialize Query Client
 const queryClient = new QueryClient({
@@ -29,20 +30,8 @@ const App: React.FC = () => {
           const userDocRef = doc(db, 'users', firebaseUser.uid);
 
           // 1. Initial Check & Creation
-          // We do this BEFORE setting up the listener to ensure the doc exists (for new users)
-          // preventing the listener from firing 'not exists' immediately and logging them out during sign up.
-          const initialSnap = await getDoc(userDocRef);
-          if (!initialSnap.exists()) {
-            const newUser = {
-              name: firebaseUser.displayName || 'Usuario',
-              email: firebaseUser.email || '',
-              avatar: firebaseUser.photoURL || 'https://ui-avatars.com/api/?name=' + (firebaseUser.displayName || 'U'),
-              role: 'Creative Member',
-              location: 'Latam',
-              createdAt: new Date().toISOString()
-            };
-            await setDoc(userDocRef, newUser);
-          }
+          // We use centralized service to avoid race conditions with AuthView
+          await usersService.initializeUserProfile(firebaseUser);
 
           // 2. Real-time Listener for Updates & Session Validation
           const unsubscribeSnapshot = onSnapshot(userDocRef, (userDocSnap) => {

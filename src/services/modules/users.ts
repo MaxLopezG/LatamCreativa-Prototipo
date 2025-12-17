@@ -61,6 +61,48 @@ export const usersService = {
         }
     },
 
+    /**
+     * Ensures a user profile exists in Firestore.
+     * Use this for Google Auth or App.tsx initialization to prevent overwriting existing data.
+     * @param user Firebase Auth User object
+     * @param additionalData Optional data to merge if creating a NEW document
+     */
+    initializeUserProfile: async (user: any, additionalData: any = {}): Promise<any> => {
+        try {
+            const userRef = doc(db, 'users', user.uid);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists()) {
+                return { id: userSnap.id, ...userSnap.data() };
+            }
+
+            // Create new profile
+            const newUser = {
+                name: additionalData.name || user.displayName || 'Usuario',
+                email: user.email || '',
+                avatar: additionalData.avatar || user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'U')}`,
+                role: 'Creative Member',
+                location: 'Latam',
+                firstName: additionalData.firstName || '',
+                lastName: additionalData.lastName || '',
+                country: additionalData.country || '',
+                city: additionalData.city || '',
+                isProfileComplete: false, // Explicit flag for onboarding
+                createdAt: new Date().toISOString(),
+                ...additionalData
+            };
+
+            // Remove undefined fields
+            Object.keys(newUser).forEach(key => newUser[key] === undefined && delete newUser[key]);
+
+            await setDoc(userRef, newUser);
+            return { id: user.uid, ...newUser };
+        } catch (error) {
+            console.error("Error initializing user profile:", error);
+            throw error;
+        }
+    },
+
     getUserProfileByUsername: async (username: string) => {
         try {
             if (!username) return null;

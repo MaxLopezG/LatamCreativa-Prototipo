@@ -120,7 +120,12 @@ export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, con
 
                   <button
                     onClick={() => {
-                      onModuleSelect?.('profile');
+                      if (user.username) {
+                        navigate(`/user/${user.username}`);
+                        onModuleSelect?.('user');
+                      } else {
+                        onModuleSelect?.('profile');
+                      }
                       setIsProfileOpen(false);
                     }}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
@@ -472,7 +477,12 @@ export const SecondarySidebar = ({
                   if (!user) {
                     onModuleSelect?.('auth');
                   } else {
-                    onModuleSelect?.('profile');
+                    if (user.username) {
+                      navigate(`/user/${user.username}`);
+                      onModuleSelect?.('user');
+                    } else {
+                      onModuleSelect?.('profile');
+                    }
                   }
                   onClose?.();
                 }}

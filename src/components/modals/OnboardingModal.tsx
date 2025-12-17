@@ -15,8 +15,10 @@ export const OnboardingModal: React.FC = () => {
 
     // Form State
     const [name, setName] = useState('');
+    const [username, setUsername] = useState(''); // New
     const [role, setRole] = useState('');
-    const [location, setLocation] = useState('');
+    const [location, setLocation] = useState(''); // Country
+    const [city, setCity] = useState(''); // New
     const [bio, setBio] = useState('');
     const [skills, setSkills] = useState<string[]>([]);
     const [socialLinks, setSocialLinks] = useState<SocialLinks>({});
@@ -32,41 +34,73 @@ export const OnboardingModal: React.FC = () => {
             return;
         }
 
-        const hasSkipped = localStorage.getItem(`onboarding_skipped_${user.id}`);
-        // "Latam" is the default location, so we consider it incomplete if it matches that or is missing.
-        const isIncomplete = user.location === 'Latam' || !user.location;
-        const shouldShow = isIncomplete && !hasSkipped;
+        const hasSkipped = localStorage.getItem(`onboarding_skipped_v4_${user.id}`);
+        // Now using explicit 'isProfileComplete' flag from DB.
+        // Fallback to old check if flag missing (legacy users)
+        const isProfileComplete = user.isProfileComplete ?? (user.location !== 'Latam' && user.username);
+        const shouldShow = !isProfileComplete && !hasSkipped;
+
+        console.log("Onboarding Check:", {
+            hasSkipped,
+            location: user.location,
+            username: user.username,
+            isProfileComplete,
+            shouldShow
+        });
 
         if (shouldShow && !isOpen) {
-            // Directly open if conditions met. 
-            // We use a small heuristic: if data is incomplete, just show it.
-            // No timeout needed if we trust the 'user' object from store is valid.
             setIsOpen(true);
-
-            // Pre-fill
-            if (user) {
-                // Only set fields if they are currently empty in local state to avoid overwriting user input
-                // But since this effect runs on mount/updates, we should be careful.
-                // Actually, just setting them initially is fine.
-                setName(prev => prev || user.name || '');
-                setRole(prev => prev || user.role || '');
-                setLocation(prev => prev || ''); // Location is forced empty to require selection
-                setBio(prev => prev || user.bio || '');
-                setSkills(prev => prev.length ? prev : user.skills || []);
-                setSocialLinks(prev => Object.keys(prev).length ? prev : user.socialLinks || {});
-            }
-        } else if (!shouldShow && isOpen) {
-            // Optional: Close if it suddenly becomes complete external to this modal?
-            // No, that might be annoying while typing.
         }
 
-    }, [user?.id, user?.location, user?.name, user?.role, isOpen]); // Depend on fields that determine 'shouldShow'
+        if (isOpen && user) {
+            // Update fields if user data becomes available or changes (e.g. from race condition)
+            // We prioritize the user data if the local state is empty OR if local state equals "Usuario" (default)
+            // and the new user data is different.
+
+            // NOTE: We used to depend on 'name', 'username' etc here, but that causes input lag on every keystroke.
+            // Instead, we trust that if 'user' changes, we update. 
+            // We do NOT update if 'user' didn't change but 'name' changed (that's just user typing).
+
+            // Name
+            if ((!name || name === 'Usuario') && user.name && user.name !== 'Usuario') {
+                setName(user.name);
+            } else if (!name && user.name) {
+                setName(user.name);
+            }
+
+            // Username
+            if (!username && user.username) setUsername(user.username);
+
+            // Location
+            if (!location && user.country) setLocation(user.country);
+            if (!city && user.city) setCity(user.city);
+
+            // Role - Don't default to 'Creative Member'
+            if (!role && user.role && user.role !== 'Creative Member') {
+                setRole(user.role);
+            }
+
+            // Others
+            if (!bio && user.bio) setBio(user.bio);
+            if (skills.length === 0 && user.skills) setSkills(user.skills);
+            if (Object.keys(socialLinks).length === 0 && user.socialLinks) setSocialLinks(user.socialLinks);
+        }
+
+        // ESLint might complain about missing deps (name, role, etc), but we INTENTIONALLY omit them 
+        // to prevent re-running this effect when the user types in those fields.
+        // We only want to re-run if 'user' updates (e.g. initial load vs auth load).
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user, isOpen]);
 
     if (!isOpen || !user) return null;
 
     const handleSave = async () => {
         if (!location) {
             actions.showToast('Por favor selecciona tu país', 'error');
+            return;
+        }
+        if (!username) {
+            actions.showToast('Por favor ingresa un nombre de usuario', 'error');
             return;
         }
 
@@ -78,25 +112,35 @@ export const OnboardingModal: React.FC = () => {
             const isDevRole = devKeywords.some(k => lowerRole.includes(k));
             const newMode: 'dev' | 'creative' = isDevRole ? 'dev' : 'creative';
 
+            const finalLocation = city ? `${city}, ${location}` : location;
+
             const updatedUser = {
                 ...user,
                 name,
+                username,
                 role,
-                location: location || 'Latam',
+                location: finalLocation,
+                country: location,
+                city,
                 bio,
                 skills,
                 socialLinks,
+                isProfileComplete: true // Mark as complete
             };
 
             // Update Firestore
             const userRef = doc(db, 'users', user.id);
             await updateDoc(userRef, {
                 name,
+                username,
                 role,
-                location: location || 'Latam',
+                location: finalLocation,
+                country: location,
+                city,
                 bio,
                 skills,
-                socialLinks
+                socialLinks,
+                isProfileComplete: true
             });
 
             // Update Local State & Mode
@@ -121,7 +165,7 @@ export const OnboardingModal: React.FC = () => {
     const handleSkip = () => {
         // Mark as skipped in LocalStorage so it doesn't annoy them this session/browser
         // Or better: don't show again unless they go to profile.
-        localStorage.setItem(`onboarding_skipped_${user.id}`, 'true');
+        localStorage.setItem(`onboarding_skipped_v4_${user.id}`, 'true');
         setIsOpen(false);
         actions.showToast('Puedes completar tu perfil más tarde en la configuración.', 'info');
     };
@@ -147,33 +191,45 @@ export const OnboardingModal: React.FC = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nombre</label>
+                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Username</label>
                                 <div className="relative">
                                     <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
                                     <input
                                         type="text"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
                                         className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/20 border border-white/10 text-white focus:border-amber-500 outline-none transition-colors"
-                                        placeholder="Tu nombre"
+                                        placeholder="Tu nombre de usuario"
                                     />
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">País</label>
-                                <div className="relative">
-                                    <MapPin className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                                    <select
-                                        value={location}
-                                        onChange={(e) => setLocation(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/20 border border-white/10 text-white focus:border-amber-500 outline-none transition-colors appearance-none"
-                                    >
-                                        <option value="" disabled>Selecciona tu país</option>
-                                        {LATAM_COUNTRIES.map(c => (
-                                            <option key={c} value={c} className="bg-[#0F1115]">{c}</option>
-                                        ))}
-                                    </select>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">País</label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                                        <select
+                                            value={location}
+                                            onChange={(e) => setLocation(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/20 border border-white/10 text-white focus:border-amber-500 outline-none transition-colors appearance-none"
+                                        >
+                                            <option value="" disabled>País</option>
+                                            {LATAM_COUNTRIES.map(c => (
+                                                <option key={c} value={c} className="bg-[#0F1115]">{c}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Ciudad</label>
+                                    <input
+                                        type="text"
+                                        value={city}
+                                        onChange={(e) => setCity(e.target.value)}
+                                        className="w-full px-4 py-3 rounded-xl bg-black/20 border border-white/10 text-white focus:border-amber-500 outline-none transition-colors"
+                                        placeholder="Ciudad"
+                                    />
                                 </div>
                             </div>
                         </div>

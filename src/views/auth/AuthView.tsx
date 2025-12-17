@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../hooks/useAppStore';
+import { usersService } from '../../services/modules/users';
 import { Mail, Lock, User, Github, ArrowRight, Loader2, AlertCircle, Globe, Eye, EyeOff, MapPin } from 'lucide-react';
 import { auth, googleProvider, db } from '../../lib/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signInWithPopup, sendEmailVerification, signOut } from 'firebase/auth';
@@ -68,19 +69,16 @@ export const AuthView: React.FC = () => {
                         displayName: displayName
                     });
 
-                    const newUser = {
-                        name: displayName || userCredential.user.displayName || 'Usuario',
-                        email: userCredential.user.email || '',
-                        avatar: userCredential.user.photoURL || 'https://ui-avatars.com/api/?name=' + (firstName || 'U'),
-                        role: 'Creative Member',
-                        location: `${city}, ${country}`,
-                        country: country,
-                        city: city,
-                        firstName: firstName,
-                        lastName: lastName,
-                        createdAt: new Date().toISOString()
-                    };
-                    await setDoc(doc(db, 'users', userCredential.user.uid), newUser);
+                    // Use centralized service to create/merge profile
+                    // We pass the specific form data as additionalData
+                    await usersService.initializeUserProfile(userCredential.user, {
+                        name: displayName,
+                        firstName,
+                        lastName,
+                        country,
+                        city,
+                        location: `${city}, ${country}`
+                    });
 
                     // Send Email Verification
                     try {
@@ -147,21 +145,10 @@ export const AuthView: React.FC = () => {
             const userCredential = await signInWithPopup(auth, googleProvider);
             const user = userCredential.user;
 
-            // Check if user exists in Firestore, if not create
-            const userDocRef = doc(db, 'users', user.uid);
-            const userDocSnap = await getDoc(userDocRef);
+            // Check if user exists in Firestore, if not create (Centralized)
+            await usersService.initializeUserProfile(user);
 
-            if (!userDocSnap.exists()) {
-                const newUser = {
-                    name: user.displayName || 'Usuario',
-                    email: user.email || '',
-                    avatar: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'U'}`,
-                    role: 'Creative Member',
-                    location: 'Latam',
-                    createdAt: new Date().toISOString()
-                };
-                await setDoc(userDocRef, newUser);
-            }
+            const userDocRef = doc(db, 'users', user.uid);
 
             // FORCE STORE UPDATE BEFORE REDIRECT
             if (user) {

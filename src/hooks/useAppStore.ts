@@ -106,6 +106,7 @@ interface AuthSlice {
     stats?: UserStats;
     isAdmin?: boolean;
     createdAt?: string;
+    isProfileComplete?: boolean;
   } | null;
   cartItems: CartItem[];
   likedItems: string[];
