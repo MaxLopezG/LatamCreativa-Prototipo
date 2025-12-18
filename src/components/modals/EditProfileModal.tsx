@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { X, Save, Plus, Trash2, Briefcase, GraduationCap, User, MapPin, Globe, GripVertical } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
 import { ExperienceItem, EducationItem, SocialLinks } from '../../types';
 import { usersService } from '../../services/modules/users';
+import { storageService } from '../../services/modules/storage';
 import { TagInput } from '../ui/TagInput';
 import { COMMON_TAGS } from '../../data/tags';
 import { COMMON_ROLES } from '../../data/roles';
@@ -45,6 +45,15 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     // Drag and Drop State
     const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
     const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
+
+    // Image Upload State
+    const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
+    const [selectedCoverFile, setSelectedCoverFile] = useState<File | null>(null);
+    const [previewAvatarUrl, setPreviewAvatarUrl] = useState<string | null>(null);
+    const [previewCoverUrl, setPreviewCoverUrl] = useState<string | null>(null);
+
+    const fileInputAvatarRef = React.useRef<HTMLInputElement>(null);
+    const fileInputCoverRef = React.useRef<HTMLInputElement>(null);
 
     // Suggestions State
     const [showRoleSuggestions, setShowRoleSuggestions] = useState(false);
@@ -119,6 +128,31 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
     if (!isOpen || !user) return null;
 
+    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'cover') => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Validation (5MB and Image Type) - Quick Check before setting state
+        if (!file.type.startsWith('image/')) {
+            actions.showToast('Solo se permiten archivos de imagen', 'error');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            actions.showToast('La imagen debe pesar menos de 5MB', 'error');
+            return;
+        }
+
+        const previewUrl = URL.createObjectURL(file);
+
+        if (type === 'avatar') {
+            setSelectedAvatarFile(file);
+            setPreviewAvatarUrl(previewUrl);
+        } else {
+            setSelectedCoverFile(file);
+            setPreviewCoverUrl(previewUrl);
+        }
+    };
+
     const handleSave = async () => {
         try {
             setIsSaving(true);
@@ -155,34 +189,49 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             const isDevRole = devKeywords.some(k => lowerRole.includes(k));
             const newMode: 'dev' | 'creative' = isDevRole ? 'dev' : 'creative';
 
-            // Construct update object
-            const combinedName = `${firstName.trim()} ${lastName.trim()}`;
-            const combinedLocation = city.trim() ? `${city.trim()}, ${country.trim()}` : country.trim();
+            // 2. Upload Images if selected
+            let newAvatarUrl = user.avatar;
+            let newCoverUrl = user.coverImage;
 
-            const updates: any = {
-                name: combinedName,
+            if (selectedAvatarFile) {
+                // Determine path: users/{uid}/avatar.jpg (or timestamped to avoid caching issues)
+                const path = `users/${state.user!.id}/avatar_${Date.now()}.jpg`;
+                newAvatarUrl = await storageService.uploadImage(selectedAvatarFile, path);
+            }
+
+            if (selectedCoverFile) {
+                const path = `users/${state.user!.id}/cover_${Date.now()}.jpg`;
+                newCoverUrl = await storageService.uploadImage(selectedCoverFile, path);
+            }
+
+            // 3. Prepare Updated User Object
+            const updatedUser = {
+                ...state.user!,
                 firstName: firstName.trim(),
                 lastName: lastName.trim(),
+                name: `${firstName.trim()} ${lastName.trim()}`, // Keep 'name' for backward compatibility if needed
+                username: username.trim(),
                 role: role.trim(),
-                location: combinedLocation,
-                country: country.trim(),
+                bio: bio.trim(), // Changed from 'about' to 'bio' to match existing state
+                country: country,
                 city: city.trim(),
-                bio: bio.trim(),
+                avatar: newAvatarUrl,
+                coverImage: newCoverUrl,
+                availableForWork,
                 experience,
                 education,
-                skills,
-                socialLinks,
-                availableForWork
+                skills, // Added skills
+                socialLinks: {
+                    ...state.user!.socialLinks,
+                    ...socialLinks,
+                },
+                location: city.trim() ? `${city.trim()}, ${country}` : country, // Simple Fallback
             };
 
-            if (username) updates.username = username;
+            // 4. Update Firestore
+            await usersService.updateUserProfile(state.user!.id, updatedUser); // Changed to updateUserProfile and user.id
 
-            const updatedUser = { ...user, ...updates };
-
-            // Update via Service (Handles sanitization and Firestore)
-            await usersService.updateUserProfile(user.id, updates);
-
-            // Update Local Store
+            // 5. Update Local Store
             actions.setUser(updatedUser);
 
             // Switch Mode if needed
@@ -355,6 +404,62 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                     {/* GENERAL TAB */}
                     {activeTab === 'general' && (
                         <div className="space-y-6 max-w-2xl mx-auto">
+                            <div className="relative h-48 md:h-64 bg-slate-900">
+                                <img
+                                    src={previewCoverUrl || user.coverImage || "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=2070&auto=format&fit=crop"}
+                                    alt="Cover"
+                                    className="w-full h-full object-cover opacity-60"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#030304] to-transparent"></div>
+
+                                {/* Change Cover Button */}
+                                <button
+                                    onClick={() => fileInputCoverRef.current?.click()}
+                                    className="absolute bottom-4 right-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-lg border border-white/10 transition-colors flex items-center gap-2"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-camera"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></svg>
+                                    <span className="text-sm font-medium">Cambiar Portada</span>
+                                </button>
+                                <div className="absolute top-4 right-4 px-2 py-1 bg-black/40 backdrop-blur-sm rounded text-xs text-white/70">
+                                    Recomendado: 1500x500px • Máx 5MB
+                                </div>
+                                <input
+                                    type="file"
+                                    ref={fileInputCoverRef}
+                                    onChange={(e) => handleImageChange(e, 'cover')}
+                                    accept="image/*"
+                                    className="hidden"
+                                />
+                            </div>
+
+                            <div className="px-6 md:px-12 relative -mt-16 md:-mt-20 z-10">
+                                <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start md:items-end">
+                                    <div className="relative group">
+                                        <div className="h-32 w-32 md:h-40 md:w-40 rounded-3xl p-1 bg-[#030304]">
+                                            <img
+                                                src={previewAvatarUrl || user.avatar || "https://cdn.ui-avatars.com/api/?name=User&background=random"}
+                                                alt="Avatar"
+                                                className="w-full h-full object-cover rounded-2xl bg-slate-800 border-4 border-[#030304]"
+                                            />
+                                            {/* Change Avatar Overlay */}
+                                            <div
+                                                onClick={() => fileInputAvatarRef.current?.click()}
+                                                className="absolute inset-0 bg-black/60 rounded-3xl flex flex-col gap-2 items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-20"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /><circle cx="12" cy="13" r="3" /></svg>
+                                                <span className="text-[10px] text-white/80 font-medium px-2 text-center">400x400px<br />Máx 5MB</span>
+                                            </div>
+                                            <input
+                                                type="file"
+                                                ref={fileInputAvatarRef}
+                                                onChange={(e) => handleImageChange(e, 'avatar')}
+                                                accept="image/*"
+                                                className="hidden"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             {/* Nombres y Apellidos */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">

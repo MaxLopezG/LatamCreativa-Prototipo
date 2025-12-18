@@ -415,29 +415,30 @@ export interface UserStats {
   following: number;
 }
 
-export interface User {
-  id: string; // O 'uid', unifica esto con tu store
-  email: string;
-  name: string; // Display Name
-  firstName?: string; // Nuevo
-  lastName?: string;  // Nuevo
-  username?: string;  // Nuevo (Vital para Onboarding)
-  photoURL?: string;
-  avatar?: string; // Alias for photoURL to maintain compatibility
-  role?: string;      // 'Creative Member' | 'Client'
-  location?: string;  // País
-  country?: string;   // Alias for location
-  city?: string;
-  bio?: string;
-  skills?: string[];
-  socialLinks?: SocialLinks; // Asegúrate de importar o definir SocialLinks
-  isProfileComplete?: boolean; // Flag del Onboarding
-  isAdmin?: boolean;
-  experience?: ExperienceItem[];
-  education?: EducationItem[];
-  stats?: UserStats;
-  createdAt?: string;
-  availableForWork?: boolean;
+id: string; // O 'uid', unifica esto con tu store
+uid: string; // Added for explicit Firebase UID support
+email: string;
+name: string; // Display Name
+firstName ?: string; // Nuevo
+lastName ?: string;  // Nuevo
+username ?: string;  // Nuevo (Vital para Onboarding)
+photoURL ?: string;
+avatar ?: string; // Alias for photoURL to maintain compatibility
+coverImage ?: string; // Added for Profile Cover
+role ?: string;      // 'Creative Member' | 'Client'
+location ?: string;  // País
+country ?: string;   // Alias for location
+city ?: string;
+bio ?: string;
+skills ?: string[];
+socialLinks ?: SocialLinks; // Asegúrate de importar o definir SocialLinks
+isProfileComplete ?: boolean; // Flag del Onboarding
+isAdmin ?: boolean;
+experience ?: ExperienceItem[];
+education ?: EducationItem[];
+stats ?: UserStats;
+createdAt ?: string;
+availableForWork ?: boolean;
 }
 
 export interface SocialLinks {

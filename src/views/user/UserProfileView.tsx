@@ -319,7 +319,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
             {/* Banner Area */}
             <div className="relative h-[250px] md:h-[350px] 2xl:h-[450px] w-full overflow-hidden">
                 <img
-                    src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2000&auto=format&fit=crop"
+                    src={displayUser.coverImage || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2000&auto=format&fit=crop"}
                     alt="Cover"
                     className="w-full h-full object-cover"
                 />
