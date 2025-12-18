@@ -390,3 +390,62 @@ export interface SortConfig {
   key: keyof SaleItem;
   direction: SortDirection;
 }
+
+export interface ExperienceItem {
+  id: number | string;
+  role: string;
+  company: string;
+  period: string;
+  location: string;
+  description: string;
+}
+
+export interface EducationItem {
+  id: number | string;
+  degree: string;
+  school: string;
+  period: string;
+  description: string;
+}
+
+export interface UserStats {
+  views: number;
+  likes: number;
+  followers: number;
+  following: number;
+}
+
+export interface User {
+  id: string; // O 'uid', unifica esto con tu store
+  email: string;
+  name: string; // Display Name
+  firstName?: string; // Nuevo
+  lastName?: string;  // Nuevo
+  username?: string;  // Nuevo (Vital para Onboarding)
+  photoURL?: string;
+  avatar?: string; // Alias for photoURL to maintain compatibility
+  role?: string;      // 'Creative Member' | 'Client'
+  location?: string;  // País
+  country?: string;   // Alias for location
+  city?: string;
+  bio?: string;
+  skills?: string[];
+  socialLinks?: SocialLinks; // Asegúrate de importar o definir SocialLinks
+  isProfileComplete?: boolean; // Flag del Onboarding
+  isAdmin?: boolean;
+  experience?: ExperienceItem[];
+  education?: EducationItem[];
+  stats?: UserStats;
+  createdAt?: string;
+  availableForWork?: boolean;
+}
+
+export interface SocialLinks {
+  linkedin?: string;
+  artstation?: string;
+  instagram?: string;
+  website?: string;
+  twitter?: string; // Kept for compatibility
+  github?: string;  // Kept for compatibility
+}
+

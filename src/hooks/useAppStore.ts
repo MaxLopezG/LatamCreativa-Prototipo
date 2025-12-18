@@ -1,42 +1,11 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { CartItem, Notification, CollectionItem, PortfolioItem, ArticleItem, ItemType, CreateMode } from '../types';
+import { CartItem, Notification, CollectionItem, PortfolioItem, ArticleItem, ItemType, CreateMode, User, ExperienceItem, EducationItem, SocialLinks, UserStats } from '../types';
 
 import { api } from '../services/api';
 import { notificationsService } from '../services/modules/notifications';
 
-export interface ExperienceItem {
-  id: number | string;
-  role: string;
-  company: string;
-  period: string;
-  location: string;
-  description: string;
-}
 
-export interface EducationItem {
-  id: number | string;
-  degree: string;
-  school: string;
-  period: string;
-  description: string;
-}
-
-export interface SocialLinks {
-  artstation?: string;
-  linkedin?: string;
-  twitter?: string;
-  instagram?: string;
-  github?: string;
-  website?: string;
-}
-
-export interface UserStats {
-  views: number;
-  likes: number;
-  followers: number;
-  following: number;
-}
 
 // --- Types ---
 export type ContentMode = 'creative' | 'dev';
@@ -84,30 +53,7 @@ interface UISlice {
 }
 
 interface AuthSlice {
-  user: {
-    name: string;
-    id: string;
-    username?: string;
-    avatar: string;
-    role: string;
-    location: string;
-    country?: string;
-    city?: string;
-    email?: string;
-    bio?: string;
-    experience?: ExperienceItem[];
-    education?: EducationItem[];
-    handle?: string;
-    coverImage?: string;
-    skills?: string[];
-    availableForWork?: boolean;
-    isPro?: boolean;
-    socialLinks?: SocialLinks;
-    stats?: UserStats;
-    isAdmin?: boolean;
-    createdAt?: string;
-    isProfileComplete?: boolean;
-  } | null;
+  user: User | null;
   cartItems: CartItem[];
   likedItems: string[];
   createdItems: PortfolioItem[];

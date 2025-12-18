@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { notificationsService } from './notifications';
+import { User } from '../../types';
 
 export const usersService = {
     getUserProfile: async (userId: string): Promise<any> => {
