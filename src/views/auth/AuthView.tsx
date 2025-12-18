@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../hooks/useAppStore';
 import { usersService } from '../../services/modules/users';
-import { Mail, Lock, User, Github, ArrowRight, Loader2, AlertCircle, Globe, Eye, EyeOff, MapPin } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, Eye, EyeOff, Zap, Check, CheckCircle2 } from 'lucide-react';
 import { auth, googleProvider, db } from '../../lib/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signInWithPopup, sendEmailVerification, signOut } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -21,17 +21,20 @@ export const AuthView: React.FC = () => {
     // Form State
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
-    const [country, setCountry] = useState('');
-    const [city, setCity] = useState('');
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const activeColor = isDev ? 'text-blue-500' : 'text-amber-500';
     const activeBg = isDev ? 'bg-blue-600 hover:bg-blue-700' : 'bg-amber-500 hover:bg-amber-600';
     const focusRing = isDev ? 'focus:ring-blue-500' : 'focus:ring-amber-500';
+
+    // Validation Helpers
+    const isEmailValid = /\S+@\S+\.\S+/.test(email);
+    const isPasswordValid = password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password);
+    const isFirstNameValid = firstName.trim().length > 1;
+    const isLastNameValid = lastName.trim().length > 1;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -44,40 +47,40 @@ export const AuthView: React.FC = () => {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
                 // CHECK IF EMAIL IS VERIFIED
-                // CHECK IF EMAIL IS VERIFIED
                 if (!userCredential.user.emailVerified) {
                     await signOut(auth);
                     setError("Tu correo electrónico no ha sido verificado. Por favor revisa tu bandeja de entrada.");
                     return; // Stop execution
                 }
-                // Log removed
             } else {
                 // Register Logic
-                if (password !== confirmPassword) {
-                    setError("Las contraseñas no coinciden.");
+                if (!acceptedTerms) {
+                    setError("Debes aceptar los términos y condiciones para continuar.");
+                    setIsLoading(false);
+                    return;
+                }
+
+                // Password Validation
+                if (!isPasswordValid) {
+                    setError("La contraseña no cumple con los requisitos mínimos.");
                     setIsLoading(false);
                     return;
                 }
 
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                // Update display name if provided
 
-                // Create User Document with Selected Country immediately
+                // Create User Document
                 if (userCredential.user) {
                     const displayName = `${firstName} ${lastName}`.trim();
                     await updateProfile(userCredential.user, {
                         displayName: displayName
                     });
 
-                    // Use centralized service to create/merge profile
-                    // We pass the specific form data as additionalData
+                    // Use centralized service
                     await usersService.initializeUserProfile(userCredential.user, {
                         name: displayName,
                         firstName,
-                        lastName,
-                        country,
-                        city,
-                        location: `${city}, ${country}`
+                        lastName
                     });
 
                     // Send Email Verification
@@ -86,7 +89,7 @@ export const AuthView: React.FC = () => {
                         await signOut(auth); // Sign out immediately
                         setIsVerificationSent(true);
                         setIsLoading(false);
-                        return; // Stop execution (don't redirect)
+                        return; // Stop execution
                     } catch (emailError) {
                         console.error("Error sending verification email:", emailError);
                         actions.showToast('Cuenta creada, pero hubo un error enviando el correo de verificación.', 'error');
@@ -97,12 +100,8 @@ export const AuthView: React.FC = () => {
             // FORCE STORE UPDATE BEFORE REDIRECT (Only if still logged in)
             if (auth.currentUser) {
                 const user = auth.currentUser;
-                // Double check verification for good measure (though we caught it above for login)
-                if (!user.emailVerified) {
-                    // Should technically be caught by the onAuthStateChanged in App.tsx or the check above, 
-                    // but in the registration flow we just signed them out, so we return here.
-                    return;
-                }
+                // Double check verification
+                if (!user.emailVerified) return;
 
                 const isAdmin = user.email === 'admin@latamcreativa.com';
                 const appUser = {
@@ -125,7 +124,7 @@ export const AuthView: React.FC = () => {
             console.error("Auth error:", err);
             let msg = "Ocurrió un error al autenticar.";
 
-            // Map common Firebase errors to user-friendly messages
+            // Map common Firebase errors
             if (err.code === 'auth/invalid-email') msg = "El correo electrónico no es válido.";
             if (err.code === 'auth/user-not-found') msg = "No existe una cuenta con este correo.";
             if (err.code === 'auth/wrong-password') msg = "Contraseña incorrecta.";
@@ -145,14 +144,11 @@ export const AuthView: React.FC = () => {
             const userCredential = await signInWithPopup(auth, googleProvider);
             const user = userCredential.user;
 
-            // Check if user exists in Firestore, if not create (Centralized)
             await usersService.initializeUserProfile(user);
 
             const userDocRef = doc(db, 'users', user.uid);
 
-            // FORCE STORE UPDATE BEFORE REDIRECT
             if (user) {
-                // Fetch latest data (or use what we just created/have)
                 const finalDoc = await getDoc(userDocRef);
                 const userData = finalDoc.exists() ? finalDoc.data() : {};
 
@@ -165,7 +161,7 @@ export const AuthView: React.FC = () => {
                     location: userData.location || 'Latam',
                     email: user.email || '',
                     isAdmin: isAdmin,
-                    ...userData // Merge other fields
+                    ...userData
                 };
                 actions.setUser(appUser);
             }
@@ -180,20 +176,25 @@ export const AuthView: React.FC = () => {
     };
 
     return (
-        <div className="min-h-[80vh] flex items-center justify-center p-4 animate-fade-in">
-            <div className="w-full max-w-md">
+        <div className="min-h-screen flex items-center justify-center p-4 animate-fade-in relative z-10">
+            <div className="w-full max-w-lg">
 
-                {/* Header Logo/Title */}
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-                        {isLogin ? 'Bienvenido de nuevo' : 'Únete a Latam Creativa'}
-                    </h1>
-                    <p className="text-slate-500 dark:text-slate-400">
-                        {isLogin ? 'Accede a tu cuenta para continuar' : 'Comienza tu viaje creativo hoy'}
-                    </p>
-                </div>
+                <div className="bg-white dark:bg-[#0A0A0B] border border-slate-200 dark:border-white/10 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
 
-                <div className="bg-white dark:bg-[#0A0A0B] border border-slate-200 dark:border-white/10 rounded-2xl p-8 shadow-xl relative overflow-hidden">
+                    {/* Header Logo/Title */}
+                    <div className="text-center mb-8 relative z-10">
+                        {!isLogin && (
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] font-bold uppercase tracking-wider mb-4">
+                                <Zap className="h-3 w-3" /> Únete a la Beta
+                            </div>
+                        )}
+                        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">
+                            {isLogin ? 'Bienvenido de nuevo' : 'Crea tu cuenta'}
+                        </h1>
+                        <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">
+                            {isLogin ? 'Accede a tu cuenta para continuar' : 'Únete al ecosistema definitivo para creadores digitales.'}
+                        </p>
+                    </div>
 
                     {/* Ambient Glow */}
                     <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-[100px] opacity-20 -mr-20 -mt-20 pointer-events-none ${isDev ? 'bg-blue-500' : 'bg-amber-500'}`}></div>
@@ -231,86 +232,69 @@ export const AuthView: React.FC = () => {
                         <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
 
                             {!isLogin && (
-                                <div className="grid grid-cols-2 gap-4 animate-fade-in">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-fade-in">
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nombres</label>
                                         <div className="relative">
-                                            <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                                            <User className={`absolute left-3 top-3 h-5 w-5 ${isFirstNameValid ? 'text-green-500' : 'text-slate-400'}`} />
                                             <input
                                                 type="text"
                                                 value={firstName}
                                                 onChange={(e) => setFirstName(e.target.value)}
                                                 placeholder="Juan"
-                                                className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
+                                                className={`w-full bg-slate-50 dark:bg-white/5 border rounded-xl pl-10 pr-10 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${isFirstNameValid
+                                                    ? 'border-green-500/50 focus:border-green-500'
+                                                    : `border-slate-200 dark:border-white/10 ${focusRing}`
+                                                    }`}
                                                 required={!isLogin}
                                             />
+                                            {isFirstNameValid && (
+                                                <CheckCircle2 className="absolute right-3 top-3 h-5 w-5 text-green-500 animate-in fade-in zoom-in" />
+                                            )}
                                         </div>
                                     </div>
                                     <div className="space-y-1.5">
                                         <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Apellidos</label>
                                         <div className="relative">
+                                            {/* Note: No specific icon for lastname, keeping it simple or reuse User? Reusing input styling */}
                                             <input
                                                 type="text"
                                                 value={lastName}
                                                 onChange={(e) => setLastName(e.target.value)}
                                                 placeholder="Pérez"
-                                                className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
+                                                className={`w-full bg-slate-50 dark:bg-white/5 border rounded-xl px-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${isLastNameValid
+                                                    ? 'border-green-500/50 focus:border-green-500'
+                                                    : `border-slate-200 dark:border-white/10 ${focusRing}`
+                                                    }`}
                                                 required={!isLogin}
                                             />
+                                            {isLastNameValid && (
+                                                <CheckCircle2 className="absolute right-3 top-3 h-5 w-5 text-green-500 animate-in fade-in zoom-in" />
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                             )}
-
-
-                            {/* Location Fields (Register Only) */}
-                            {!isLogin && (
-                                <div className="grid grid-cols-2 gap-4 animate-fade-in">
-                                    <div className="space-y-1.5">
-                                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">País</label>
-                                        <div className="relative">
-                                            <Globe className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                                            <input
-                                                type="text"
-                                                value={country}
-                                                onChange={(e) => setCountry(e.target.value)}
-                                                placeholder="Colombia"
-                                                className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
-                                                required={!isLogin}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Ciudad</label>
-                                        <div className="relative">
-                                            <MapPin className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                                            <input
-                                                type="text"
-                                                value={city}
-                                                onChange={(e) => setCity(e.target.value)}
-                                                placeholder="Bogotá"
-                                                className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
-                                                required={!isLogin}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
 
                             {/* Email Field */}
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Correo Electrónico</label>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                                    <Mail className={`absolute left-3 top-3 h-5 w-5 ${isEmailValid ? 'text-green-500' : 'text-slate-400'}`} />
                                     <input
                                         type="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         placeholder="hola@ejemplo.com"
-                                        className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
+                                        className={`w-full bg-slate-50 dark:bg-white/5 border rounded-xl pl-10 pr-10 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${isEmailValid
+                                            ? 'border-green-500/50 focus:border-green-500'
+                                            : `border-slate-200 dark:border-white/10 ${focusRing}`
+                                            }`}
                                         required
                                     />
+                                    {isEmailValid && (
+                                        <CheckCircle2 className="absolute right-3 top-3 h-5 w-5 text-green-500 animate-in fade-in zoom-in" />
+                                    )}
                                 </div>
                             </div>
 
@@ -318,13 +302,16 @@ export const AuthView: React.FC = () => {
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Contraseña</label>
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400 z-10" />
+                                    <Lock className={`absolute left-3 top-3 h-5 w-5 z-10 ${isPasswordValid ? 'text-green-500' : 'text-slate-400'}`} />
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         placeholder="••••••••"
-                                        className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-12 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
+                                        className={`w-full bg-slate-50 dark:bg-white/5 border rounded-xl pl-10 pr-12 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${isPasswordValid
+                                            ? 'border-green-500/50 focus:border-green-500'
+                                            : `border-slate-200 dark:border-white/10 ${focusRing}`
+                                            }`}
                                         required
                                     />
                                     <button
@@ -335,30 +322,45 @@ export const AuthView: React.FC = () => {
                                         {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                                     </button>
                                 </div>
+
+                                {/* Password Requirements Checklist (Register Only) */}
+                                {!isLogin && (
+                                    <div className="grid grid-cols-2 gap-2 mt-2">
+                                        {[
+                                            { label: '8+ Caracteres', valid: password.length >= 8 },
+                                            { label: 'Mayúscula', valid: /[A-Z]/.test(password) },
+                                            { label: 'Número', valid: /[0-9]/.test(password) },
+                                            { label: 'Símbolo', valid: /[^A-Za-z0-9]/.test(password) }
+                                        ].map((req, index) => (
+                                            <div key={index} className="flex items-center gap-1.5">
+                                                <div className={`h-1.5 w-1.5 rounded-full ${req.valid ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-700'}`}></div>
+                                                <span className={`text-[10px] font-medium ${req.valid ? 'text-green-500' : 'text-slate-500 dark:text-slate-400'}`}>
+                                                    {req.label}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Confirm Password Field (Register Only) */}
+                            {/* Terms and Conditions (Register Only) */}
                             {!isLogin && (
-                                <div className="space-y-1.5 animate-fade-in">
-                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Confirmar Contraseña</label>
-                                    <div className="relative">
-                                        <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400 z-10" />
-                                        <input
-                                            type={showConfirmPassword ? "text" : "password"}
-                                            value={confirmPassword}
-                                            onChange={(e) => setConfirmPassword(e.target.value)}
-                                            placeholder="••••••••"
-                                            className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl pl-10 pr-12 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${focusRing}`}
-                                            required={!isLogin}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                            className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                                        >
-                                            {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                                        </button>
+                                <div
+                                    className="flex items-center gap-3 animate-fade-in px-1 cursor-pointer group"
+                                    onClick={() => setAcceptedTerms(!acceptedTerms)}
+                                >
+                                    <div className={`
+                                        h-5 w-5 rounded-full border flex items-center justify-center transition-all duration-200
+                                        ${acceptedTerms
+                                            ? 'bg-amber-500 border-amber-500'
+                                            : 'border-slate-300 dark:border-white/20 group-hover:border-amber-500/50'
+                                        }
+                                    `}>
+                                        {acceptedTerms && <Check className="h-3 w-3 text-white stroke-[3]" />}
                                     </div>
+                                    <label className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer select-none">
+                                        Acepto los <span className={`font-bold hover:underline ${activeColor}`}>términos y condiciones</span>
+                                    </label>
                                 </div>
                             )}
 
@@ -384,22 +386,19 @@ export const AuthView: React.FC = () => {
                     {/* Divider */}
                     <div className="relative my-8">
                         <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-slate-200 dark:border-white/10"></div>
+                            <div className="w-full border-t border-slate-200 dark:border-white/5"></div>
                         </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-white dark:bg-[#0A0A0B] px-2 text-slate-500">O continúa con</span>
+                        <div className="relative flex justify-center text-[10px] uppercase tracking-widest">
+                            <span className="bg-white dark:bg-[#0A0A0B] px-2 text-slate-400">O regístrate con</span>
                         </div>
                     </div>
 
                     {/* Social Auth */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <button className="flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-sm font-bold text-slate-700 dark:text-slate-300">
-                            <Github className="h-5 w-5" /> GitHub
-                        </button>
+                    <div className="w-full">
                         <button
                             type="button"
                             onClick={handleGoogleLogin}
-                            className="flex items-center justify-center gap-2 p-3 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-sm font-bold text-slate-700 dark:text-slate-300"
+                            className="w-full flex items-center justify-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-white/5 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 transition-all text-sm font-medium text-slate-700 dark:text-slate-300"
                         >
                             <svg className="h-5 w-5" viewBox="0 0 24 24">
                                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
