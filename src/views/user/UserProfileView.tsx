@@ -60,7 +60,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
             if (username !== state.user.username) {
                 // Avoid redirect loop if they are equivalent (e.g. case sensitivity handled by router usually but good to be safe)
                 // But generally users want the exact casing they set.
-                console.log("Redirecting to canonical profile URL:", state.user.username);
                 navigate(`/user/${state.user.username}`, { replace: true });
             }
         }
@@ -139,7 +138,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
         role: 'Creative Member',
         location: 'Latam',
         email: '',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        coverImage: undefined
     }) : {
         name: finalName,
         id: fetchedUser?.id || author?.id || 'unknown',
@@ -152,7 +152,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
         experience: fetchedUser?.experience,
         education: fetchedUser?.education,
         socialLinks: fetchedUser?.socialLinks,
-        username: fetchedUser?.username
+        username: fetchedUser?.username,
+        coverImage: fetchedUser?.coverImage
     };
 
     const sanitizeName = (val: any) => {

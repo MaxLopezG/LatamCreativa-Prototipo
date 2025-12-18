@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useAppStore, SocialLinks } from '../../hooks/useAppStore';
+import { useAppStore } from '../../hooks/useAppStore';
+import { SocialLinks } from '../../types';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { LATAM_COUNTRIES } from '../../data/countries';
@@ -42,13 +43,6 @@ export const OnboardingModal: React.FC = () => {
         const isProfileComplete = user.isProfileComplete ?? (user.location !== 'Latam' && user.username);
         const shouldShow = !isProfileComplete && !hasSkipped;
 
-        console.log("Onboarding Check:", {
-            hasSkipped,
-            location: user.location,
-            username: user.username,
-            isProfileComplete,
-            shouldShow
-        });
 
         if (shouldShow && !isOpen) {
             setIsOpen(true);

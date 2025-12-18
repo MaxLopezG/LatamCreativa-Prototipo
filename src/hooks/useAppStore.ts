@@ -393,40 +393,44 @@ const useZustandStore = create<AppStore>()(
         },
 
         createCollection: async (title, isPrivate) => {
-          const { itemToSave, showToast, closeSaveModal, user } = get();
+          const { itemToSave, showToast, closeSaveModal, user, collections, saveToCollection } = get();
           if (!user) return;
 
           try {
-            // Create empty collection
             console.log("Action: Creating collection...", { title, isPrivate, userId: user.id });
             const newCol = await api.createCollection(user.id, title, isPrivate);
 
             if (newCol) {
-              console.log("Action: Collection created, checking itemToSave:", itemToSave);
-              // If there's an item to save, add it immediately
+              // Add the new collection to state immediately (optimistic/confirmed from API)
+              const newCollectionState: CollectionItem = {
+                id: newCol.id, // Ensure we use the ID from API
+                title: newCol.title,
+                itemCount: 0,
+                thumbnails: [],
+                isPrivate: newCol.isPrivate,
+                items: []
+              };
+
+              // Update state with new collection
+              set((state) => ({
+                collections: [...state.collections, newCollectionState]
+              }));
+
+              // If there is an item to save, add it to this new collection
               if (itemToSave) {
-                console.log("Action: Adding item to new collection...", itemToSave);
-
-                // Sanitize the item to ensure no custom objects or undefined values are passed to Firestore
-                const sanitizedItem = {
-                  id: String(itemToSave.id),
-                  type: itemToSave.type || (itemToSave.type === 'article' ? 'article' : 'project'),
-                  image: String(itemToSave.image || ''),
-                  addedAt: new Date().toISOString()
-                };
-
-                // The service expects the reference object now
-                await api.addToCollection(user.id, newCol.id, sanitizedItem as any);
-
-                // Update local object to reflect the change immediately
-                newCol.itemCount = 1;
-                newCol.thumbnails = [sanitizedItem.image];
-                newCol.items = [sanitizedItem as any];
+                // We can reuse saveToCollection action, but we need to ensure the modal closes after.
+                // Actually saveToCollection handles toast and closeSaveModal.
+                // But wait, saveToCollection uses `get().itemToSave`.
+                await saveToCollection(newCollectionState.id);
+                // saveToCollection shows its own toast and closes modal.
+                // But we want to say "Collection created" too? 
+                // Maybe just "Collection created and item saved" is better, but reusing is easier.
+                // Logic: If itemToSave, saveToCollection does the heavy lifting.
+                // If NOT itemToSave, we just show toast and close modal.
+              } else {
+                showToast('Colección creada correctamente', 'success');
+                closeSaveModal();
               }
-
-              set((state) => ({ collections: [newCol, ...state.collections] }));
-              showToast("Colección creada correctamente", 'success');
-              closeSaveModal();
             }
           } catch (error) {
             console.error("Action Error [createCollection]:", error);
