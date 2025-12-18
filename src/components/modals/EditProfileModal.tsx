@@ -1,11 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Save, Plus, Trash2, Briefcase, GraduationCap, User, MapPin, Globe } from 'lucide-react';
-import { useAppStore, ExperienceItem, EducationItem, SocialLinks } from '../../hooks/useAppStore';
+import { useAppStore } from '../../hooks/useAppStore';
+import { ExperienceItem, EducationItem, SocialLinks } from '../../types';
 import { usersService } from '../../services/modules/users';
 import { TagInput } from '../ui/TagInput';
 import { COMMON_TAGS } from '../../data/tags';
 import { COMMON_ROLES } from '../../data/roles';
+import { LATAM_COUNTRIES } from '../../data/countries';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -22,7 +24,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     const [activeTab, setActiveTab] = useState<'general' | 'experience' | 'education' | 'social'>('general');
 
     // Form States
-    const [name, setName] = useState('');
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [role, setRole] = useState('');
     const [location, setLocation] = useState('');
     const [country, setCountry] = useState('');
@@ -51,7 +54,19 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                     const dbUser = await usersService.getUserProfile(user.id);
                     const userData = dbUser || user; // Fallback to local user if DB fails
 
-                    setName(userData.name || '');
+                    // Split name logic if separate fields missing
+                    if (userData.firstName && userData.lastName) {
+                        setFirstName(userData.firstName);
+                        setLastName(userData.lastName);
+                    } else if (userData.name) {
+                        const parts = userData.name.split(' ');
+                        setFirstName(parts[0] || '');
+                        setLastName(parts.slice(1).join(' ') || '');
+                    } else {
+                        setFirstName('');
+                        setLastName('');
+                    }
+
                     setUsername(userData.username || '');
                     setRole(userData.role || '');
                     setLocation(userData.location || '');
@@ -81,7 +96,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                 } catch (err) {
                     console.error("Error fetching fresh profile:", err);
                     // Fallback to local state
-                    setName(user.name || '');
+                    if (user.firstName && user.lastName) {
+                        setFirstName(user.firstName);
+                        setLastName(user.lastName);
+                    } else if (user.name) {
+                        const parts = user.name.split(' ');
+                        setFirstName(parts[0] || '');
+                        setLastName(parts.slice(1).join(' ') || '');
+                    }
                     // ... (rest of fallback assignment if needed, but simple console log is enough as we default to 'user' above)
                 }
             }
@@ -94,15 +116,21 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
     const handleSave = async () => {
         try {
-            // Validate Username
+            // 1. Validate Required Fields
+            if (!firstName.trim() || !lastName.trim() || !username.trim() || !role.trim() || !country.trim()) {
+                actions.showToast('Por favor completa todos los campos obligatorios (*)', 'error');
+                return;
+            }
+
+            // Validate Username Format
             const usernameRegex = /^(?![0-9]+$)(?![0-9])(?![-_])(?!.*[-_]$)[a-zA-Z0-9-_]{3,63}$/;
-            if (username && !usernameRegex.test(username)) {
+            if (!usernameRegex.test(username)) {
                 setUsernameError('Nombre de usuario inválido (3-63 caracteres, sin espacios, no puede empezar con números)');
                 return;
             }
 
             // Check Availability if changed
-            if (username && username !== user?.username) {
+            if (username !== user?.username) {
                 setIsCheckingUsername(true);
                 const isAvailable = await usersService.checkUsernameAvailability(username);
                 setIsCheckingUsername(false);
@@ -119,14 +147,18 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             const newMode: 'dev' | 'creative' = isDevRole ? 'dev' : 'creative';
 
             // Construct update object
-            const combinedLocation = `${city}, ${country}`;
+            const combinedName = `${firstName.trim()} ${lastName.trim()}`;
+            const combinedLocation = city.trim() ? `${city.trim()}, ${country.trim()}` : country.trim();
+
             const updates: any = {
-                name,
-                role,
+                name: combinedName,
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                role: role.trim(),
                 location: combinedLocation,
-                country,
-                city,
-                bio,
+                country: country.trim(),
+                city: city.trim(),
+                bio: bio.trim(),
                 experience,
                 education,
                 skills,
@@ -263,64 +295,78 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                     {/* GENERAL TAB */}
                     {activeTab === 'general' && (
                         <div className="space-y-6 max-w-2xl mx-auto">
+                            {/* Nombres y Apellidos */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nombre Completo</label>
+                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nombres *</label>
                                     <div className="relative">
                                         <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
                                         <input
                                             type="text"
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
+                                            value={firstName}
+                                            onChange={(e) => setFirstName(e.target.value)}
                                             className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
-                                            placeholder="Tu nombre"
+                                            placeholder="Tus nombres"
                                         />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Rol Profesional</label>
+                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Apellidos *</label>
                                     <div className="relative">
-                                        <Briefcase className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
                                         <input
                                             type="text"
-                                            value={role}
-                                            onChange={(e) => {
-                                                const val = e.target.value;
-                                                setRole(val);
-                                                setFilteredRoles(COMMON_ROLES.filter(r => r.toLowerCase().includes(val.toLowerCase())));
-                                                setShowRoleSuggestions(true);
-                                            }}
-                                            onFocus={() => {
-                                                setFilteredRoles(COMMON_ROLES.filter(r => r.toLowerCase().includes(role.toLowerCase())));
-                                                setShowRoleSuggestions(true);
-                                            }}
-                                            onBlur={() => setTimeout(() => setShowRoleSuggestions(false), 200)}
-                                            className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
-                                            placeholder="ej. Concept Artist"
+                                            value={lastName}
+                                            onChange={(e) => setLastName(e.target.value)}
+                                            className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
+                                            placeholder="Tus apellidos"
                                         />
-                                        {/* Suggestions Dropdown */}
-                                        {showRoleSuggestions && filteredRoles.length > 0 && (
-                                            <div className="absolute z-50 w-full mt-1 bg-white dark:bg-[#1A1D23] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
-                                                {filteredRoles.map((r) => (
-                                                    <div
-                                                        key={r}
-                                                        className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer text-sm text-slate-700 dark:text-slate-300 transition-colors"
-                                                        onClick={() => {
-                                                            setRole(r);
-                                                            setShowRoleSuggestions(false);
-                                                        }}
-                                                    >
-                                                        {r}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nombre de Usuario</label>
+                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Rol Profesional *</label>
+                                <div className="relative">
+                                    <Briefcase className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                                    <input
+                                        type="text"
+                                        value={role}
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            setRole(val);
+                                            setFilteredRoles(COMMON_ROLES.filter(r => r.toLowerCase().includes(val.toLowerCase())));
+                                            setShowRoleSuggestions(true);
+                                        }}
+                                        onFocus={() => {
+                                            setFilteredRoles(COMMON_ROLES.filter(r => r.toLowerCase().includes(role.toLowerCase())));
+                                            setShowRoleSuggestions(true);
+                                        }}
+                                        onBlur={() => setTimeout(() => setShowRoleSuggestions(false), 200)}
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
+                                        placeholder="ej. Concept Artist"
+                                    />
+                                    {/* Suggestions Dropdown */}
+                                    {showRoleSuggestions && filteredRoles.length > 0 && (
+                                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-[#1A1D23] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
+                                            {filteredRoles.map((r) => (
+                                                <div
+                                                    key={r}
+                                                    className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer text-sm text-slate-700 dark:text-slate-300 transition-colors"
+                                                    onClick={() => {
+                                                        setRole(r);
+                                                        setShowRoleSuggestions(false);
+                                                    }}
+                                                >
+                                                    {r}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nombre de Usuario *</label>
                                 <div className="relative">
                                     <span className="absolute left-3 top-3 text-slate-400 font-bold">@</span>
                                     <input
@@ -338,18 +384,21 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                 <p className="text-[10px] text-slate-500">latamcreativa.com/user/{username || 'username'}</p>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">País</label>
+                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">País *</label>
                                     <div className="relative">
-                                        <Globe className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                                        <input
-                                            type="text"
+                                        <Globe className="absolute left-3 top-3 h-5 w-5 text-slate-400 pointer-events-none" />
+                                        <select
                                             value={country}
                                             onChange={(e) => setCountry(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
-                                            placeholder="País"
-                                        />
+                                            className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white appearance-none cursor-pointer"
+                                        >
+                                            <option value="" disabled>Selecciona tu país</option>
+                                            {LATAM_COUNTRIES.map((c) => (
+                                                <option key={c} value={c} className="bg-white dark:bg-slate-900">{c}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
                                 <div className="space-y-2">

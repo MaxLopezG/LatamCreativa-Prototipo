@@ -451,6 +451,22 @@ const useZustandStore = create<AppStore>()(
       }),
       {
         name: 'app-storage', // name of the item in the storage (must be unique)
+        version: 1, // Increment to trigger migration
+        migrate: (persistedState: any, version: number) => {
+          if (version < 1) {
+            // Migration: Clear all local content arrays but keep user session
+            return {
+              ...persistedState,
+              createdItems: [],
+              blogPosts: [],
+              collections: [],
+              cartItems: [],
+              likedItems: [],
+              notifications: [] // Clear notifications too as they might be stale
+            };
+          }
+          return persistedState;
+        },
         partialize: (state) => ({
           // Select which fields to persist
           user: state.user,
