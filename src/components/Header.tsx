@@ -150,7 +150,8 @@ export const Header = ({
                 {state.user && (
                     <>
                         {/* Shopping Cart */}
-                        <button
+                        {/* Shopping Cart - HIDDEN */}
+                        {/* <button
                             onClick={onCartClick}
                             className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-500 dark:text-slate-400 transition-colors hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white group"
                             title="Carrito"
@@ -161,7 +162,7 @@ export const Header = ({
                                     {cartCount}
                                 </span>
                             )}
-                        </button>
+                        </button> */}
 
                         {/* NOTIFICATIONS DROPDOWN */}
                         <div className="relative" ref={notifRef}>

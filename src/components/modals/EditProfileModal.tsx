@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Plus, Trash2, Briefcase, GraduationCap, User, MapPin, Globe } from 'lucide-react';
+import { X, Save, Plus, Trash2, Briefcase, GraduationCap, User, MapPin, Globe, GripVertical } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
 import { ExperienceItem, EducationItem, SocialLinks } from '../../types';
 import { usersService } from '../../services/modules/users';
@@ -39,7 +39,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     const [newSkill, setNewSkill] = useState('');
     const [username, setUsername] = useState('');
     const [usernameError, setUsernameError] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
     const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+
+    // Drag and Drop State
+    const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
+    const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
 
     // Suggestions State
     const [showRoleSuggestions, setShowRoleSuggestions] = useState(false);
@@ -116,9 +121,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
     const handleSave = async () => {
         try {
+            setIsSaving(true);
             // 1. Validate Required Fields
             if (!firstName.trim() || !lastName.trim() || !username.trim() || !role.trim() || !country.trim()) {
                 actions.showToast('Por favor completa todos los campos obligatorios (*)', 'error');
+                setIsSaving(false);
                 return;
             }
 
@@ -126,6 +133,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             const usernameRegex = /^(?![0-9]+$)(?![0-9])(?![-_])(?!.*[-_]$)[a-zA-Z0-9-_]{3,63}$/;
             if (!usernameRegex.test(username)) {
                 setUsernameError('Nombre de usuario inválido (3-63 caracteres, sin espacios, no puede empezar con números)');
+                setIsSaving(false);
                 return;
             }
 
@@ -136,6 +144,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                 setIsCheckingUsername(false);
                 if (!isAvailable) {
                     setUsernameError('Este nombre de usuario ya está en uso');
+                    setIsSaving(false);
                     return;
                 }
             }
@@ -193,6 +202,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         } catch (error) {
             console.error("Error updating profile:", error);
             actions.showToast('Error al actualizar el perfil', 'error');
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -215,6 +226,55 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
     const removeExperience = (id: number | string) => {
         setExperience(experience.filter(exp => exp.id !== id));
+    };
+
+    // --- Drag and Drop Handlers (Experience) ---
+    const handleDragStart = (index: number) => {
+        setDraggedItemIndex(index);
+    };
+
+    const handleDragEnter = (index: number) => {
+        setDragOverItemIndex(index);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault(); // Necessary to allow dropping
+    };
+
+    const handleDrop = (index: number) => {
+        if (draggedItemIndex === null) return;
+
+        const items = [...experience];
+        const draggedItem = items[draggedItemIndex];
+
+        // Remove from old position
+        items.splice(draggedItemIndex, 1);
+        // Insert at new position
+        items.splice(index, 0, draggedItem);
+
+        setExperience(items);
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
+    };
+
+    // --- Drag and Drop Handlers (Education) ---
+    const handleDropEdu = (index: number) => {
+        if (draggedItemIndex === null) return;
+
+        const items = [...education];
+        const draggedItem = items[draggedItemIndex];
+
+        items.splice(draggedItemIndex, 1);
+        items.splice(index, 0, draggedItem);
+
+        setEducation(items);
+        setDraggedItemIndex(null);
+        setDragOverItemIndex(null);
     };
 
     // --- Education Handlers ---
@@ -450,14 +510,29 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                     </div>
                                 ) : (
                                     experience.map((exp, index) => (
-                                        <div key={exp.id} className="p-5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 relative group">
+                                        <div
+                                            key={exp.id}
+                                            draggable
+                                            onDragStart={() => handleDragStart(index)}
+                                            onDragEnter={() => handleDragEnter(index)}
+                                            onDragEnd={handleDragEnd}
+                                            onDragOver={handleDragOver}
+                                            onDrop={() => handleDrop(index)}
+                                            className={`p-5 rounded-xl bg-slate-50 dark:bg-white/5 border relative group transition-all duration-200 ${draggedItemIndex === index ? 'opacity-50 border-dashed border-amber-500' : 'border-slate-200 dark:border-white/10'} ${dragOverItemIndex === index && draggedItemIndex !== index ? 'border-amber-500 ring-1 ring-amber-500' : ''}`}
+                                        >
+                                            {/* Delete Button */}
                                             <button
                                                 onClick={() => removeExperience(exp.id)}
-                                                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100 z-10"
                                                 title="Eliminar"
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </button>
+
+                                            {/* Drag Handle */}
+                                            <div className="absolute top-1/2 -translate-y-1/2 -left-3 md:-left-4 p-2 cursor-grab active:cursor-grabbing text-slate-400 hover:text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <GripVertical className="h-5 w-5" />
+                                            </div>
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pr-10">
                                                 <div className="space-y-1">
@@ -533,14 +608,29 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                     </div>
                                 ) : (
                                     education.map((edu, index) => (
-                                        <div key={edu.id} className="p-5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 relative group">
+                                        <div
+                                            key={edu.id}
+                                            draggable
+                                            onDragStart={() => handleDragStart(index)}
+                                            onDragEnter={() => handleDragEnter(index)}
+                                            onDragEnd={handleDragEnd}
+                                            onDragOver={handleDragOver}
+                                            onDrop={() => handleDropEdu(index)}
+                                            className={`p-5 rounded-xl bg-slate-50 dark:bg-white/5 border relative group transition-all duration-200 ${draggedItemIndex === index ? 'opacity-50 border-dashed border-blue-500' : 'border-slate-200 dark:border-white/10'} ${dragOverItemIndex === index && draggedItemIndex !== index ? 'border-blue-500 ring-1 ring-blue-500' : ''}`}
+                                        >
+                                            {/* Delete Button */}
                                             <button
                                                 onClick={() => removeEducation(edu.id)}
-                                                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                                className="absolute top-4 right-4 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100 z-10"
                                                 title="Eliminar"
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </button>
+
+                                            {/* Drag Handle */}
+                                            <div className="absolute top-1/2 -translate-y-1/2 -left-3 md:-left-4 p-2 cursor-grab active:cursor-grabbing text-slate-400 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <GripVertical className="h-5 w-5" />
+                                            </div>
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 pr-10">
                                                 <div className="space-y-1">
@@ -709,10 +799,23 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                     </button>
                     <button
                         onClick={handleSave}
-                        className="px-8 py-3 rounded-xl font-bold bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-500/20 transition-all flex items-center gap-2"
+                        disabled={isSaving}
+                        className={`px-8 py-3 rounded-xl font-bold text-white shadow-lg transition-all flex items-center gap-2 ${isSaving
+                            ? 'bg-slate-400 cursor-not-allowed shadow-none'
+                            : 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20'
+                            }`}
                     >
-                        <Save className="h-4 w-4" />
-                        Guardar Cambios
+                        {isSaving ? (
+                            <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                                Guardando...
+                            </>
+                        ) : (
+                            <>
+                                <Save className="h-4 w-4" />
+                                Guardar Cambios
+                            </>
+                        )}
                     </button>
                 </div>
 

@@ -341,16 +341,27 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
                                 />
                             </div>
                         </div>
-                        {/* Status Indicator */}
-                        <div className={`absolute bottom-3 right-3 h-5 w-5 md:h-6 md:w-6 rounded-full border-4 border-[#030304] ${availableForWork ? 'bg-green-500' : 'bg-slate-500'}`} title={availableForWork ? "Disponible para trabajar" : "No disponible"}></div>
+                        {/* Status Indicator - Removed per user request */}
+                        {/* <div className={`absolute bottom-3 right-3 h-5 w-5 md:h-6 md:w-6 rounded-full border-4 border-[#030304] ${availableForWork ? 'bg-green-500' : 'bg-slate-500'}`} title={availableForWork ? "Disponible para trabajar" : "No disponible"}></div> */}
                     </div>
 
                     {/* Info Text */}
                     <div className="flex-1 pb-2 w-full">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
                             <h1 className="text-3xl md:text-4xl 2xl:text-5xl font-bold text-white tracking-tight">{name}</h1>
-                            <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6 2xl:h-8 2xl:w-8 text-amber-500 fill-amber-500/20" />
-                            <span className="px-2 py-0.5 rounded text-[10px] 2xl:text-xs font-bold bg-amber-500/20 text-amber-500 border border-amber-500/20 uppercase tracking-wider ml-2">{artistLevel}</span>
+                            {availableForWork && (
+                                <span className="px-3 py-1 rounded-full bg-green-500/10 text-green-500 border border-green-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 ml-3">
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                    </span>
+                                    Disponible
+                                </span>
+                            )}
+
+                            {/* Unimplemented Badges: Verified & Pro */}
+                            {/* <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6 2xl:h-8 2xl:w-8 text-amber-500 fill-amber-500/20" />
+                            <span className="px-2 py-0.5 rounded text-[10px] 2xl:text-xs font-bold bg-amber-500/20 text-amber-500 border border-amber-500/20 uppercase tracking-wider ml-2">{artistLevel}</span> */}
                         </div>
                         <p className="text-lg md:text-xl 2xl:text-2xl text-slate-300 font-light mb-4">{displayUser.role}</p>
 
@@ -359,10 +370,22 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
                                 <MapPin className="h-4 w-4 text-slate-500" />
                                 {displayUser.location}
                             </div>
-                            <div className="flex items-center gap-1.5">
-                                <LinkIcon className="h-4 w-4 text-slate-500" />
-                                <a href="#" className="hover:text-amber-500 transition-colors truncate max-w-[200px] md:max-w-none">artstation.com/{name.replace(/\s/g, '').toLowerCase()}</a>
-                            </div>
+                            {(socialLinks.website || socialLinks.artstation) && (
+                                <div className="flex items-center gap-1.5">
+                                    <LinkIcon className="h-4 w-4 text-slate-500" />
+                                    <a
+                                        href={socialLinks.website ? (socialLinks.website.startsWith('http') ? socialLinks.website : `https://${socialLinks.website}`) : `https://artstation.com/${socialLinks.artstation}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="hover:text-amber-500 transition-colors truncate max-w-[200px] md:max-w-none"
+                                    >
+                                        {socialLinks.website
+                                            ? socialLinks.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
+                                            : `artstation.com/${socialLinks.artstation}`
+                                        }
+                                    </a>
+                                </div>
+                            )}
                             <div className="flex items-center gap-1.5 hidden sm:flex">
                                 <Calendar className="h-4 w-4 text-slate-500" />
                                 Se unió en {displayUser.createdAt ? new Date(displayUser.createdAt).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }) : 'Mayo 2021'}
@@ -418,7 +441,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
                 <div className="space-y-10 order-2 lg:order-1">
 
                     {/* Gamification Level Box */}
-                    <div className={`bg-gradient-to-br from-slate-900 to-slate-950 border border-white/10 p-6 rounded-2xl relative overflow-hidden`}>
+                    {/* Gamification Level Box - Hidden per user request */}
+                    {/* <div className={`bg-gradient-to-br from-slate-900 to-slate-950 border border-white/10 p-6 rounded-2xl relative overflow-hidden`}>
                         <div className={`absolute top-0 right-0 w-64 h-64 rounded-full blur-[80px] -mr-16 -mt-16 opacity-20 bg-amber-500`}></div>
 
                         <div className="relative z-10">
@@ -446,7 +470,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div> */}
 
                     {/* Stats */}
                     <div className="grid grid-cols-3 gap-2 p-6 rounded-2xl bg-white/5 border border-white/5">
@@ -599,7 +623,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
                             <Layers className="h-4 w-4" /> Portafolio <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userPortfolio.length}</span>
                         </button>
 
-                        <button
+                        {/* Hidden Tabs: Courses, Assets, Blog, Saved, Membership */}
+                        {/* <button
                             onClick={() => setActiveTab('courses')}
                             className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'courses'
                                 ? 'text-amber-500 border-amber-500'
@@ -627,11 +652,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
                                 }`}
                         >
                             <Newspaper className="h-4 w-4" /> Blog <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userArticles.length}</span>
-                        </button>
+                        </button> */}
 
                         {isOwnProfile && (
                             <>
-                                <button
+                                {/* <button
                                     onClick={() => setActiveTab('saved')}
                                     className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'saved'
                                         ? 'text-amber-500 border-amber-500'
@@ -639,7 +664,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
                                         }`}
                                 >
                                     <Bookmark className="h-4 w-4" /> Guardados <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{savedItems.length}</span>
-                                </button>
+                                </button> */}
                                 <button
                                     onClick={() => setActiveTab('collections')}
                                     className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'collections'
@@ -652,7 +677,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
                             </>
                         )}
 
-                        <button
+                        {/* <button
                             onClick={() => setActiveTab('membership')}
                             className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'membership'
                                 ? 'text-amber-500 border-amber-500'
@@ -660,7 +685,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
                                 }`}
                         >
                             <Heart className="h-4 w-4" /> Membresía
-                        </button>
+                        </button> */}
                     </div>
 
                     {/* TAB: PORTFOLIO */}

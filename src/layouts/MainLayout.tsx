@@ -150,7 +150,7 @@ export const MainLayout: React.FC = () => {
                 </div>
             </main>
 
-            {!isLearningMode && state.user && (
+            {/* {!isLearningMode && state.user && (
                 <ChatWidget
                     isOpen={state.isChatOpen}
                     onToggle={() => actions.setIsChatOpen(!state.isChatOpen)}
@@ -158,7 +158,7 @@ export const MainLayout: React.FC = () => {
                     onCloseChat={() => actions.setChatActiveUser(null)}
                     contentMode={state.contentMode}
                 />
-            )}
+            )} */}
 
             {/* Mobile Tab Bar */}
             {!isLearningMode && (

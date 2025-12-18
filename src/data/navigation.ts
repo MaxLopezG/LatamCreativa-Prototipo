@@ -16,17 +16,17 @@ export const PRIMARY_NAV_ITEMS: NavItem[] = [
   { id: 'collections', icon: Bookmark, label: 'Colecciones' },
 
   // 3. Professional & Growth (Career/Money)
-  { id: 'jobs', icon: Building2, label: 'Empleos' },
-  { id: 'freelance', icon: Briefcase, label: 'Freelance' },
-  { id: 'market', icon: Store, label: 'Mercado' },
-  { id: 'education', icon: GraduationCap, label: 'Educación' },
+  // { id: 'jobs', icon: Building2, label: 'Empleos' },
+  // { id: 'freelance', icon: Briefcase, label: 'Freelance' },
+  // { id: 'market', icon: Store, label: 'Mercado' },
+  // { id: 'education', icon: GraduationCap, label: 'Educación' },
 
   // 4. Collaboration & Community (Interaction)
-  { id: 'community', icon: Users, label: 'Proyectos' },
-  { id: 'challenges', icon: Trophy, label: 'Retos' },
-  { id: 'events', icon: CalendarDays, label: 'Eventos' },
-  { id: 'people', icon: UsersRound, label: 'Comunidad' },
-  { id: 'forum', icon: MessageCircleQuestion, label: 'Foro' },
+  // { id: 'community', icon: Users, label: 'Proyectos' },
+  // { id: 'challenges', icon: Trophy, label: 'Retos' },
+  // { id: 'events', icon: CalendarDays, label: 'Eventos' },
+  // { id: 'people', icon: UsersRound, label: 'Comunidad' },
+  // { id: 'forum', icon: MessageCircleQuestion, label: 'Foro' },
 
   // 5. Content & News
   { id: 'blog', icon: Newspaper, label: 'Blog' },
