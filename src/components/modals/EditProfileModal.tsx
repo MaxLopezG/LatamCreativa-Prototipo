@@ -278,8 +278,15 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     };
 
     // --- Drag and Drop Handlers (Experience) ---
-    const handleDragStart = (index: number) => {
+    const handleDragStart = (e: React.DragEvent, index: number) => {
         setDraggedItemIndex(index);
+        // Attempt to capture the parent card as the drag image
+        if (e.currentTarget.parentElement) {
+            // Create a ghost image requires the element to be visible. The parent is visible.
+            // We can use the parent element directly.
+            e.dataTransfer.setDragImage(e.currentTarget.parentElement, 0, 0);
+            e.dataTransfer.effectAllowed = "move";
+        }
     };
 
     const handleDragEnter = (index: number) => {
@@ -617,10 +624,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                     experience.map((exp, index) => (
                                         <div
                                             key={exp.id}
-                                            draggable
-                                            onDragStart={() => handleDragStart(index)}
+                                            // Draggable attributes moved to handle
                                             onDragEnter={() => handleDragEnter(index)}
-                                            onDragEnd={handleDragEnd}
                                             onDragOver={handleDragOver}
                                             onDrop={() => handleDrop(index)}
                                             className={`p-5 rounded-xl bg-slate-50 dark:bg-white/5 border relative group transition-all duration-200 ${draggedItemIndex === index ? 'opacity-50 border-dashed border-amber-500' : 'border-slate-200 dark:border-white/10'} ${dragOverItemIndex === index && draggedItemIndex !== index ? 'border-amber-500 ring-1 ring-amber-500' : ''}`}
@@ -635,7 +640,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                             </button>
 
                                             {/* Drag Handle */}
-                                            <div className="absolute top-1/2 -translate-y-1/2 -left-3 md:-left-4 p-2 cursor-grab active:cursor-grabbing text-slate-400 hover:text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div
+                                                className="absolute top-1/2 -translate-y-1/2 -left-3 md:-left-4 p-2 cursor-grab active:cursor-grabbing text-slate-400 hover:text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                draggable
+                                                onDragStart={(e) => handleDragStart(e, index)}
+                                                onDragEnd={handleDragEnd}
+                                            >
                                                 <GripVertical className="h-5 w-5" />
                                             </div>
 
@@ -715,10 +725,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                     education.map((edu, index) => (
                                         <div
                                             key={edu.id}
-                                            draggable
-                                            onDragStart={() => handleDragStart(index)}
+                                            // Draggable attributes moved to handle
                                             onDragEnter={() => handleDragEnter(index)}
-                                            onDragEnd={handleDragEnd}
                                             onDragOver={handleDragOver}
                                             onDrop={() => handleDropEdu(index)}
                                             className={`p-5 rounded-xl bg-slate-50 dark:bg-white/5 border relative group transition-all duration-200 ${draggedItemIndex === index ? 'opacity-50 border-dashed border-blue-500' : 'border-slate-200 dark:border-white/10'} ${dragOverItemIndex === index && draggedItemIndex !== index ? 'border-blue-500 ring-1 ring-blue-500' : ''}`}
@@ -733,7 +741,12 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                             </button>
 
                                             {/* Drag Handle */}
-                                            <div className="absolute top-1/2 -translate-y-1/2 -left-3 md:-left-4 p-2 cursor-grab active:cursor-grabbing text-slate-400 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <div
+                                                className="absolute top-1/2 -translate-y-1/2 -left-3 md:-left-4 p-2 cursor-grab active:cursor-grabbing text-slate-400 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                draggable
+                                                onDragStart={(e) => handleDragStart(e, index)}
+                                                onDragEnd={handleDragEnd}
+                                            >
                                                 <GripVertical className="h-5 w-5" />
                                             </div>
 

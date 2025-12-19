@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Menu, Bell, Plus, FileText, Layers, Video, Box, Users, Search, Command, Briefcase, MessageCircleQuestion, CalendarDays, Heart, UserPlus, Check, ShoppingCart, Building2, Aperture, Trash2 } from 'lucide-react';
+import { Menu, Bell, Plus, FileText, Layers, Video, Box, Users, Search, Command, Briefcase, MessageCircleQuestion, CalendarDays, Heart, UserPlus, Check, ShoppingCart, Building2, Aperture, Trash2, Sparkles, ArrowRight } from 'lucide-react';
 import { Notification } from '../types';
 import { ContentMode, useAppStore } from '../hooks/useAppStore';
 
@@ -17,6 +17,7 @@ interface HeaderProps {
     onMarkAllRead?: () => void;
     contentMode?: ContentMode;
     onLoginClick?: () => void;
+    onRegisterClick?: () => void;
 }
 
 export const Header = ({
@@ -31,7 +32,8 @@ export const Header = ({
     onMarkRead,
     onMarkAllRead,
     contentMode = 'creative',
-    onLoginClick
+    onLoginClick,
+    onRegisterClick
 }: HeaderProps) => {
     const { state, actions } = useAppStore();
     const location = useLocation();
@@ -274,16 +276,25 @@ export const Header = ({
 
                 {/* Login Button for Guests */}
                 {!state.user && (
-                    <button
-                        onClick={onLoginClick}
-                        className={`hidden md:flex rounded-full px-5 py-2.5 text-sm font-bold transition-all hover:scale-105 active:scale-95 items-center gap-2 ${contentMode === 'dev'
-                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                            : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
-                            }`}
-                    >
-                        <UserPlus className="h-4 w-4" />
-                        <span>Iniciar Sesión</span>
-                    </button>
+                    <div className="hidden md:flex items-center gap-3">
+                        <button
+                            onClick={onLoginClick}
+                            className={`flex rounded-full px-5 py-2.5 text-sm font-bold transition-all hover:scale-105 active:scale-95 items-center gap-2 ${contentMode === 'dev'
+                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900'
+                                }`}
+                        >
+                            <UserPlus className="h-4 w-4" />
+                            <span>Iniciar Sesión</span>
+                        </button>
+                        <button
+                            onClick={onRegisterClick}
+                            className="group flex rounded-full px-5 py-2.5 text-sm font-bold transition-all duration-300 hover:scale-105 active:scale-95 items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 ring-1 ring-white/20"
+                        >
+                            <Sparkles className="h-4 w-4 text-amber-100 group-hover:text-white transition-colors" />
+                            <span>Registrarse</span>
+                        </button>
+                    </div>
                 )}
 
                 {/* CREATE BUTTON & DROPDOWN */}

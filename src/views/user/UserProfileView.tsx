@@ -66,44 +66,59 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
     }, [isOwnProfile, state.user?.username, username, navigate]);
 
     // Fetch real user data if we have an ID or Name
+    // 4. Real-time subscription to user data
     useEffect(() => {
-        const fetchUserData = async () => {
-            if (isOwnProfile) return;
+        let unsubscribe: (() => void) | undefined;
 
-            let userData = null;
+        const setupSubscription = async () => {
+            // 0. If Own Profile, listen by ID from state
+            if (isOwnProfile && state.user?.id) {
+                unsubscribe = usersService.listenToUserProfile(state.user.id, (user) => {
+                    if (user) setFetchedUser(user);
+                });
+                return;
+            }
 
-            // 1. Try by ID
+            // 1. Try by ID (if author prop allows)
             if (author?.id && author.id !== 'unknown') {
-                userData = await api.getUserProfile(author.id);
+                unsubscribe = usersService.listenToUserProfile(author.id, (user) => {
+                    if (user) setFetchedUser(user);
+                });
+                return;
             }
 
-            // 2. Try by Username (if param exists)
-            if (!userData && username) {
-                // Try fetching by username first (exact match)
-                userData = await usersService.getUserProfileByUsername(username);
-            }
-
-            // 3. Fallback: Try by Name if no user found by ID or Username
-            if (!userData) {
-                const targetName = author?.name || authorName || (username ? decodeURIComponent(username) : '');
-                if (targetName && targetName !== 'Unknown User') {
-                    // Sanitize name if it's an object/string mess
-                    const cleanName = typeof targetName === 'object'
-                        ? (targetName as any).name || (targetName as any).displayName || ''
-                        : String(targetName);
-
-                    if (cleanName) {
-                        userData = await api.getUserProfileByName(cleanName);
+            // 2. Try by Username
+            if (username) {
+                unsubscribe = usersService.listenToUserProfileByUsername(username, (user) => {
+                    if (user) {
+                        setFetchedUser(user);
+                    } else {
+                        setFetchedUser(null);
                     }
+                });
+                return;
+            }
+
+            // 3. Fallback: Try by Name (one-time fetch)
+            const targetName = author?.name || authorName || (username ? decodeURIComponent(username) : '');
+            if (targetName && targetName !== 'Unknown User') {
+                const cleanName = typeof targetName === 'object'
+                    ? (targetName as any).name || (targetName as any).displayName || ''
+                    : String(targetName);
+
+                if (cleanName) {
+                    const user = await api.getUserProfileByName(cleanName);
+                    if (user) setFetchedUser(user);
                 }
             }
-
-            if (userData) {
-                setFetchedUser(userData);
-            }
         };
-        fetchUserData();
-    }, [author?.id, author?.name, authorName, isOwnProfile]);
+
+        setupSubscription();
+
+        return () => {
+            if (unsubscribe) unsubscribe();
+        };
+    }, [author?.id, author?.name, authorName, isOwnProfile, username, state.user?.id]);
 
     // Helper to check if a name is valid/useful
     const isValidName = (n: any) => {
@@ -139,7 +154,9 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
         location: 'Latam',
         email: '',
         createdAt: new Date().toISOString(),
-        coverImage: undefined
+        coverImage: undefined,
+        // Merge fetched stats if available to show real-time followers count
+        stats: fetchedUser?.stats || state.user?.stats
     }) : {
         name: finalName,
         id: fetchedUser?.id || author?.id || 'unknown',
@@ -153,7 +170,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
         education: fetchedUser?.education,
         socialLinks: fetchedUser?.socialLinks,
         username: fetchedUser?.username,
-        coverImage: fetchedUser?.coverImage
+        coverImage: fetchedUser?.coverImage,
+        stats: fetchedUser?.stats
     };
 
     const sanitizeName = (val: any) => {
@@ -228,7 +246,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
     const showMockData = false; // DISABLED: We want real data or empty state
 
     // Stats
-    const stats = (displayUser['stats'] as any) || { views: 0, likes: 0, followers: 0 };
+    const stats = { views: 0, likes: 0, followers: 0, ...(displayUser['stats'] as any) };
 
     // About
     const aboutText = displayUser['bio'] || "¡Hola! Soy un miembro de la comunidad creativa.";

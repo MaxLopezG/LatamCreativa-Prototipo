@@ -1,5 +1,6 @@
 import { storage } from '../../lib/firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import imageCompression from 'browser-image-compression';
 
 export const storageService = {
     /**
@@ -32,7 +33,7 @@ export const storageService = {
             throw new Error('El archivo debe ser una imagen.');
         }
 
-        // 2. Validate File Size (max 5MB)
+        // 2. Validate File Size (max 5MB) - Validation for the INPUT file
         const MAX_SIZE_MB = 5;
         const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
@@ -40,7 +41,24 @@ export const storageService = {
             throw new Error(`La imagen no debe superar los ${MAX_SIZE_MB}MB.`);
         }
 
-        return this.uploadFile(path, file);
+        // 3. Compress Image
+        let fileToUpload = file;
+        try {
+            const options = {
+                maxSizeMB: 0.8,          // target 800KB
+                maxWidthOrHeight: 1920,  // max resolution 1920px
+                useWebWorker: true,
+                fileType: 'image/jpeg'   // force jpeg
+            };
+            const compressedFile = await imageCompression(file, options);
+            fileToUpload = compressedFile;
+            // console.log(`Compression: ${file.size / 1024 / 1024}MB -> ${compressedFile.size / 1024 / 1024}MB`);
+        } catch (error) {
+            console.warn("Image compression failed, uploading original:", error);
+            // Fallback to original file
+        }
+
+        return this.uploadFile(path, fileToUpload);
     },
 
     /**

@@ -8,7 +8,9 @@ import {
     deleteDoc,
     where,
     limit,
-    updateDoc
+    updateDoc,
+    increment,
+    onSnapshot
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { notificationsService } from './notifications';
@@ -132,6 +134,31 @@ export const usersService = {
         }
     },
 
+    listenToUserProfile: (userId: string, callback: (user: any) => void) => {
+        if (!userId) return () => { };
+        const docRef = doc(db, 'users', userId);
+        return onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                callback({ id: docSnap.id, ...docSnap.data() });
+            } else {
+                callback(null);
+            }
+        });
+    },
+
+    listenToUserProfileByUsername: (username: string, callback: (user: any) => void) => {
+        if (!username) return () => { };
+        const q = query(collection(db, 'users'), where('username', '==', username), limit(1));
+        return onSnapshot(q, (querySnapshot) => {
+            if (!querySnapshot.empty) {
+                const doc = querySnapshot.docs[0];
+                callback({ id: doc.id, ...doc.data() });
+            } else {
+                callback(null);
+            }
+        });
+    },
+
     getUserProfileByName: async (name: string) => {
         try {
             if (!name || name === 'Unknown User') return null;
@@ -183,17 +210,29 @@ export const usersService = {
 
     subscribeToUser: async (targetUserId: string, currentUserId: string): Promise<void> => {
         try {
-            // Add to target's followers
-            await setDoc(doc(db, 'users', targetUserId, 'followers', currentUserId), {
-                since: new Date().toISOString()
-            });
-            // Add to current's following (optional, consistent data)
+            // Fetch current user profile to store rich data
+            const currentUserProfile = await usersService.getUserProfile(currentUserId);
+            // Fetch target user profile to store rich data in "following" (optional but good for symmetry)
+            // For now, we prioritize the "Follower" info as requested.
+
+            const followerData = {
+                since: new Date().toISOString(),
+                followerId: currentUserId,
+                followerName: currentUserProfile?.name || 'Usuario',
+                followerUsername: currentUserProfile?.username || '',
+                followerAvatar: currentUserProfile?.avatar || ''
+            };
+
+            // Add to target's followers with RICH DATA
+            await setDoc(doc(db, 'users', targetUserId, 'followers', currentUserId), followerData);
+
+            // Add to current's following
             await setDoc(doc(db, 'users', currentUserId, 'following', targetUserId), {
-                since: new Date().toISOString()
+                since: new Date().toISOString(),
+                followingId: targetUserId
             });
 
             // Create Notification
-            const currentUserProfile = await usersService.getUserProfile(currentUserId);
             if (currentUserProfile) {
                 await notificationsService.createNotification(targetUserId, {
                     type: 'follow',
@@ -206,6 +245,17 @@ export const usersService = {
                 });
             }
 
+            // Update Counters (Atomic Increment)
+            const targetUserRef = doc(db, 'users', targetUserId);
+            await updateDoc(targetUserRef, {
+                'stats.followers': increment(1)
+            });
+
+            const currentUserRef = doc(db, 'users', currentUserId);
+            await updateDoc(currentUserRef, {
+                'stats.following': increment(1)
+            });
+
         } catch (error) {
             console.error("Error subscribing:", error);
             throw error;
@@ -216,6 +266,17 @@ export const usersService = {
         try {
             await deleteDoc(doc(db, 'users', targetUserId, 'followers', currentUserId));
             await deleteDoc(doc(db, 'users', currentUserId, 'following', targetUserId));
+
+            // Update Counters (Atomic Decrement)
+            const targetUserRef = doc(db, 'users', targetUserId);
+            await updateDoc(targetUserRef, {
+                'stats.followers': increment(-1)
+            });
+
+            const currentUserRef = doc(db, 'users', currentUserId);
+            await updateDoc(currentUserRef, {
+                'stats.following': increment(-1)
+            });
         } catch (error) {
             console.error("Error unsubscribing:", error);
             throw error;
