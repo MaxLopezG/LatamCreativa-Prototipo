@@ -1,15 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { X, Save, Plus, Trash2, Briefcase, GraduationCap, User, MapPin, Globe, GripVertical } from 'lucide-react';
-import { useAppStore } from '../../hooks/useAppStore';
 import { ExperienceItem, EducationItem, SocialLinks } from '../../types';
-import { usersService } from '../../services/modules/users';
-import { storageService } from '../../services/modules/storage';
 import { TagInput } from '../ui/TagInput';
 import { COMMON_TAGS } from '../../data/tags';
 import { COMMON_ROLES } from '../../data/roles';
 import { LATAM_COUNTRIES } from '../../data/countries';
-
-import { useNavigate } from 'react-router-dom';
+import { useEditProfile } from '../../hooks/useEditProfile';
+import { useDraggableList } from '../../hooks/useDraggableList';
 
 interface EditProfileModalProps {
     isOpen: boolean;
@@ -17,244 +14,39 @@ interface EditProfileModalProps {
 }
 
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose }) => {
-    const { state, actions } = useAppStore();
-    const user = state.user;
-    const navigate = useNavigate();
+    const {
+        user,
+        activeTab,
+        setActiveTab,
+        formData,
+        handleInputChange,
+        collections,
+        updateCollection,
+        images,
+        handleImageChange,
+        suggestions,
+        setSuggestions,
+        usernameError,
+        isSaving,
+        handleSave
+    } = useEditProfile(isOpen, onClose);
 
-    const [activeTab, setActiveTab] = useState<'general' | 'experience' | 'education' | 'social'>('general');
+    const fileInputAvatarRef = useRef<HTMLInputElement>(null);
+    const fileInputCoverRef = useRef<HTMLInputElement>(null);
 
-    // Form States
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [role, setRole] = useState('');
-    const [location, setLocation] = useState('');
-    const [country, setCountry] = useState('');
-    const [city, setCity] = useState('');
-    const [bio, setBio] = useState('');
-    const [experience, setExperience] = useState<ExperienceItem[]>([]);
-    const [education, setEducation] = useState<EducationItem[]>([]);
-    const [skills, setSkills] = useState<string[]>([]);
-    const [socialLinks, setSocialLinks] = useState<SocialLinks>({});
-    const [availableForWork, setAvailableForWork] = useState(false);
-    const [newSkill, setNewSkill] = useState('');
-    const [username, setUsername] = useState('');
-    const [usernameError, setUsernameError] = useState('');
-    const [isSaving, setIsSaving] = useState(false);
-    const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+    // --- Experience Hook ---
+    const experienceDrag = useDraggableList(
+        collections.experience,
+        (newItems) => updateCollection('experience', newItems)
+    );
 
-    // Drag and Drop State
-    const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
-    const [dragOverItemIndex, setDragOverItemIndex] = useState<number | null>(null);
-
-    // Image Upload State
-    const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
-    const [selectedCoverFile, setSelectedCoverFile] = useState<File | null>(null);
-    const [previewAvatarUrl, setPreviewAvatarUrl] = useState<string | null>(null);
-    const [previewCoverUrl, setPreviewCoverUrl] = useState<string | null>(null);
-
-    const fileInputAvatarRef = React.useRef<HTMLInputElement>(null);
-    const fileInputCoverRef = React.useRef<HTMLInputElement>(null);
-
-    // Suggestions State
-    const [showRoleSuggestions, setShowRoleSuggestions] = useState(false);
-    const [filteredRoles, setFilteredRoles] = useState<string[]>([]);
-
-    // Initialize state from User Store when modal opens
-    useEffect(() => {
-        const fetchUserData = async () => {
-            if (isOpen && user) {
-                try {
-                    // Fetch latest from DB to ensure no staleness
-                    const dbUser = await usersService.getUserProfile(user.id);
-                    const userData = dbUser || user; // Fallback to local user if DB fails
-
-                    // Split name logic if separate fields missing
-                    if (userData.firstName && userData.lastName) {
-                        setFirstName(userData.firstName);
-                        setLastName(userData.lastName);
-                    } else if (userData.name) {
-                        const parts = userData.name.split(' ');
-                        setFirstName(parts[0] || '');
-                        setLastName(parts.slice(1).join(' ') || '');
-                    } else {
-                        setFirstName('');
-                        setLastName('');
-                    }
-
-                    setUsername(userData.username || '');
-                    setRole(userData.role || '');
-                    setLocation(userData.location || '');
-                    setBio(userData.bio || '');
-                    setExperience(userData.experience || []);
-                    setEducation(userData.education || []);
-                    setSkills(userData.skills || []);
-                    setSocialLinks(userData.socialLinks || {});
-                    setAvailableForWork(userData.availableForWork || false);
-
-                    // Granular Location Logic
-                    if (userData.country && userData.city) {
-                        setCountry(userData.country);
-                        setCity(userData.city);
-                    } else if (userData.location && userData.location.includes(',')) {
-                        // Attempt to split "City, Country"
-                        const parts = userData.location.split(',');
-                        if (parts.length >= 2) {
-                            setCity(parts[0].trim());
-                            setCountry(parts[1].trim());
-                        } else {
-                            setCity(userData.location);
-                        }
-                    } else {
-                        setCity(userData.location || '');
-                    }
-                } catch (err) {
-                    console.error("Error fetching fresh profile:", err);
-                    // Fallback to local state
-                    if (user.firstName && user.lastName) {
-                        setFirstName(user.firstName);
-                        setLastName(user.lastName);
-                    } else if (user.name) {
-                        const parts = user.name.split(' ');
-                        setFirstName(parts[0] || '');
-                        setLastName(parts.slice(1).join(' ') || '');
-                    }
-                    // ... (rest of fallback assignment if needed, but simple console log is enough as we default to 'user' above)
-                }
-            }
-        };
-
-        fetchUserData();
-    }, [isOpen, user?.id]); // Only trigger if ID changes or opens
+    // --- Education Hook ---
+    const educationDrag = useDraggableList(
+        collections.education,
+        (newItems) => updateCollection('education', newItems)
+    );
 
     if (!isOpen || !user) return null;
-
-    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'cover') => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        // Validation (5MB and Image Type) - Quick Check before setting state
-        if (!file.type.startsWith('image/')) {
-            actions.showToast('Solo se permiten archivos de imagen', 'error');
-            return;
-        }
-        if (file.size > 5 * 1024 * 1024) {
-            actions.showToast('La imagen debe pesar menos de 5MB', 'error');
-            return;
-        }
-
-        const previewUrl = URL.createObjectURL(file);
-
-        if (type === 'avatar') {
-            setSelectedAvatarFile(file);
-            setPreviewAvatarUrl(previewUrl);
-        } else {
-            setSelectedCoverFile(file);
-            setPreviewCoverUrl(previewUrl);
-        }
-    };
-
-    const handleSave = async () => {
-        try {
-            setIsSaving(true);
-            // 1. Validate Required Fields
-            if (!firstName.trim() || !lastName.trim() || !username.trim() || !role.trim() || !country.trim()) {
-                actions.showToast('Por favor completa todos los campos obligatorios (*)', 'error');
-                setIsSaving(false);
-                return;
-            }
-
-            // Validate Username Format
-            const usernameRegex = /^(?![0-9]+$)(?![0-9])(?![-_])(?!.*[-_]$)[a-zA-Z0-9-_]{3,63}$/;
-            if (!usernameRegex.test(username)) {
-                setUsernameError('Nombre de usuario inválido (3-63 caracteres, sin espacios, no puede empezar con números)');
-                setIsSaving(false);
-                return;
-            }
-
-            // Check Availability if changed
-            if (username !== user?.username) {
-                setIsCheckingUsername(true);
-                const isAvailable = await usersService.checkUsernameAvailability(username);
-                setIsCheckingUsername(false);
-                if (!isAvailable) {
-                    setUsernameError('Este nombre de usuario ya está en uso');
-                    setIsSaving(false);
-                    return;
-                }
-            }
-
-            // Determine Content Mode based on Role
-            const devKeywords = ['developer', 'desarrollador', 'engineer', 'ingeniero', 'coder', 'programmer', 'programador', 'software', 'tech', 'web', 'app', 'mobile', 'backend', 'frontend', 'fullstack', 'devops', 'data', 'ai'];
-            const lowerRole = role.toLowerCase();
-            const isDevRole = devKeywords.some(k => lowerRole.includes(k));
-            const newMode: 'dev' | 'creative' = isDevRole ? 'dev' : 'creative';
-
-            // 2. Upload Images if selected
-            let newAvatarUrl = user.avatar;
-            let newCoverUrl = user.coverImage;
-
-            if (selectedAvatarFile) {
-                // Determine path: users/{uid}/avatar.jpg (or timestamped to avoid caching issues)
-                const path = `users/${state.user!.id}/avatar_${Date.now()}.jpg`;
-                newAvatarUrl = await storageService.uploadImage(selectedAvatarFile, path);
-            }
-
-            if (selectedCoverFile) {
-                const path = `users/${state.user!.id}/cover_${Date.now()}.jpg`;
-                newCoverUrl = await storageService.uploadImage(selectedCoverFile, path);
-            }
-
-            // 3. Prepare Updated User Object
-            const updatedUser = {
-                ...state.user!,
-                firstName: firstName.trim(),
-                lastName: lastName.trim(),
-                name: `${firstName.trim()} ${lastName.trim()}`, // Keep 'name' for backward compatibility if needed
-                username: username.trim(),
-                role: role.trim(),
-                bio: bio.trim(), // Changed from 'about' to 'bio' to match existing state
-                country: country,
-                city: city.trim(),
-                avatar: newAvatarUrl,
-                coverImage: newCoverUrl,
-                availableForWork,
-                experience,
-                education,
-                skills, // Added skills
-                socialLinks: {
-                    ...state.user!.socialLinks,
-                    ...socialLinks,
-                },
-                location: city.trim() ? `${city.trim()}, ${country}` : country, // Simple Fallback
-            };
-
-            // 4. Update Firestore
-            await usersService.updateUserProfile(state.user!.id, updatedUser); // Changed to updateUserProfile and user.id
-
-            // 5. Update Local Store
-            actions.setUser(updatedUser);
-
-            // Switch Mode if needed
-            if (state.contentMode !== newMode) {
-                actions.setContentMode(newMode);
-                actions.showToast(`Perfil actualizado y modo ${newMode === 'dev' ? 'Developer' : 'Creativo'} activado`, 'info');
-            } else {
-                actions.showToast('Perfil actualizado correctamente', 'success');
-            }
-
-            onClose();
-
-            // Redirect if username changed or just to ensure URL is correct
-            if (username) {
-                navigate(`/user/${username}`);
-            }
-        } catch (error) {
-            console.error("Error updating profile:", error);
-            actions.showToast('Error al actualizar el perfil', 'error');
-        } finally {
-            setIsSaving(false);
-        }
-    };
 
     // --- Experience Handlers ---
     const addExperience = () => {
@@ -266,71 +58,15 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             location: 'Ciudad, País',
             description: 'Descripción del puesto...'
         };
-        setExperience([...experience, newExp]);
+        updateCollection('experience', [...collections.experience, newExp]);
     };
 
     const updateExperience = (id: number | string, field: keyof ExperienceItem, value: string) => {
-        setExperience(experience.map(exp => exp.id === id ? { ...exp, [field]: value } : exp));
+        updateCollection('experience', collections.experience.map(exp => exp.id === id ? { ...exp, [field]: value } : exp));
     };
 
     const removeExperience = (id: number | string) => {
-        setExperience(experience.filter(exp => exp.id !== id));
-    };
-
-    // --- Drag and Drop Handlers (Experience) ---
-    const handleDragStart = (e: React.DragEvent, index: number) => {
-        setDraggedItemIndex(index);
-        // Attempt to capture the parent card as the drag image
-        if (e.currentTarget.parentElement) {
-            // Create a ghost image requires the element to be visible. The parent is visible.
-            // We can use the parent element directly.
-            e.dataTransfer.setDragImage(e.currentTarget.parentElement, 0, 0);
-            e.dataTransfer.effectAllowed = "move";
-        }
-    };
-
-    const handleDragEnter = (index: number) => {
-        setDragOverItemIndex(index);
-    };
-
-    const handleDragEnd = () => {
-        setDraggedItemIndex(null);
-        setDragOverItemIndex(null);
-    };
-
-    const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault(); // Necessary to allow dropping
-    };
-
-    const handleDrop = (index: number) => {
-        if (draggedItemIndex === null) return;
-
-        const items = [...experience];
-        const draggedItem = items[draggedItemIndex];
-
-        // Remove from old position
-        items.splice(draggedItemIndex, 1);
-        // Insert at new position
-        items.splice(index, 0, draggedItem);
-
-        setExperience(items);
-        setDraggedItemIndex(null);
-        setDragOverItemIndex(null);
-    };
-
-    // --- Drag and Drop Handlers (Education) ---
-    const handleDropEdu = (index: number) => {
-        if (draggedItemIndex === null) return;
-
-        const items = [...education];
-        const draggedItem = items[draggedItemIndex];
-
-        items.splice(draggedItemIndex, 1);
-        items.splice(index, 0, draggedItem);
-
-        setEducation(items);
-        setDraggedItemIndex(null);
-        setDragOverItemIndex(null);
+        updateCollection('experience', collections.experience.filter(exp => exp.id !== id));
     };
 
     // --- Education Handlers ---
@@ -342,27 +78,20 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             period: '2020 - 2024',
             description: 'Descripción de los estudios...'
         };
-        setEducation([...education, newEdu]);
+        updateCollection('education', [...collections.education, newEdu]);
     };
 
     const updateEducation = (id: number | string, field: keyof EducationItem, value: string) => {
-        setEducation(education.map(edu => edu.id === id ? { ...edu, [field]: value } : edu));
+        updateCollection('education', collections.education.map(edu => edu.id === id ? { ...edu, [field]: value } : edu));
     };
 
     const removeEducation = (id: number | string) => {
-        setEducation(education.filter(edu => edu.id !== id));
+        updateCollection('education', collections.education.filter(edu => edu.id !== id));
     };
 
-    // --- Skills Handlers ---
-    const addSkill = () => {
-        if (newSkill.trim() && !skills.includes(newSkill.trim())) {
-            setSkills([...skills, newSkill.trim()]);
-            setNewSkill('');
-        }
-    };
-
-    const removeSkill = (skillToRemove: string) => {
-        setSkills(skills.filter(skill => skill !== skillToRemove));
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'cover') => {
+        const file = e.target.files?.[0];
+        if (file) handleImageChange(file, type);
     };
 
     return (
@@ -413,7 +142,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                         <div className="space-y-6 max-w-2xl mx-auto">
                             <div className="relative h-48 md:h-64 bg-slate-900">
                                 <img
-                                    src={previewCoverUrl || user.coverImage || "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=2070&auto=format&fit=crop"}
+                                    src={images.previewCover || user.coverImage || "https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=2070&auto=format&fit=crop"}
                                     alt="Cover"
                                     className="w-full h-full object-cover opacity-60"
                                 />
@@ -433,7 +162,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                 <input
                                     type="file"
                                     ref={fileInputCoverRef}
-                                    onChange={(e) => handleImageChange(e, 'cover')}
+                                    onChange={(e) => handleFileSelect(e, 'cover')}
                                     accept="image/*"
                                     className="hidden"
                                 />
@@ -444,7 +173,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                     <div className="relative group">
                                         <div className="h-32 w-32 md:h-40 md:w-40 rounded-3xl p-1 bg-[#030304]">
                                             <img
-                                                src={previewAvatarUrl || user.avatar || "https://cdn.ui-avatars.com/api/?name=User&background=random"}
+                                                src={images.previewAvatar || user.avatar || "https://cdn.ui-avatars.com/api/?name=User&background=random"}
                                                 alt="Avatar"
                                                 className="w-full h-full object-cover rounded-2xl bg-slate-800 border-4 border-[#030304]"
                                             />
@@ -459,7 +188,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                             <input
                                                 type="file"
                                                 ref={fileInputAvatarRef}
-                                                onChange={(e) => handleImageChange(e, 'avatar')}
+                                                onChange={(e) => handleFileSelect(e, 'avatar')}
                                                 accept="image/*"
                                                 className="hidden"
                                             />
@@ -475,8 +204,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                         <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
                                         <input
                                             type="text"
-                                            value={firstName}
-                                            onChange={(e) => setFirstName(e.target.value)}
+                                            value={formData.firstName}
+                                            onChange={(e) => handleInputChange('firstName', e.target.value)}
                                             className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
                                             placeholder="Tus nombres"
                                         />
@@ -487,8 +216,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                     <div className="relative">
                                         <input
                                             type="text"
-                                            value={lastName}
-                                            onChange={(e) => setLastName(e.target.value)}
+                                            value={formData.lastName}
+                                            onChange={(e) => handleInputChange('lastName', e.target.value)}
                                             className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
                                             placeholder="Tus apellidos"
                                         />
@@ -502,31 +231,23 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                     <Briefcase className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
                                     <input
                                         type="text"
-                                        value={role}
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            setRole(val);
-                                            setFilteredRoles(COMMON_ROLES.filter(r => r.toLowerCase().includes(val.toLowerCase())));
-                                            setShowRoleSuggestions(true);
-                                        }}
-                                        onFocus={() => {
-                                            setFilteredRoles(COMMON_ROLES.filter(r => r.toLowerCase().includes(role.toLowerCase())));
-                                            setShowRoleSuggestions(true);
-                                        }}
-                                        onBlur={() => setTimeout(() => setShowRoleSuggestions(false), 200)}
+                                        value={formData.role}
+                                        onChange={(e) => handleInputChange('role', e.target.value)}
+                                        onFocus={() => setSuggestions(prev => ({ ...prev, showRole: true }))}
+                                        onBlur={() => setTimeout(() => setSuggestions(prev => ({ ...prev, showRole: false })), 200)}
                                         className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
                                         placeholder="ej. Concept Artist"
                                     />
                                     {/* Suggestions Dropdown */}
-                                    {showRoleSuggestions && filteredRoles.length > 0 && (
+                                    {suggestions.showRole && suggestions.filteredRoles.length > 0 && (
                                         <div className="absolute z-50 w-full mt-1 bg-white dark:bg-[#1A1D23] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl max-h-48 overflow-y-auto custom-scrollbar">
-                                            {filteredRoles.map((r) => (
+                                            {suggestions.filteredRoles.map((r) => (
                                                 <div
                                                     key={r}
                                                     className="px-4 py-2 hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer text-sm text-slate-700 dark:text-slate-300 transition-colors"
                                                     onClick={() => {
-                                                        setRole(r);
-                                                        setShowRoleSuggestions(false);
+                                                        handleInputChange('role', r);
+                                                        setSuggestions(prev => ({ ...prev, showRole: false }));
                                                     }}
                                                 >
                                                     {r}
@@ -543,17 +264,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                     <span className="absolute left-3 top-3 text-slate-400 font-bold">@</span>
                                     <input
                                         type="text"
-                                        value={username}
-                                        onChange={(e) => {
-                                            setUsername(e.target.value.toLowerCase());
-                                            setUsernameError('');
-                                        }}
+                                        value={formData.username}
+                                        onChange={(e) => handleInputChange('username', e.target.value.toLowerCase())}
                                         className={`w-full pl-8 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border ${usernameError ? 'border-red-500' : 'border-slate-200 dark:border-white/10'} focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white`}
                                         placeholder="username"
                                     />
                                 </div>
                                 {usernameError && <p className="text-xs text-red-500">{usernameError}</p>}
-                                <p className="text-[10px] text-slate-500">latamcreativa.com/user/{username || 'username'}</p>
+                                <p className="text-[10px] text-slate-500">latamcreativa.com/user/{formData.username || 'username'}</p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -562,8 +280,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                     <div className="relative">
                                         <Globe className="absolute left-3 top-3 h-5 w-5 text-slate-400 pointer-events-none" />
                                         <select
-                                            value={country}
-                                            onChange={(e) => setCountry(e.target.value)}
+                                            value={formData.country}
+                                            onChange={(e) => handleInputChange('country', e.target.value)}
                                             className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white appearance-none cursor-pointer"
                                         >
                                             <option value="" disabled>Selecciona tu país</option>
@@ -579,8 +297,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                         <MapPin className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
                                         <input
                                             type="text"
-                                            value={city}
-                                            onChange={(e) => setCity(e.target.value)}
+                                            value={formData.city}
+                                            onChange={(e) => handleInputChange('city', e.target.value)}
                                             className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
                                             placeholder="Ciudad"
                                         />
@@ -591,8 +309,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                             <div className="space-y-2">
                                 <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Biografía</label>
                                 <textarea
-                                    value={bio}
-                                    onChange={(e) => setBio(e.target.value)}
+                                    value={formData.bio}
+                                    onChange={(e) => handleInputChange('bio', e.target.value)}
                                     className="w-full p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white min-h-[150px]"
                                     placeholder="Cuéntanos sobre ti..."
                                 />
@@ -615,20 +333,20 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                             </div>
 
                             <div className="space-y-4">
-                                {experience.length === 0 ? (
+                                {collections.experience.length === 0 ? (
                                     <div className="text-center py-10 bg-slate-50 dark:bg-white/5 rounded-xl border border-dashed border-slate-300 dark:border-white/10">
                                         <Briefcase className="h-10 w-10 text-slate-400 mx-auto mb-3 opacity-50" />
                                         <p className="text-slate-500">No tienes experiencia registrada.</p>
                                     </div>
                                 ) : (
-                                    experience.map((exp, index) => (
+                                    collections.experience.map((exp, index) => (
                                         <div
                                             key={exp.id}
                                             // Draggable attributes moved to handle
-                                            onDragEnter={() => handleDragEnter(index)}
-                                            onDragOver={handleDragOver}
-                                            onDrop={() => handleDrop(index)}
-                                            className={`p-5 rounded-xl bg-slate-50 dark:bg-white/5 border relative group transition-all duration-200 ${draggedItemIndex === index ? 'opacity-50 border-dashed border-amber-500' : 'border-slate-200 dark:border-white/10'} ${dragOverItemIndex === index && draggedItemIndex !== index ? 'border-amber-500 ring-1 ring-amber-500' : ''}`}
+                                            onDragEnter={() => experienceDrag.handleDragEnter(index)}
+                                            onDragOver={experienceDrag.handleDragOver}
+                                            onDrop={() => experienceDrag.handleDrop(index)}
+                                            className={`p-5 rounded-xl bg-slate-50 dark:bg-white/5 border relative group transition-all duration-200 ${experienceDrag.draggedItemIndex === index ? 'opacity-50 border-dashed border-amber-500' : 'border-slate-200 dark:border-white/10'} ${experienceDrag.dragOverItemIndex === index && experienceDrag.draggedItemIndex !== index ? 'border-amber-500 ring-1 ring-amber-500' : ''}`}
                                         >
                                             {/* Delete Button */}
                                             <button
@@ -643,8 +361,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                             <div
                                                 className="absolute top-1/2 -translate-y-1/2 -left-3 md:-left-4 p-2 cursor-grab active:cursor-grabbing text-slate-400 hover:text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                                 draggable
-                                                onDragStart={(e) => handleDragStart(e, index)}
-                                                onDragEnd={handleDragEnd}
+                                                onDragStart={(e) => experienceDrag.handleDragStart(e, index)}
+                                                onDragEnd={experienceDrag.handleDragEnd}
                                             >
                                                 <GripVertical className="h-5 w-5" />
                                             </div>
@@ -716,20 +434,20 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                             </div>
 
                             <div className="space-y-4">
-                                {education.length === 0 ? (
+                                {collections.education.length === 0 ? (
                                     <div className="text-center py-10 bg-slate-50 dark:bg-white/5 rounded-xl border border-dashed border-slate-300 dark:border-white/10">
                                         <GraduationCap className="h-10 w-10 text-slate-400 mx-auto mb-3 opacity-50" />
                                         <p className="text-slate-500">No tienes formación registrada.</p>
                                     </div>
                                 ) : (
-                                    education.map((edu, index) => (
+                                    collections.education.map((edu, index) => (
                                         <div
                                             key={edu.id}
                                             // Draggable attributes moved to handle
-                                            onDragEnter={() => handleDragEnter(index)}
-                                            onDragOver={handleDragOver}
-                                            onDrop={() => handleDropEdu(index)}
-                                            className={`p-5 rounded-xl bg-slate-50 dark:bg-white/5 border relative group transition-all duration-200 ${draggedItemIndex === index ? 'opacity-50 border-dashed border-blue-500' : 'border-slate-200 dark:border-white/10'} ${dragOverItemIndex === index && draggedItemIndex !== index ? 'border-blue-500 ring-1 ring-blue-500' : ''}`}
+                                            onDragEnter={() => educationDrag.handleDragEnter(index)}
+                                            onDragOver={educationDrag.handleDragOver}
+                                            onDrop={() => educationDrag.handleDrop(index)}
+                                            className={`p-5 rounded-xl bg-slate-50 dark:bg-white/5 border relative group transition-all duration-200 ${educationDrag.draggedItemIndex === index ? 'opacity-50 border-dashed border-blue-500' : 'border-slate-200 dark:border-white/10'} ${educationDrag.dragOverItemIndex === index && educationDrag.draggedItemIndex !== index ? 'border-blue-500 ring-1 ring-blue-500' : ''}`}
                                         >
                                             {/* Delete Button */}
                                             <button
@@ -744,8 +462,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                             <div
                                                 className="absolute top-1/2 -translate-y-1/2 -left-3 md:-left-4 p-2 cursor-grab active:cursor-grabbing text-slate-400 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                                 draggable
-                                                onDragStart={(e) => handleDragStart(e, index)}
-                                                onDragEnd={handleDragEnd}
+                                                onDragStart={(e) => educationDrag.handleDragStart(e, index)}
+                                                onDragEnd={educationDrag.handleDragEnd}
                                             >
                                                 <GripVertical className="h-5 w-5" />
                                             </div>
@@ -803,18 +521,18 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">Habilidades</h3>
 
                                 <TagInput
-                                    tags={skills}
+                                    tags={collections.skills}
                                     onAddTag={(tag) => {
-                                        if (!skills.includes(tag)) {
-                                            setSkills([...skills, tag]);
+                                        if (!collections.skills.includes(tag)) {
+                                            updateCollection('skills', [...collections.skills, tag]);
                                         }
                                     }}
-                                    onRemoveTag={(tag) => setSkills(skills.filter(s => s !== tag))}
+                                    onRemoveTag={(tag) => updateCollection('skills', collections.skills.filter(s => s !== tag))}
                                     suggestions={COMMON_TAGS}
                                     placeholder="Busca o añade una habilidad..."
                                 />
 
-                                {skills.length === 0 && <p className="text-sm text-slate-500">Añade tus habilidades principales.</p>}
+                                {collections.skills.length === 0 && <p className="text-sm text-slate-500">Añade tus habilidades principales.</p>}
                             </div>
 
                             <hr className="border-slate-100 dark:border-white/10" />
@@ -827,8 +545,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                         <label className="text-[10px] font-bold uppercase text-slate-500">ArtStation</label>
                                         <input
                                             type="text"
-                                            value={socialLinks.artstation || ''}
-                                            onChange={(e) => setSocialLinks({ ...socialLinks, artstation: e.target.value })}
+                                            value={collections.socialLinks.artstation || ''}
+                                            onChange={(e) => updateCollection('socialLinks', { ...collections.socialLinks, artstation: e.target.value })}
                                             className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-amber-500"
                                             placeholder="username"
                                         />
@@ -837,8 +555,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                         <label className="text-[10px] font-bold uppercase text-slate-500">LinkedIn</label>
                                         <input
                                             type="text"
-                                            value={socialLinks.linkedin || ''}
-                                            onChange={(e) => setSocialLinks({ ...socialLinks, linkedin: e.target.value })}
+                                            value={collections.socialLinks.linkedin || ''}
+                                            onChange={(e) => updateCollection('socialLinks', { ...collections.socialLinks, linkedin: e.target.value })}
                                             className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-amber-500"
                                             placeholder="usuario-linkedin"
                                         />
@@ -847,8 +565,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                         <label className="text-[10px] font-bold uppercase text-slate-500">Twitter / X</label>
                                         <input
                                             type="text"
-                                            value={socialLinks.twitter || ''}
-                                            onChange={(e) => setSocialLinks({ ...socialLinks, twitter: e.target.value })}
+                                            value={collections.socialLinks.twitter || ''}
+                                            onChange={(e) => updateCollection('socialLinks', { ...collections.socialLinks, twitter: e.target.value })}
                                             className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-amber-500"
                                             placeholder="@usuario"
                                         />
@@ -857,8 +575,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                         <label className="text-[10px] font-bold uppercase text-slate-500">Instagram</label>
                                         <input
                                             type="text"
-                                            value={socialLinks.instagram || ''}
-                                            onChange={(e) => setSocialLinks({ ...socialLinks, instagram: e.target.value })}
+                                            value={collections.socialLinks.instagram || ''}
+                                            onChange={(e) => updateCollection('socialLinks', { ...collections.socialLinks, instagram: e.target.value })}
                                             className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-amber-500"
                                             placeholder="@usuario"
                                         />
@@ -867,8 +585,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                         <label className="text-[10px] font-bold uppercase text-slate-500">GitHub</label>
                                         <input
                                             type="text"
-                                            value={socialLinks.github || ''}
-                                            onChange={(e) => setSocialLinks({ ...socialLinks, github: e.target.value })}
+                                            value={collections.socialLinks.github || ''}
+                                            onChange={(e) => updateCollection('socialLinks', { ...collections.socialLinks, github: e.target.value })}
                                             className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-amber-500"
                                             placeholder="usuario"
                                         />
@@ -877,8 +595,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                         <label className="text-[10px] font-bold uppercase text-slate-500">Website Personal</label>
                                         <input
                                             type="text"
-                                            value={socialLinks.website || ''}
-                                            onChange={(e) => setSocialLinks({ ...socialLinks, website: e.target.value })}
+                                            value={collections.socialLinks.website || ''}
+                                            onChange={(e) => updateCollection('socialLinks', { ...collections.socialLinks, website: e.target.value })}
                                             className="w-full px-4 py-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 outline-none focus:border-amber-500"
                                             placeholder="https://miweb.com"
                                         />
@@ -895,10 +613,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                     <p className="text-sm text-slate-500">Muestra en tu perfil que estás buscando nuevas oportunidades.</p>
                                 </div>
                                 <button
-                                    onClick={() => setAvailableForWork(!availableForWork)}
-                                    className={`w-14 h-8 rounded-full transition-colors relative ${availableForWork ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-700'}`}
+                                    onClick={() => handleInputChange('availableForWork', !formData.availableForWork)}
+                                    className={`w-14 h-8 rounded-full transition-colors relative ${formData.availableForWork ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-700'}`}
                                 >
-                                    <div className={`absolute top-1 left-1 bg-white w-6 h-6 rounded-full transition-transform ${availableForWork ? 'translate-x-6' : 'translate-x-0'}`} />
+                                    <div className={`absolute top-1 left-1 bg-white w-6 h-6 rounded-full transition-transform ${formData.availableForWork ? 'translate-x-6' : 'translate-x-0'}`} />
                                 </button>
                             </div>
 

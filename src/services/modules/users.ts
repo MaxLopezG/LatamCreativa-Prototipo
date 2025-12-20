@@ -10,10 +10,10 @@ import {
     limit,
     updateDoc,
     increment,
-    onSnapshot
+    onSnapshot,
+    writeBatch
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { notificationsService } from './notifications';
 import { User } from '../../types';
 
 export const usersService = {
@@ -223,39 +223,33 @@ export const usersService = {
                 followerAvatar: currentUserProfile?.avatar || ''
             };
 
+            const batch = writeBatch(db);
+
             // Add to target's followers with RICH DATA
-            await setDoc(doc(db, 'users', targetUserId, 'followers', currentUserId), followerData);
+            const followerRef = doc(db, 'users', targetUserId, 'followers', currentUserId);
+            batch.set(followerRef, followerData);
 
             // Add to current's following
-            await setDoc(doc(db, 'users', currentUserId, 'following', targetUserId), {
+            const followingRef = doc(db, 'users', currentUserId, 'following', targetUserId);
+            batch.set(followingRef, {
                 since: new Date().toISOString(),
                 followingId: targetUserId
             });
 
-            // Create Notification
-            if (currentUserProfile) {
-                await notificationsService.createNotification(targetUserId, {
-                    type: 'follow',
-                    user: currentUserProfile.name || 'Usuario',
-                    avatar: currentUserProfile.avatar || '',
-                    content: 'comenzó a seguirte',
-                    link: `/user/${encodeURIComponent(currentUserProfile.username || currentUserProfile.name)}`,
-                    time: new Date().toISOString(),
-                    read: false
-                });
-            }
+            // TODO: Notification creation should be handled by a Cloud Function triggered by the creation of a document in the 'followers' subcollection.
 
             // Update Counters (Atomic Increment)
             const targetUserRef = doc(db, 'users', targetUserId);
-            await updateDoc(targetUserRef, {
+            batch.update(targetUserRef, {
                 'stats.followers': increment(1)
             });
 
             const currentUserRef = doc(db, 'users', currentUserId);
-            await updateDoc(currentUserRef, {
+            batch.update(currentUserRef, {
                 'stats.following': increment(1)
             });
 
+            await batch.commit();
         } catch (error) {
             console.error("Error subscribing:", error);
             throw error;
@@ -264,19 +258,26 @@ export const usersService = {
 
     unsubscribeFromUser: async (targetUserId: string, currentUserId: string): Promise<void> => {
         try {
-            await deleteDoc(doc(db, 'users', targetUserId, 'followers', currentUserId));
-            await deleteDoc(doc(db, 'users', currentUserId, 'following', targetUserId));
+            const batch = writeBatch(db);
+
+            const followerRef = doc(db, 'users', targetUserId, 'followers', currentUserId);
+            batch.delete(followerRef);
+
+            const followingRef = doc(db, 'users', currentUserId, 'following', targetUserId);
+            batch.delete(followingRef);
 
             // Update Counters (Atomic Decrement)
             const targetUserRef = doc(db, 'users', targetUserId);
-            await updateDoc(targetUserRef, {
+            batch.update(targetUserRef, {
                 'stats.followers': increment(-1)
             });
 
             const currentUserRef = doc(db, 'users', currentUserId);
-            await updateDoc(currentUserRef, {
+            batch.update(currentUserRef, {
                 'stats.following': increment(-1)
             });
+
+            await batch.commit();
         } catch (error) {
             console.error("Error unsubscribing:", error);
             throw error;

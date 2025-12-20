@@ -207,32 +207,33 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
             return;
         }
 
-        try {
-            setIsFollowLoading(true);
-            const targetId = displayUser.id || displayUser.name; // Fallback? UsersService expects ID. 
-            // NOTE: displayUser here might be a constructed object if coming from API or route. 
-            // In UserProfileView, displayUser comes from props or lookup.
-            // If displayUser.id is missing, this will fail. 
-            // Assuming displayUser HAS id as it's fetched from 'usersService.getUserProfile' or 'usersService.getUserProfileByName'
-            if (!targetId) {
-                console.error("No user ID found for follow");
-                return;
-            }
+        const targetId = displayUser.id;
 
-            if (isFollowing) {
+        // Validación estricta: Solo permitir seguir si tenemos un ID válido
+        if (!targetId || targetId === 'unknown') {
+            console.error("No user ID found for follow");
+            return;
+        }
+
+        // 1. Optimistic UI: Cambiar el estado visual INMEDIATAMENTE
+        const previousState = isFollowing;
+        setIsFollowing(!previousState);
+
+        try {
+            // 2. Realizar la petición en segundo plano
+            if (previousState) {
                 await usersService.unsubscribeFromUser(targetId, state.user.id);
                 actions.showToast(`Dejaste de seguir a ${name}`, 'success');
             } else {
                 await usersService.subscribeToUser(targetId, state.user.id);
                 actions.showToast(`Ahora sigues a ${name}`, 'success');
             }
-            setIsFollowing(!isFollowing);
             actions.triggerSubscriptionUpdate();
         } catch (error) {
             console.error("Follow error:", error);
+            // 3. Revertir cambios si falla (Rollback)
+            setIsFollowing(previousState);
             actions.showToast("Error al actualizar seguimiento", "error");
-        } finally {
-            setIsFollowLoading(false);
         }
     };
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
