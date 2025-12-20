@@ -176,7 +176,7 @@ export const useEditProfile = (isOpen: boolean, onClose: () => void) => {
                 username: formData.username,
                 role: formData.role,
                 country: formData.country, // Ensure both fields are synced if needed
-                location: formData.country, // Sync location with country
+                location: formData.city ? `${formData.city}, ${formData.country}` : formData.country,
                 city: formData.city,
                 bio: formData.bio,
                 availableForWork: formData.availableForWork,

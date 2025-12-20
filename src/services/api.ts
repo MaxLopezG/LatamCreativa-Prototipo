@@ -1,5 +1,5 @@
 import { projectsService } from './modules/projects';
-import { blogService } from './modules/blog';
+import { articlesService } from './modules/articles';
 import { usersService } from './modules/users';
 import { notificationsService } from './modules/notifications';
 import { collectionsService } from './modules/collections';
@@ -14,7 +14,7 @@ export const api = {
   ...projectsService,
 
   // Blog (Articles & Comments)
-  ...blogService,
+  ...articlesService,
 
   // Users (Profiles & Social)
   ...usersService,

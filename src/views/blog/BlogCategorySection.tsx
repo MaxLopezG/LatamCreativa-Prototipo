@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { ArrowRight, Newspaper, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ArticleItem } from '../../types';
-import { blogService } from '../../services/modules/blog';
+import { articlesService } from '../../services/modules/articles';
 import { BlogCard } from '../../components/cards/BlogCard';
 
 interface BlogCategorySectionProps {
@@ -34,11 +34,11 @@ export const BlogCategorySection: React.FC<BlogCategorySectionProps> = ({
                 if (categories && categories.length > 0) {
                     // Fetch by specific categories (increased limit for carousel)
                     // Update: getArticlesByCategories now returns PaginatedResult
-                    const result = await blogService.getArticlesByCategories(categories, null, 10);
+                    const result = await articlesService.getArticlesByCategories(categories, null, 10);
                     fetched = result.data;
                 } else {
                     // Fetch recent (top 10 globally)
-                    fetched = await blogService.getRecentArticles(10);
+                    fetched = await articlesService.getRecentArticles(10);
                 }
 
                 setArticles(fetched);

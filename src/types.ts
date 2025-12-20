@@ -89,6 +89,7 @@ export interface PortfolioItem {
   images?: string[]; // New: Project gallery (wireframes, details)
   software?: string[]; // New: Software used
   domain?: 'creative' | 'dev'; // For filtering mode
+  createdAt?: string;
 }
 
 // New Interface for Blog Articles

@@ -1,9 +1,11 @@
-
-import React from 'react';
-import { Layers, Plus, Image as ImageIcon, Search, Filter, ArrowUpDown } from 'lucide-react';
-import { PORTFOLIO_ITEMS } from '../../data/content';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Layers, Plus, Image as ImageIcon, Search, Filter, ArrowUpDown, Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
 import { PortfolioCard } from '../../components/cards/PortfolioCard';
 import { ContentMode, useAppStore } from '../../hooks/useAppStore';
+import { projectsService } from '../../services/modules/projects';
+import { PortfolioItem } from '../../types';
+import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 
 interface PortfolioViewProps {
   activeCategory: string;
@@ -14,40 +16,69 @@ interface PortfolioViewProps {
 }
 
 export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, onItemSelect, onCreateClick, onSave, contentMode }) => {
-
-
   const { state } = useAppStore();
-  const createdItems = state.createdItems || []; // Keep for optimistic updates if needed, but prefer fetched data
   const mode = contentMode || 'creative';
 
-  const [fetchedProjects, setFetchedProjects] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentPage = Number(searchParams.get('page')) || 1;
 
-  React.useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        setLoading(true);
-        // Use the feed API which returns paginated results
-        // Passing null as cursor to get first page
-        const result = await import('../../services/api').then(m => m.api.getFeed(null, 20));
-        setFetchedProjects(result.data);
-      } catch (error) {
-        console.error("Failed to load portfolio projects:", error);
-      } finally {
-        setLoading(false);
+  const [projects, setProjects] = useState<PortfolioItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+
+  // State to store the cursors for Firestore pagination
+  const [pageCursors, setPageCursors] = useState<(QueryDocumentSnapshot<DocumentData> | null)[]>([null]);
+
+  const fetchProjects = useCallback(async (pageNumber: number) => {
+    if (pageNumber > pageCursors.length) {
+      console.warn("Cannot jump to a non-sequential page. Fetching page 1.");
+      setSearchParams({ page: '1' });
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    window.scrollTo(0, 0); // Scroll to top on new page
+
+    try {
+      const cursor = pageCursors[pageNumber - 1];
+      const result = await projectsService.getProjects(cursor, 20);
+
+      setProjects(result.data);
+      setHasMore(result.hasMore);
+
+      if (result.hasMore && pageNumber >= pageCursors.length) {
+        setPageCursors(prev => [...prev, result.lastDoc]);
       }
-    };
-    loadProjects();
-  }, [mode]); // Reload if mode changes, though getFeed might need mode filtering in future
+    } catch (err: any) {
+      setError(err.message || 'Error loading projects');
+      setProjects([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [pageCursors, setSearchParams]);
 
-  // Merge: Fetched Real Data + Static Data
-  // We prioritize fetched data.
-  // Note: 'createdItems' from store might duplicate fetched data if we are not careful, 
-  // but for now we'll assume fetchedProjects is the source of truth for global feed.
-  const allItems = [...fetchedProjects, ...PORTFOLIO_ITEMS];
+  useEffect(() => {
+    fetchProjects(currentPage);
+  }, [currentPage, fetchProjects]);
 
   // Filter items by mode
-  const filteredItems = allItems.filter(item => (item.domain || 'creative') === mode);
+  const filteredItems = projects.filter(item => {
+    // Default to 'creative' if domain is not set for backward compatibility
+    const itemDomain = item.domain || 'creative';
+    return itemDomain === mode;
+  });
+
+  const handleNextPage = () => {
+    if (!hasMore || loading) return;
+    setSearchParams({ page: String(currentPage + 1) });
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage <= 1 || loading) return;
+    setSearchParams({ page: String(currentPage - 1) });
+  };
 
   // Apply Category Filter if not Home
   const displayItems = activeCategory === 'Home'
@@ -120,7 +151,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, on
             {activeCategory === 'Home' ? 'Feed de Proyectos' : activeCategory}
           </h2>
           <p className="text-slate-400 mt-1 text-sm">
-            Mostrando {displayItems.length} resultados ordenados por relevancia
+            {loading ? 'Cargando proyectos...' : `Mostrando ${displayItems.length} resultados`}
           </p>
         </div>
 
@@ -145,31 +176,50 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, on
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 mb-16">
-        {displayItems.length > 0 ? (
-          displayItems.map((item) => (
-            <PortfolioCard
-              key={item.id}
-              item={item}
-              onClick={() => onItemSelect?.(item.id)}
-              onSave={onSave}
-            />
-          ))
-        ) : (
-          <div className="col-span-full py-20 text-center border border-dashed border-white/10 rounded-3xl bg-white/5">
-            <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Layers className="h-8 w-8 text-slate-500" />
+      {loading ? (
+        <div className="flex justify-center items-center py-20">
+          <Loader2 className={`h-12 w-12 animate-spin ${accentText}`} />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-16">
+          {displayItems.length > 0 ? (
+            displayItems.map((item) => (
+              <PortfolioCard
+                key={item.id}
+                item={item}
+                onClick={() => onItemSelect?.(item.id)}
+                onSave={onSave}
+              />
+            ))
+          ) : (
+            <div className="col-span-full py-20 text-center border border-dashed border-white/10 rounded-3xl bg-white/5">
+              <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Layers className="h-8 w-8 text-slate-500" />
+              </div>
+              <p className="text-slate-400 text-lg">No hay proyectos para mostrar en esta categoría.</p>
+              <button onClick={onCreateClick} className={`mt-4 ${accentText} font-bold hover:underline`}>Sé el primero en subir uno</button>
             </div>
-            <p className="text-slate-400 text-lg">No hay proyectos para mostrar en esta categoría.</p>
-            <button onClick={onCreateClick} className={`mt-4 ${accentText} font-bold hover:underline`}>Sé el primero en subir uno</button>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
-      {displayItems.length > 0 && (
-        <div className="mt-12 md:mt-16 flex justify-center">
-          <button className="px-8 py-3 rounded-full border border-white/10 bg-white/5 text-white font-semibold hover:bg-white/10 hover:border-white/20 transition-all text-sm md:text-base backdrop-blur-md">
-            Cargar más proyectos
+      {/* Pagination Controls */}
+      {!loading && (projects.length > 0 || currentPage > 1) && (
+        <div className="mt-12 md:mt-16 flex justify-center items-center gap-4">
+          <button
+            onClick={handlePrevPage}
+            disabled={currentPage === 1 || loading}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 bg-white/5 text-white font-semibold hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" /> Anterior
+          </button>
+          <span className="font-bold text-slate-400 text-sm">Página {currentPage}</span>
+          <button
+            onClick={handleNextPage}
+            disabled={!hasMore || loading}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 bg-white/5 text-white font-semibold hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Siguiente <ArrowRight className="h-4 w-4" />
           </button>
         </div>
       )}

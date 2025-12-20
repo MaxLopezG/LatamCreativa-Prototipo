@@ -1,79 +1,46 @@
-import { storage } from '../../lib/firebase';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import imageCompression from 'browser-image-compression';
+
+const storage = getStorage();
+
+interface UploadOptions {
+    maxSizeMB?: number;
+    compress?: boolean;
+    quality?: number;
+}
 
 export const storageService = {
     /**
-     * Uploads a file to Firebase Storage
-     * @param path The path where the file should be stored (e.g., 'users/avatar.jpg')
-     * @param file The file to upload
-     * @returns The download URL of the uploaded file
+     * Uploads an image to Firebase Storage with validation and optional compression.
+     * @param file The file to upload.
+     * @param path The path in storage.
+     * @param options Configuration for the upload.
+     * @returns The public download URL of the uploaded file.
      */
-    async uploadFile(path: string, file: File): Promise<string> {
-        try {
-            const storageRef = ref(storage, path);
-            const snapshot = await uploadBytes(storageRef, file);
-            const downloadURL = await getDownloadURL(snapshot.ref);
-            return downloadURL;
-        } catch (error) {
-            console.error("Error uploading file:", error);
-            throw error;
-        }
-    },
+    uploadImage: async (file: File, path: string, options: UploadOptions = {}): Promise<string> => {
+        const { maxSizeMB = 5, compress = true, quality = 0.8 } = options;
 
-    /**
-     * Uploads an image to Firebase Storage with validation
-     * @param file The image file to upload
-     * @param path The path where the file should be stored
-     * @returns The download URL of the uploaded image
-     */
-    async uploadImage(file: File, path: string): Promise<string> {
-        // 1. Validate File Type
-        if (!file.type.startsWith('image/')) {
-            throw new Error('El archivo debe ser una imagen.');
+        if (file.size > maxSizeMB * 1024 * 1024) {
+            throw new Error(`El archivo excede el límite de ${maxSizeMB}MB.`);
         }
 
-        // 2. Validate File Size (max 5MB) - Validation for the INPUT file
-        const MAX_SIZE_MB = 5;
-        const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
-
-        if (file.size > MAX_SIZE_BYTES) {
-            throw new Error(`La imagen no debe superar los ${MAX_SIZE_MB}MB.`);
-        }
-
-        // 3. Compress Image
         let fileToUpload = file;
-        try {
-            const options = {
-                maxSizeMB: 0.8,          // target 800KB
-                maxWidthOrHeight: 1920,  // max resolution 1920px
-                useWebWorker: true,
-                fileType: 'image/jpeg'   // force jpeg
-            };
-            const compressedFile = await imageCompression(file, options);
-            fileToUpload = compressedFile;
-            // console.log(`Compression: ${file.size / 1024 / 1024}MB -> ${compressedFile.size / 1024 / 1024}MB`);
-        } catch (error) {
-            console.warn("Image compression failed, uploading original:", error);
-            // Fallback to original file
+
+        if (compress && file.type.startsWith('image/')) {
+            try {
+                fileToUpload = await imageCompression(file, {
+                    maxSizeMB: 2, // Always try to compress to a reasonable web size
+                    maxWidthOrHeight: 1920,
+                    useWebWorker: true,
+                    initialQuality: quality,
+                });
+            } catch (compressionError) {
+                console.warn('No se pudo comprimir la imagen, se subirá el original:', compressionError);
+            }
         }
 
-        return this.uploadFile(path, fileToUpload);
+        const storageRef = ref(storage, path);
+        await uploadBytes(storageRef, fileToUpload);
+        return getDownloadURL(storageRef);
     },
-
-    /**
-     * Deletes a file from Firebase Storage
-     * @param path The path of the file to delete (or the full URL)
-     */
-    async deleteFile(path: string): Promise<void> {
-        try {
-            // If it's a full URL, we can reference it directly or parse it. 
-            // ref() accepts a full HTTPS URL for the file as well.
-            const storageRef = ref(storage, path);
-            await deleteObject(storageRef);
-        } catch (error) {
-            console.error("Error deleting file:", error);
-            throw error;
-        }
-    }
 };

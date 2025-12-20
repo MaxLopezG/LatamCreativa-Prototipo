@@ -3,49 +3,50 @@ import React, { Suspense } from 'react';
 import { useNavigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useAppStore } from '../hooks/useAppStore';
 import { Loader } from '../components/common/Loader';
+import { lazyImport } from '../utils/lazyImport';
 
 // Lazy Load Views using new paths
-const HomeView = React.lazy(() => import('../views/general/HomeView').then(module => ({ default: module.HomeView })));
-const FeedView = React.lazy(() => import('../views/general/FeedView').then(module => ({ default: module.FeedView })));
-const PortfolioView = React.lazy(() => import('../views/portfolio/PortfolioView').then(module => ({ default: module.PortfolioView })));
-const PortfolioPostView = React.lazy(() => import('../views/portfolio/PortfolioPostView').then(module => ({ default: module.PortfolioPostView })));
-const BlogView = React.lazy(() => import('../views/blog/BlogView').then(module => ({ default: module.BlogView })));
-const BlogPostView = React.lazy(() => import('../views/blog/BlogPostView').then(module => ({ default: module.BlogPostView })));
-const EducationView = React.lazy(() => import('../views/education/EducationView').then(module => ({ default: module.EducationView })));
-const CourseDetailView = React.lazy(() => import('../views/education/CourseDetailView').then(module => ({ default: module.CourseDetailView })));
-const CoursePlayerView = React.lazy(() => import('../views/education/CoursePlayerView').then(module => ({ default: module.CoursePlayerView })));
-const AssetsView = React.lazy(() => import('../views/market/AssetsView').then(module => ({ default: module.AssetsView })));
-const AssetDetailView = React.lazy(() => import('../views/market/AssetDetailView').then(module => ({ default: module.AssetDetailView })));
-const FreelanceView = React.lazy(() => import('../views/services/FreelanceView').then(module => ({ default: module.FreelanceView })));
-const ServiceDetailView = React.lazy(() => import('../views/services/ServiceDetailView').then(module => ({ default: module.ServiceDetailView })));
-const JobsView = React.lazy(() => import('../views/services/JobsView').then(module => ({ default: module.JobsView })));
-const JobDetailView = React.lazy(() => import('../views/services/JobDetailView').then(module => ({ default: module.JobDetailView })));
-const CommunityView = React.lazy(() => import('../views/community/CommunityView').then(module => ({ default: module.CommunityView })));
-const ProjectDetailView = React.lazy(() => import('../views/community/ProjectDetailView').then(module => ({ default: module.ProjectDetailView })));
-const ChallengesView = React.lazy(() => import('../views/community/ChallengesView').then(module => ({ default: module.ChallengesView })));
-const ChallengeDetailView = React.lazy(() => import('../views/community/ChallengeDetailView').then(module => ({ default: module.ChallengeDetailView })));
-const EventsView = React.lazy(() => import('../views/community/EventsView').then(module => ({ default: module.EventsView })));
-const EventDetailView = React.lazy(() => import('../views/community/EventDetailView').then(module => ({ default: module.EventDetailView })));
-const ForumView = React.lazy(() => import('../views/community/ForumView').then(module => ({ default: module.ForumView })));
-const ForumDetailView = React.lazy(() => import('../views/community/ForumDetailView').then(module => ({ default: module.ForumDetailView })));
-const PeopleView = React.lazy(() => import('../views/user/PeopleView').then(module => ({ default: module.PeopleView })));
-const UserProfileView = React.lazy(() => import('../views/user/UserProfileView').then(module => ({ default: module.UserProfileView })));
-const CartView = React.lazy(() => import('../views/market/CartView').then(module => ({ default: module.CartView })));
-const SettingsView = React.lazy(() => import('../views/user/SettingsView').then(module => ({ default: module.SettingsView })));
-const ProUpgradeView = React.lazy(() => import('../views/user/ProUpgradeView').then(module => ({ default: module.ProUpgradeView })));
-const EarningsView = React.lazy(() => import('../views/market/EarningsView').then(module => ({ default: module.EarningsView })));
-const SalesListView = React.lazy(() => import('../views/market/SalesListView').then(module => ({ default: module.SalesListView })));
+const HomeView = lazyImport(() => import('../views/general/HomeView').then(module => ({ default: module.HomeView })));
+const FeedView = lazyImport(() => import('../views/general/FeedView').then(module => ({ default: module.FeedView })));
+const PortfolioView = lazyImport(() => import('../views/portfolio/PortfolioView').then(module => ({ default: module.PortfolioView })));
+const PortfolioPostView = lazyImport(() => import('../views/portfolio/PortfolioPostView').then(module => ({ default: module.PortfolioPostView })));
+const BlogView = lazyImport(() => import('../views/blog/BlogView').then(module => ({ default: module.BlogView })));
+const BlogPostView = lazyImport(() => import('../views/blog/BlogPostView').then(module => ({ default: module.BlogPostView })));
+const EducationView = lazyImport(() => import('../views/education/EducationView').then(module => ({ default: module.EducationView })));
+const CourseDetailView = lazyImport(() => import('../views/education/CourseDetailView').then(module => ({ default: module.CourseDetailView })));
+const CoursePlayerView = lazyImport(() => import('../views/education/CoursePlayerView').then(module => ({ default: module.CoursePlayerView })));
+const AssetsView = lazyImport(() => import('../views/market/AssetsView').then(module => ({ default: module.AssetsView })));
+const AssetDetailView = lazyImport(() => import('../views/market/AssetDetailView').then(module => ({ default: module.AssetDetailView })));
+const FreelanceView = lazyImport(() => import('../views/services/FreelanceView').then(module => ({ default: module.FreelanceView })));
+const ServiceDetailView = lazyImport(() => import('../views/services/ServiceDetailView').then(module => ({ default: module.ServiceDetailView })));
+const JobsView = lazyImport(() => import('../views/services/JobsView').then(module => ({ default: module.JobsView })));
+const JobDetailView = lazyImport(() => import('../views/services/JobDetailView').then(module => ({ default: module.JobDetailView })));
+const CommunityView = lazyImport(() => import('../views/community/CommunityView').then(module => ({ default: module.CommunityView })));
+const ProjectDetailView = lazyImport(() => import('../views/community/ProjectDetailView').then(module => ({ default: module.ProjectDetailView })));
+const ChallengesView = lazyImport(() => import('../views/community/ChallengesView').then(module => ({ default: module.ChallengesView })));
+const ChallengeDetailView = lazyImport(() => import('../views/community/ChallengeDetailView').then(module => ({ default: module.ChallengeDetailView })));
+const EventsView = lazyImport(() => import('../views/community/EventsView').then(module => ({ default: module.EventsView })));
+const EventDetailView = lazyImport(() => import('../views/community/EventDetailView').then(module => ({ default: module.EventDetailView })));
+const ForumView = lazyImport(() => import('../views/community/ForumView').then(module => ({ default: module.ForumView })));
+const ForumDetailView = lazyImport(() => import('../views/community/ForumDetailView').then(module => ({ default: module.ForumDetailView })));
+const PeopleView = lazyImport(() => import('../views/user/PeopleView').then(module => ({ default: module.PeopleView })));
+const UserProfileView = lazyImport(() => import('../views/user/UserProfileView').then(module => ({ default: module.UserProfileView })));
+const CartView = lazyImport(() => import('../views/market/CartView').then(module => ({ default: module.CartView })));
+const SettingsView = lazyImport(() => import('../views/user/SettingsView').then(module => ({ default: module.SettingsView })));
+const ProUpgradeView = lazyImport(() => import('../views/user/ProUpgradeView').then(module => ({ default: module.ProUpgradeView })));
+const EarningsView = lazyImport(() => import('../views/market/EarningsView').then(module => ({ default: module.EarningsView })));
+const SalesListView = lazyImport(() => import('../views/market/SalesListView').then(module => ({ default: module.SalesListView })));
 
-const ServicesHomeView = React.lazy(() => import('../views/services/ServicesHomeView').then(module => ({ default: module.ServicesHomeView })));
-const AboutView = React.lazy(() => import('../views/general/AboutView').then(module => ({ default: module.AboutView })));
-const InfoView = React.lazy(() => import('../views/general/InfoView').then(module => ({ default: module.InfoView })));
-const SearchResultsView = React.lazy(() => import('../views/general/SearchResultsView').then(module => ({ default: module.SearchResultsView })));
+const ServicesHomeView = lazyImport(() => import('../views/services/ServicesHomeView').then(module => ({ default: module.ServicesHomeView })));
+const AboutView = lazyImport(() => import('../views/general/AboutView').then(module => ({ default: module.AboutView })));
+const InfoView = lazyImport(() => import('../views/general/InfoView').then(module => ({ default: module.InfoView })));
+const SearchResultsView = lazyImport(() => import('../views/general/SearchResultsView').then(module => ({ default: module.SearchResultsView })));
 
-const ComingSoonView = React.lazy(() => import('../views/general/ComingSoonView'));
-const SuccessView = React.lazy(() => import('../views/general/SuccessView').then(module => ({ default: module.SuccessView })));
-const CollectionsView = React.lazy(() => import('../views/user/CollectionsView').then(module => ({ default: module.CollectionsView })));
-const CollectionDetailView = React.lazy(() => import('../views/user/CollectionDetailView').then(module => ({ default: module.CollectionDetailView })));
-const AuthView = React.lazy(() => import('../views/auth/AuthView').then(module => ({ default: module.AuthView })));
+const ComingSoonView = lazyImport(() => import('../views/general/ComingSoonView'));
+const SuccessView = lazyImport(() => import('../views/general/SuccessView').then(module => ({ default: module.SuccessView })));
+const CollectionsView = lazyImport(() => import('../views/user/CollectionsView').then(module => ({ default: module.CollectionsView })));
+const CollectionDetailView = lazyImport(() => import('../views/user/CollectionDetailView').then(module => ({ default: module.CollectionDetailView })));
+const AuthView = lazyImport(() => import('../views/auth/AuthView').then(module => ({ default: module.AuthView })));
 
 // Helper to wrap components in Suspense
 export const Suspended = ({ children }: { children?: React.ReactNode }) => (
@@ -552,8 +553,8 @@ export const SuspendedView = ({ Component, ...props }: { Component: React.FC<any
 );
 
 // --- Admin Views ---
-const AdminLayoutView = React.lazy(() => import('../layouts/AdminLayout').then(module => ({ default: module.AdminLayout })));
-const AdminDashboard = React.lazy(() => import('../views/admin/AdminDashboardView').then(module => ({ default: module.AdminDashboardView })));
+const AdminLayoutView = lazyImport(() => import('../layouts/AdminLayout').then(module => ({ default: module.AdminLayout })));
+const AdminDashboard = lazyImport(() => import('../views/admin/AdminDashboardView').then(module => ({ default: module.AdminDashboardView })));
 
 // Exports for direct use in router
 export {

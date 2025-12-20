@@ -2,8 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowLeft, Lock, Globe, Share2, MoreHorizontal, Filter, Plus } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
-import { api } from '../../services/api';
 import { PortfolioCard } from '../../components/cards/PortfolioCard';
+import { projectsService } from '../../services/modules/projects';
+import { articlesService } from '../../services/modules/articles';
 import { PORTFOLIO_ITEMS, BLOG_ITEMS } from '../../data/content';
 import { PortfolioItem } from '../../types';
 
@@ -33,8 +34,8 @@ export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({ coll
                     // 2. Fetch from BOTH services for all IDs to be robust against type mismatches
                     // This handles cases where an item is saved as 'project' but is actually an 'article' (or vice versa)
                     const [projects, articles] = await Promise.all([
-                        allIds.length > 0 ? api.getProjectsByIds(allIds) : Promise.resolve([]),
-                        allIds.length > 0 ? api.getArticlesByIds(allIds) : Promise.resolve([])
+                        allIds.length > 0 ? projectsService.getProjectsByIds(allIds) : Promise.resolve([]),
+                        allIds.length > 0 ? articlesService.getArticlesByIds(allIds) : Promise.resolve([])
                     ]);
 
                     // Merge with local/static items to ensure we find everything (e.g. newly created local items)

@@ -4,47 +4,9 @@ import { api, PaginatedResult } from '../services/api';
 import { PortfolioItem, ArticleItem, BlogComment } from '../types';
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { NAV_SECTIONS, NAV_SECTIONS_DEV } from '../data/navigation';
-
-// --- Hook for Infinite Scroll Feed ---
-export const useProjects = () => {
-    const [projects, setProjects] = useState<PortfolioItem[]>([]);
-    const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [hasMore, setHasMore] = useState(true);
-
-    const loadMore = useCallback(async (reset = false) => {
-        if (loading || (!hasMore && !reset)) return;
-
-        setLoading(true);
-        setError(null);
-
-        try {
-            const currentLastDoc = reset ? null : lastDoc;
-            const result = await api.getProjects(currentLastDoc);
-
-            if (reset) {
-                setProjects(result.data);
-            } else {
-                setProjects(prev => [...prev, ...result.data]);
-            }
-
-            setLastDoc(result.lastDoc);
-            setHasMore(result.hasMore);
-        } catch (err: any) {
-            setError(err.message || 'Error loading projects');
-        } finally {
-            setLoading(false);
-        }
-    }, [lastDoc, hasMore, loading]);
-
-    // Initial load
-    useEffect(() => {
-        loadMore(true);
-    }, []);
-
-    return { projects, loading, error, hasMore, loadMore };
-};
+import { articlesService } from '../services/modules/articles';
+import { usersService } from '../services/modules/users';
+import { projectsService } from '../services/modules/projects';
 
 // --- Hook for User Profile ---
 export const useUserProfile = (userId: string | null) => {
@@ -96,14 +58,19 @@ export const useCreateProject = () => {
 
 // --- Hook for Deleting Project ---
 export const useDeleteProject = () => {
+    const { state } = useAppStore();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const deleteProject = async (id: string) => {
+        if (!state.user?.id) {
+            throw new Error("Debes iniciar sesión para eliminar un proyecto.");
+        }
+
         setLoading(true);
         setError(null);
         try {
-            await api.deleteProject(id);
+            await projectsService.deleteProject(state.user.id, id);
         } catch (err: any) {
             setError(err.message);
             throw err;
@@ -127,7 +94,7 @@ export const useProject = (id: string | undefined) => {
         const fetchProject = async () => {
             setLoading(true);
             try {
-                const data = await api.getProject(id);
+                const data = await projectsService.getProject(id);
                 setProject(data);
             } catch (err: any) {
                 setError(err.message);
@@ -233,15 +200,15 @@ export const useArticles = () => {
                 );
 
                 if (isTag) {
-                    result = await api.getArticlesByTag(category, startAfterDoc, 10);
+                    result = await articlesService.getArticlesByTag(category, startAfterDoc, 10);
                 } else {
                     // We treat categories as a list, but activeCategory is a string
-                    result = await api.getArticlesByCategories([category], startAfterDoc, 10);
+                    result = await articlesService.getArticlesByCategories([category], startAfterDoc, 10);
                 }
 
             } else {
                 // 2. Default / Home / Sort-Based Fetching
-                const resultFetch = await api.getArticles(startAfterDoc, 10, sortField, sortDir);
+                const resultFetch = await articlesService.getArticles(startAfterDoc, 10, sortField, sortDir);
                 result = resultFetch;
             }
             actions.setBlogState({
@@ -312,7 +279,7 @@ export const useCreateArticle = () => {
         setLoading(true);
         setError(null);
         try {
-            const id = await api.createArticle(data, file);
+            const id = await articlesService.createArticle(data, file);
             return id;
         } catch (err: any) {
             setError(err.message);
@@ -337,7 +304,7 @@ export const useUserArticles = (authorName: string | undefined, authorId?: strin
         const fetchArticles = async () => {
             setLoading(true);
             try {
-                const data = await api.getUserArticles(authorName || '', authorId);
+                const data = await articlesService.getUserArticles(authorName || '', authorId);
                 setArticles(data);
             } catch (err: any) {
                 setError(err.message);
@@ -364,7 +331,8 @@ export const useUserProjects = (userId: string | undefined, userName: string | u
         const fetchProjects = async () => {
             setLoading(true);
             try {
-                const data = await api.getUserProjects(userId || '', userName || '');
+                // We use userId as the primary key. userName is ignored in the new service pattern or used as fallback if implemented.
+                const data = await projectsService.getUserProjects(userId || '');
                 setProjects(data);
             } catch (err: any) {
                 setError(err.message);
@@ -376,7 +344,11 @@ export const useUserProjects = (userId: string | undefined, userName: string | u
         fetchProjects();
     }, [userId, userName]);
 
-    return { projects, loading, error };
+    const removeProject = (projectId: string) => {
+        setProjects(prev => prev.filter(p => p.id !== projectId));
+    };
+
+    return { projects, loading, error, removeProject };
 };
 
 // --- Hook for Single Article ---
@@ -391,7 +363,7 @@ export const useArticle = (articleId: string | undefined) => {
         const fetchArticle = async () => {
             setLoading(true);
             try {
-                const data = await api.getArticle(articleId);
+                const data = await articlesService.getArticle(articleId);
                 setArticle(data);
             } catch (err: any) {
                 setError(err.message);
@@ -416,7 +388,7 @@ export const useRecommendedArticles = (currentArticleId: string) => {
             setLoading(true);
             try {
                 // Fetch 4 to safely exclude current one and keep 3
-                const result = await api.getArticles(null, 4);
+                const result = await articlesService.getArticles(null, 4);
                 const filtered = result.data
                     .filter(a => a.id !== currentArticleId)
                     .slice(0, 3);
@@ -442,7 +414,7 @@ export const useDeleteArticle = () => {
         setLoading(true);
         setError(null);
         try {
-            await api.deleteArticle(id);
+            await articlesService.deleteArticle(id);
         } catch (err: any) {
             setError(err.message);
             throw err;
@@ -463,7 +435,7 @@ export const useUpdateArticle = () => {
         setLoading(true);
         setError(null);
         try {
-            await api.updateArticle(id, data, file);
+            await articlesService.updateArticle(id, data, file);
         } catch (err: any) {
             setError(err.message);
             throw err;
@@ -484,7 +456,7 @@ export const useComments = (articleId: string | undefined) => {
         if (!articleId) return;
         setLoading(true);
         try {
-            const data = await api.getComments(articleId);
+            const data = await articlesService.getComments(articleId);
             setComments(data);
         } catch (err: any) {
             setError(err.message);
@@ -512,7 +484,7 @@ export const useAddComment = () => {
         setLoading(true);
         setError(null);
         try {
-            await api.addComment(articleId, data);
+            await articlesService.addComment(articleId, data);
         } catch (err: any) {
             setError(err.message);
             throw err;
@@ -539,12 +511,12 @@ export const useSubscription = (targetUserId: string, currentUserId: string | un
         try {
             // Check if subscribed
             if (currentUserId) {
-                const subscribed = await api.getSubscriptionStatus(targetUserId, currentUserId);
+                const subscribed = await usersService.getSubscriptionStatus(targetUserId, currentUserId);
                 setIsSubscribed(subscribed);
             }
 
             // Fetch subscriber count
-            const followers = await api.getFollowers(targetUserId);
+            const followers = await usersService.getFollowers(targetUserId);
             setSubscriberCount(followers.length);
         } catch (error) {
             console.error(error);
@@ -573,9 +545,9 @@ export const useSubscription = (targetUserId: string, currentUserId: string | un
 
         try {
             if (previousIsSubscribed) {
-                await api.unsubscribeFromUser(targetUserId, currentUserId);
+                await usersService.unsubscribeFromUser(targetUserId, currentUserId);
             } else {
-                await api.subscribeToUser(targetUserId, currentUserId);
+                await usersService.subscribeToUser(targetUserId, currentUserId);
             }
             // Trigger global update for sidebar
             actions.triggerSubscriptionUpdate();
@@ -597,7 +569,7 @@ export const useCommentActions = () => {
 
     const like = async (articleId: string, commentId: string) => {
         try {
-            await api.likeComment(articleId, commentId);
+            await articlesService.likeComment(articleId, commentId);
         } catch (err: any) {
             console.error(err);
         }
@@ -606,7 +578,7 @@ export const useCommentActions = () => {
     const update = async (articleId: string, commentId: string, content: string) => {
         setLoading(true);
         try {
-            await api.updateComment(articleId, commentId, content);
+            await articlesService.updateComment(articleId, commentId, content);
         } catch (err: any) {
             setError(err.message);
             throw err;
@@ -618,7 +590,7 @@ export const useCommentActions = () => {
     const remove = async (articleId: string, commentId: string) => {
         setLoading(true);
         try {
-            await api.deleteComment(articleId, commentId);
+            await articlesService.deleteComment(articleId, commentId);
         } catch (err: any) {
             setError(err.message);
             throw err;
@@ -639,7 +611,7 @@ export const useArticleLike = (articleId: string | undefined, userId: string | u
     useEffect(() => {
         const checkLike = async () => {
             if (!articleId || !userId) return;
-            const status = await api.getArticleLikeStatus(articleId, userId);
+            const status = await articlesService.getArticleLikeStatus(articleId, userId);
             setIsLiked(status);
             setInitialIsLiked(status);
         };
@@ -654,7 +626,7 @@ export const useArticleLike = (articleId: string | undefined, userId: string | u
         setIsLiked(!previousState);
 
         try {
-            const newState = await api.toggleArticleLike(articleId, userId);
+            const newState = await articlesService.toggleArticleLike(articleId, userId);
             setIsLiked(newState);
             // Verify if we need to update initial logic? No, initial logic is "was it liked when loaded".
             // If API fails, we revert.

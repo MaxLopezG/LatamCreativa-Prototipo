@@ -48,11 +48,15 @@ import {
   SuspendedView
 } from './router/RouteWrappers';
 
+import { lazyImport } from './utils/lazyImport';
+
+// ... (other imports)
+
 // --- Admin Views ---
 // Keeping AdminLayout inline lazy load or move too? 
 // Let's keep it consistent, though it was lazy loaded in original. 
 // RouteWrappers handled the lazy loading for views. AdminLayout is a layout.
-const AdminLayoutView = React.lazy(() => import('./layouts/AdminLayout').then(module => ({ default: module.AdminLayout })));
+const AdminLayoutView = lazyImport(() => import('./layouts/AdminLayout').then(module => ({ default: module.AdminLayout })));
 
 // Lazy Load Create Views (passed to CreateWrapper)
 // These were lazy loaded in router originally, now we need to import them to pass to CreateWrapper?
@@ -64,19 +68,19 @@ const AdminLayoutView = React.lazy(() => import('./layouts/AdminLayout').then(mo
 // I should probably add them to RouteWrappers exports or import them here.
 // The cleanest is to import them here using the new paths.
 
-const CreateProjectView = React.lazy(() => import('./views/community/CreateProjectView').then(module => ({ default: module.CreateProjectView })));
-const CreateArticleView = React.lazy(() => import('./views/blog/CreateArticleView').then(module => ({ default: module.CreateArticleView })));
-const CreatePortfolioView = React.lazy(() => import('./views/portfolio/CreatePortfolioView').then(module => ({ default: module.CreatePortfolioView })));
-const CreateCourseView = React.lazy(() => import('./views/education/CreateCourseView').then(module => ({ default: module.CreateCourseView })));
-const CreateAssetView = React.lazy(() => import('./views/market/CreateAssetView').then(module => ({ default: module.CreateAssetView })));
-const CreateServiceView = React.lazy(() => import('./views/services/CreateServiceView').then(module => ({ default: module.CreateServiceView })));
-const CreateForumPostView = React.lazy(() => import('./views/community/CreateForumPostView').then(module => ({ default: module.CreateForumPostView })));
-const CreateEventView = React.lazy(() => import('./views/community/CreateEventView').then(module => ({ default: module.CreateEventView })));
+const CreateProjectView = lazyImport(() => import('./views/community/CreateProjectView').then(module => ({ default: module.CreateProjectView })));
+const CreateArticleView = lazyImport(() => import('./views/blog/CreateArticleView').then(module => ({ default: module.CreateArticleView })));
+const CreatePortfolioView = lazyImport(() => import('./views/portfolio/CreatePortfolioView').then(module => ({ default: module.CreatePortfolioView })));
+const CreateCourseView = lazyImport(() => import('./views/education/CreateCourseView').then(module => ({ default: module.CreateCourseView })));
+const CreateAssetView = lazyImport(() => import('./views/market/CreateAssetView').then(module => ({ default: module.CreateAssetView })));
+const CreateServiceView = lazyImport(() => import('./views/services/CreateServiceView').then(module => ({ default: module.CreateServiceView })));
+const CreateForumPostView = lazyImport(() => import('./views/community/CreateForumPostView').then(module => ({ default: module.CreateForumPostView })));
+const CreateEventView = lazyImport(() => import('../src/views/community/CreateEventView').then(module => ({ default: module.CreateEventView })));
 
 export const router = createBrowserRouter([
   {
     path: '/auth',
-    element: <SuspendedView Component={React.lazy(() => import('./views/auth/AuthView').then(m => ({ default: m.AuthView })))} />
+    element: <SuspendedView Component={lazyImport(() => import('./views/auth/AuthView').then(m => ({ default: m.AuthView })))} />
   },
   {
     path: 'admin',

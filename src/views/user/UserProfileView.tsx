@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Link as LinkIcon, Calendar, CheckCircle2, UserPlus, Mail, MessageSquare, Layers, Twitter, Instagram, Globe, MoreHorizontal, Briefcase, GraduationCap, UserCheck, Zap, Award, Trophy, Bookmark, Heart, Lock, Plus, Image as ImageIcon, Video, Box, Newspaper, Download, PlayCircle, FileText, Settings, Github, Linkedin, Palette } from 'lucide-react';
+import { ArrowLeft, MapPin, Link as LinkIcon, Calendar, CheckCircle2, UserPlus, Mail, MessageSquare, Layers, Twitter, Instagram, Globe, MoreHorizontal, Briefcase, GraduationCap, UserCheck, Zap, Award, Trophy, Bookmark, Heart, Lock, Plus, Image as ImageIcon, Video, Box, Newspaper, Download, PlayCircle, FileText, Settings, Github, Linkedin, Palette, Trash2 } from 'lucide-react';
 import { ARTIST_DIRECTORY, ARTIST_TIERS } from '../../data/content';
 import { PortfolioCard } from '../../components/cards/PortfolioCard';
 import { BlogCard } from '../../components/cards/BlogCard';
@@ -9,10 +8,11 @@ import { AssetCard } from '../../components/cards/AssetCard';
 import { useAppStore } from '../../hooks/useAppStore';
 import { EditProfileModal } from '../../components/modals/EditProfileModal';
 import { CreatePostModal } from '../../components/modals/CreatePostModal';
-import { useUserArticles, useUserProjects } from '../../hooks/useFirebase';
+import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
+import { useUserArticles, useDeleteProject, useUserProjects } from '../../hooks/useFirebase';
 import { usersService } from '../../services/modules/users';
-import { api } from '../../services/api';
 import { EXPERIENCE, EDUCATION, LOCKED_POSTS } from '../../data/profileData';
+import { useUserProfileData } from '../../hooks/useUserProfileData';
 
 interface UserProfileViewProps {
     author?: { name: string; avatar?: string; id?: string } | null;
@@ -24,155 +24,7 @@ interface UserProfileViewProps {
 
 export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, authorName, onBack, onItemSelect, onOpenChat }) => {
     const { state, actions } = useAppStore();
-    const { username } = useParams<{ username: string }>();
-    const navigate = useNavigate();
-    const [fetchedUser, setFetchedUser] = useState<any>(null); // Store fetched profile data
-
-    // Robust check for Own Profile
-    const isOwnProfile = useMemo(() => {
-        // 1. If currently viewing /profile (no args) or /user/me
-        if (!author && !authorName && (!username || username === 'me')) return true;
-
-        // 2. If logged in, compare with current user
-        if (state.user) {
-            const currentName = state.user.name;
-            const currentId = state.user.id;
-            const currentUsername = state.user.username;
-
-            // Check ID match (if author prop has ID)
-            if (author?.id && author.id === currentId) return true;
-
-            // Check Username match
-            if (username && currentUsername && username.toLowerCase() === currentUsername.toLowerCase()) return true;
-
-            // Check Name match (author prop, authorName prop, or URL param)
-            const targetName = author?.name || authorName || (username ? decodeURIComponent(username) : '');
-            if (targetName === currentName) return true;
-        }
-
-        return false;
-    }, [state.user, author, authorName, username]);
-
-    // Force canonical URL (username) for own profile
-    useEffect(() => {
-        if (isOwnProfile && state.user?.username) {
-            // If current 'username' param is missing OR different from actual username
-            if (username !== state.user.username) {
-                // Avoid redirect loop if they are equivalent (e.g. case sensitivity handled by router usually but good to be safe)
-                // But generally users want the exact casing they set.
-                navigate(`/user/${state.user.username}`, { replace: true });
-            }
-        }
-    }, [isOwnProfile, state.user?.username, username, navigate]);
-
-    // Fetch real user data if we have an ID or Name
-    // 4. Real-time subscription to user data
-    useEffect(() => {
-        let unsubscribe: (() => void) | undefined;
-
-        const setupSubscription = async () => {
-            // 0. If Own Profile, listen by ID from state
-            if (isOwnProfile && state.user?.id) {
-                unsubscribe = usersService.listenToUserProfile(state.user.id, (user) => {
-                    if (user) setFetchedUser(user);
-                });
-                return;
-            }
-
-            // 1. Try by ID (if author prop allows)
-            if (author?.id && author.id !== 'unknown') {
-                unsubscribe = usersService.listenToUserProfile(author.id, (user) => {
-                    if (user) setFetchedUser(user);
-                });
-                return;
-            }
-
-            // 2. Try by Username
-            if (username) {
-                unsubscribe = usersService.listenToUserProfileByUsername(username, (user) => {
-                    if (user) {
-                        setFetchedUser(user);
-                    } else {
-                        setFetchedUser(null);
-                    }
-                });
-                return;
-            }
-
-            // 3. Fallback: Try by Name (one-time fetch)
-            const targetName = author?.name || authorName || (username ? decodeURIComponent(username) : '');
-            if (targetName && targetName !== 'Unknown User') {
-                const cleanName = typeof targetName === 'object'
-                    ? (targetName as any).name || (targetName as any).displayName || ''
-                    : String(targetName);
-
-                if (cleanName) {
-                    const user = await api.getUserProfileByName(cleanName);
-                    if (user) setFetchedUser(user);
-                }
-            }
-        };
-
-        setupSubscription();
-
-        return () => {
-            if (unsubscribe) unsubscribe();
-        };
-    }, [author?.id, author?.name, authorName, isOwnProfile, username, state.user?.id]);
-
-    // Helper to check if a name is valid/useful
-    const isValidName = (n: any) => {
-        if (!n) return false;
-        const s = String(n).trim();
-        if (s === 'Unknown User' || s === 'unknown user' || s === 'Unknown' || s === '[object Object]') return false;
-        if (s.includes('Unknown User')) return false; // Catch "Unknown User (Mock)" etc
-        return true;
-    };
-
-    const getDisplayName = () => {
-        // 1. Prioritize author passed prop if it's valid (Visual Consistency)
-        if (author?.name && isValidName(author.name)) return author.name;
-
-        // 2. Try fetched user name (if author prop wasn't valid)
-        if (fetchedUser?.name && isValidName(fetchedUser.name)) return fetchedUser.name;
-
-        // 3. Try other props
-        if (authorName && isValidName(authorName)) return authorName;
-        if (username && isValidName(username)) return username;
-
-        return 'Unknown User';
-    };
-
-    const finalName = getDisplayName();
-
-    // Safe user object creation
-    const displayUser = isOwnProfile ? (state.user || {
-        name: 'Usuario Nuevo',
-        id: 'new-user',
-        avatar: 'https://ui-avatars.com/api/?name=U&background=random',
-        role: 'Creative Member',
-        location: 'Latam',
-        email: '',
-        createdAt: new Date().toISOString(),
-        coverImage: undefined,
-        // Merge fetched stats if available to show real-time followers count
-        stats: fetchedUser?.stats || state.user?.stats
-    }) : {
-        name: finalName,
-        id: fetchedUser?.id || author?.id || 'unknown',
-        avatar: fetchedUser?.avatar || author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=random&size=512`,
-        role: fetchedUser?.role || 'Digital Artist',
-        location: fetchedUser?.location || 'Latam',
-        bio: fetchedUser?.bio,
-        createdAt: fetchedUser?.createdAt,
-        skills: fetchedUser?.skills,
-        experience: fetchedUser?.experience,
-        education: fetchedUser?.education,
-        socialLinks: fetchedUser?.socialLinks,
-        username: fetchedUser?.username,
-        coverImage: fetchedUser?.coverImage,
-        stats: fetchedUser?.stats
-    };
+    const { isOwnProfile, displayUser, fetchedUser } = useUserProfileData(author, authorName);
 
     const sanitizeName = (val: any) => {
         if (!val) return 'Unknown User';
@@ -188,14 +40,20 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
     const [activeTab, setActiveTab] = useState<'portfolio' | 'courses' | 'assets' | 'blog' | 'saved' | 'collections' | 'membership'>('portfolio');
     const [isFollowing, setIsFollowing] = useState(false);
     const [isFollowLoading, setIsFollowLoading] = useState(false);
-    // const { state, actions } = useAppStore(); // Removed duplicate
 
     // Check initial subscription status
     useEffect(() => {
         const checkStatus = async () => {
-            if (state.user && displayUser.id) {
-                const status = await usersService.getSubscriptionStatus(displayUser.id, state.user.id);
-                setIsFollowing(status);
+            if (state.user && displayUser.id && displayUser.id !== 'unknown') {
+                setIsFollowLoading(true);
+                try {
+                    const status = await usersService.getSubscriptionStatus(displayUser.id, state.user.id);
+                    setIsFollowing(status);
+                } catch (error) {
+                    console.error("Failed to check subscription status:", error);
+                } finally {
+                    setIsFollowLoading(false);
+                }
             }
         };
         checkStatus();
@@ -206,38 +64,62 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
             actions.showToast("Inicia sesión para seguir a creadores", "info");
             return;
         }
-
         const targetId = displayUser.id;
-
-        // Validación estricta: Solo permitir seguir si tenemos un ID válido
         if (!targetId || targetId === 'unknown') {
             console.error("No user ID found for follow");
             return;
         }
 
-        // 1. Optimistic UI: Cambiar el estado visual INMEDIATAMENTE
         const previousState = isFollowing;
-        setIsFollowing(!previousState);
+        setIsFollowing(!previousState); // Optimistic UI
 
         try {
-            // 2. Realizar la petición en segundo plano
             if (previousState) {
                 await usersService.unsubscribeFromUser(targetId, state.user.id);
-                actions.showToast(`Dejaste de seguir a ${name}`, 'success');
             } else {
                 await usersService.subscribeToUser(targetId, state.user.id);
-                actions.showToast(`Ahora sigues a ${name}`, 'success');
             }
-            actions.triggerSubscriptionUpdate();
+            actions.triggerSubscriptionUpdate(); // To update sidebar, etc.
         } catch (error) {
-            console.error("Follow error:", error);
-            // 3. Revertir cambios si falla (Rollback)
-            setIsFollowing(previousState);
+            console.error("Follow toggle error:", error);
+            setIsFollowing(previousState); // Rollback on error
             actions.showToast("Error al actualizar seguimiento", "error");
         }
     };
+
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
+
+    const userIdForQuery = isOwnProfile ? state.user?.id : fetchedUser?.id;
+    const { projects: userPortfolio, loading: projectsLoading, removeProject: removeProjectFromList } = useUserProjects(userIdForQuery, undefined);
+
+    const { deleteProject, loading: isDeleting } = useDeleteProject();
+    const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+
+    const handleDeleteProject = (projectId: string) => {
+        setProjectToDelete(projectId);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!projectToDelete) return;
+
+        try {
+            // Optimistic UI update first
+            removeProjectFromList(projectToDelete);
+            setProjectToDelete(null); // Close modal immediately
+
+            // Then perform DB deletion
+            await deleteProject(projectToDelete);
+
+            actions.showToast('Proyecto eliminado correctamente', 'success');
+        } catch (error) {
+            console.error("Error deleting project:", error);
+            actions.showToast('Error al eliminar el proyecto', 'error');
+            // Here you might want to add the project back to the list if deletion fails
+            // For now, we just show an error.
+            setProjectToDelete(null); // Ensure modal is closed on error too
+        }
+    };
 
     // Attempt to find artist level from directory if exists (Mock logic)
     const directoryArtist = ARTIST_DIRECTORY.find(a => a.name === name);
@@ -273,22 +155,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
 
     const levelFrameClass = getLevelFrameClass(artistLevel);
 
-    // --- Dynamic Content Logic ---
-
-    // 1. Portfolio / Creations
-    const { projects: fetchedProjects, loading: projectsLoading } = useUserProjects(displayUser.id === 'unknown' ? undefined : displayUser.id, name);
-
-    // Merge local created items (for immediate feedback) with fetched items
-    const userPortfolio = useMemo(() => {
-        // If own profile, prioritize local state for immediate updates, but merge with fetched
-        if (isOwnProfile) {
-            const localIds = new Set(state.createdItems.map(p => p.id));
-            const newFetched = fetchedProjects.filter(p => !localIds.has(p.id));
-            return [...state.createdItems, ...newFetched];
-        }
-        return fetchedProjects;
-    }, [isOwnProfile, state.createdItems, fetchedProjects]);
-
     // 2. Courses
     const userCourses = useMemo(() => {
         // FUTURE: Fetch real courses
@@ -302,7 +168,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
     }, [name]);
 
     // 4. Blog
-    const { articles: userArticles, loading: articlesLoading, error: articlesError } = useUserArticles(name, displayUser.id === 'unknown' ? undefined : displayUser.id);
+    const { articles: userArticles, loading: articlesLoading, error: articlesError } = useUserArticles(name, userIdForQuery);
 
 
     // 5. Saved Items (Likes)
@@ -322,6 +188,18 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
         <div className="w-full max-w-[2560px] mx-auto animate-fade-in pb-20">
 
             {/* Edit Modal */}
+            <ConfirmationModal
+                isOpen={!!projectToDelete}
+                onClose={() => setProjectToDelete(null)}
+                onConfirm={handleConfirmDelete}
+                title="Eliminar Proyecto"
+                message="¿Estás seguro de que deseas eliminar este proyecto? Esta acción es permanente y también eliminará todas las imágenes asociadas."
+                confirmText="Sí, eliminar"
+                cancelText="Cancelar"
+                type="danger"
+                loading={isDeleting}
+            />
+
             <EditProfileModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} />
             <CreatePostModal isOpen={isCreatePostModalOpen} onClose={() => setIsCreatePostModalOpen(false)} />
 
@@ -711,18 +589,48 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
                     {/* TAB: PORTFOLIO */}
                     {activeTab === 'portfolio' && (
                         <>
-                            {userPortfolio.length > 0 ? (
+                            {/* 1. Si hay proyectos, los mostramos. Esto permite que las recargas en segundo plano no eliminen lo que ya se ve. */}
+                            {userPortfolio.length > 0 && (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5 animate-slide-up">
                                     {userPortfolio.map((item) => (
-                                        <PortfolioCard
-                                            key={item.id}
-                                            item={item}
-                                            onClick={() => onItemSelect(item.id, 'portfolio')}
-                                            onSave={actions.openSaveModal}
-                                        />
+                                        <div key={item.id} className="relative group">
+                                            <PortfolioCard
+                                                item={item}
+                                                onClick={() => onItemSelect(item.id, 'portfolio')}
+                                                onSave={actions.openSaveModal}
+                                                extraAction={
+                                                    isOwnProfile ? (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleDeleteProject(item.id);
+                                                            }}
+                                                            // Removed absolute positioning and opacity transitions as parent handles them
+                                                            className="p-2 bg-red-500/90 text-white rounded-full transition-all hover:bg-red-600 hover:scale-110 shadow-lg"
+                                                            title="Eliminar proyecto"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    ) : undefined
+                                                }
+                                            />
+                                        </div>
                                     ))}
                                 </div>
-                            ) : (
+                            )}
+
+                            {/* 2. Si estamos cargando y el portafolio está vacío, mostramos el esqueleto. */}
+                            {projectsLoading && userPortfolio.length === 0 && (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
+                                    {/* Skeleton Loader */}
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                        <div key={i} className="aspect-[3/4] bg-white/5 rounded-2xl animate-pulse"></div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* 3. Si la carga ha terminado y el portafolio sigue vacío, mostramos el mensaje. */}
+                            {!projectsLoading && userPortfolio.length === 0 && (
                                 <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-2xl border border-white/5 text-center animate-fade-in">
                                     <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
                                         <Layers className="h-8 w-8 text-slate-500" />

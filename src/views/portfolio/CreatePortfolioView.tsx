@@ -1,7 +1,6 @@
 
 import React, { useState, useRef } from 'react';
 import { Image as ImageIcon, X, Trash2, ArrowLeft, Layers, Monitor, Upload, Check, Loader2 } from 'lucide-react';
-import { CreatePageLayout } from '../../components/layout/CreatePageLayout';
 import { useAppStore } from '../../hooks/useAppStore';
 import { projectsService } from '../../services/modules/projects';
 
@@ -16,6 +15,10 @@ const PORTFOLIO_CATEGORIES = [
 const COMMON_SOFTWARE = [
   'Blender', 'Maya', 'ZBrush', 'Substance Painter', 'Unreal Engine', 'Unity', 'Photoshop', 'Illustrator', 'Figma'
 ];
+
+// Definimos los límites de tamaño (en bytes)
+const MAX_SIZE_FREE = 10 * 1024 * 1024; // 10MB para usuarios gratuitos (Suficiente para 1080p/2K alta calidad)
+const MAX_SIZE_PRO = 50 * 1024 * 1024;  // 50MB para usuarios Pro (Soporte para 4K/8K sin compresión agresiva)
 
 export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack }) => {
   const { state, actions } = useAppStore();
@@ -41,10 +44,26 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
   const [tagInput, setTagInput] = useState('');
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
 
+  // Lógica de Límite Inteligente
+  // Aquí verificamos si el usuario tiene un rol premium.
+  // En el futuro, esto podría verificar 'state.user.subscriptionStatus === "active"'
+  const isProUser = state.user?.role === 'Pro' || state.user?.role === 'Master' || state.user?.role === 'Expert';
+  const maxFileSize = isProUser ? MAX_SIZE_PRO : MAX_SIZE_FREE;
+
+  const validateFile = (file: File): boolean => {
+    if (file.size > maxFileSize) {
+      const limitMb = maxFileSize / (1024 * 1024);
+      actions.showToast(`El archivo "${file.name}" excede el límite de ${limitMb}MB. ${!isProUser ? 'Suscríbete a Pro para subir en 4K.' : ''}`, 'error');
+      return false;
+    }
+    return true;
+  };
+
   // --- Handlers: Cover Image ---
   const handleCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!validateFile(file)) return;
       setCoverFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setCoverPreview(reader.result as string);
@@ -56,6 +75,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
+      if (!validateFile(file)) return;
       setCoverFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setCoverPreview(reader.result as string);
@@ -65,25 +85,45 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
 
   // --- Handlers: Gallery ---
   const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    addGalleryFiles(files);
+    if (e.target.files) {
+      const rawFiles = Array.from(e.target.files) as File[];
+      const files = rawFiles.filter(validateFile); // Filtrar archivos que exceden el peso
+      addGalleryFiles(files);
+      e.target.value = ''; // Reset input to allow selecting same files again
+    }
   };
 
   const handleDropGallery = (e: React.DragEvent) => {
     e.preventDefault();
-    const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
-    addGalleryFiles(files);
+    if (e.dataTransfer.files) {
+      const files = (Array.from(e.dataTransfer.files) as File[])
+        .filter(f => f.type.startsWith('image/'))
+        .filter(validateFile); // Filtrar archivos que exceden el peso
+      addGalleryFiles(files);
+    }
   };
 
-  const addGalleryFiles = (files: File[]) => {
-    setGalleryFiles(prev => [...prev, ...files]);
+  const addGalleryFiles = async (files: File[]) => {
+    // Filter out duplicates based on name and size
+    const newFiles = files.filter(file =>
+      !galleryFiles.some(existing =>
+        existing.name === file.name && existing.size === file.size
+      )
+    );
 
-    // Generate previews
-    files.forEach(file => {
+    if (newFiles.length === 0) return;
+
+    setGalleryFiles(prev => [...prev, ...newFiles]);
+
+    // Generate previews preserving order
+    const previewPromises = newFiles.map(file => new Promise<string>((resolve) => {
       const reader = new FileReader();
-      reader.onloadend = () => setGalleryPreviews(prev => [...prev, reader.result as string]);
+      reader.onloadend = () => resolve(reader.result as string);
       reader.readAsDataURL(file);
-    });
+    }));
+
+    const newPreviews = await Promise.all(previewPromises);
+    setGalleryPreviews(prev => [...prev, ...newPreviews]);
   };
 
   const removeGalleryImage = (index: number) => {
@@ -126,7 +166,10 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
         tags,
         artist: state.user.name,
         artistId: state.user.id,
-        artistAvatar: state.user.avatar
+        authorId: state.user.id,
+        artistAvatar: state.user.avatar,
+        artistUsername: state.user.username,
+        domain: state.contentMode // Pass the current content mode as the domain
       };
 
       const projectId = await projectsService.createProject(
@@ -135,16 +178,20 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
         {
           cover: coverFile || undefined,
           gallery: galleryFiles
+        },
+        {
+          maxSizeMB: maxFileSize / (1024 * 1024) // Pass the calculated limit in MB
         }
       );
 
       actions.showToast('Proyecto publicado con éxito', 'success');
       // Optimistic addition to list could happen here if we had the full object returned
+      setIsSubmitting(false);
       onBack();
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      actions.showToast('Error al publicar el proyecto', 'error');
-    } finally {
+      const errorMessage = error instanceof Error ? error.message : 'Error al publicar el proyecto';
+      actions.showToast(errorMessage, 'error');
       setIsSubmitting(false);
     }
   };
@@ -205,7 +252,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
                   </div>
                   <div>
                     <p className="font-medium text-slate-600 dark:text-slate-300">Arrastra tu portada aquí</p>
-                    <p className="text-xs text-slate-400 mt-1">Recomendado: 1600x1200 o mayor</p>
+                    <p className="text-xs text-slate-400 mt-1">Máx {maxFileSize / (1024 * 1024)}MB • {isProUser ? 'Soporte 4K' : 'Calidad HD'}</p>
                   </div>
                 </div>
               )}
@@ -293,12 +340,18 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
                   ))}
                   <input
                     type="text"
+                    list="software-suggestions"
                     value={softwareInput}
                     onChange={(e) => setSoftwareInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSoftware(softwareInput))}
                     placeholder={softwares.length === 0 ? "Ej: Blender..." : ""}
                     className="flex-1 bg-transparent border-none p-0 text-sm focus:ring-0 min-w-[80px]"
                   />
+                  <datalist id="software-suggestions">
+                    {COMMON_SOFTWARE.map(soft => (
+                      <option key={soft} value={soft} />
+                    ))}
+                  </datalist>
                 </div>
               </div>
 

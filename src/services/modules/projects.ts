@@ -13,11 +13,16 @@ import {
     serverTimestamp,
     writeBatch,
     increment,
-    onSnapshot
+    onSnapshot,
+    startAfter,
+    QueryDocumentSnapshot,
+    DocumentData
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { ref, listAll, deleteObject } from 'firebase/storage';
+import { db, storage } from '../../lib/firebase';
 import { storageService } from './storage';
 import { PortfolioItem } from '../../types';
+import { PaginatedResult } from './utils';
 
 export const projectsService = {
     /**
@@ -29,7 +34,8 @@ export const projectsService = {
     createProject: async (
         userId: string,
         projectData: Partial<PortfolioItem>,
-        files: { cover?: File; gallery?: File[] }
+        files: { cover?: File; gallery?: File[] },
+        uploadOptions: { maxSizeMB: number }
     ): Promise<string> => {
         try {
             // 1. Generate ID first to create storage paths
@@ -40,7 +46,7 @@ export const projectsService = {
             let coverUrl = '';
             if (files.cover) {
                 const path = `users/${userId}/projects/${projectId}/cover.jpg`;
-                coverUrl = await storageService.uploadImage(files.cover, path);
+                coverUrl = await storageService.uploadImage(files.cover, path, uploadOptions);
             }
 
             // 3. Upload Gallery Images
@@ -50,7 +56,7 @@ export const projectsService = {
                     // Unique names for gallery items
                     const timestamp = Date.now();
                     const path = `users/${userId}/projects/${projectId}/gallery/${timestamp}_${index}.jpg`;
-                    return await storageService.uploadImage(file, path);
+                    return await storageService.uploadImage(file, path, uploadOptions);
                 });
                 const urls = await Promise.all(uploadPromises);
                 galleryUrls.push(...urls);
@@ -59,13 +65,15 @@ export const projectsService = {
             // 4. Prepare Final Data
             const finalData = {
                 ...projectData,
+                domain: projectData.domain || 'creative', // Ensure domain is saved
                 id: projectId,
                 authorId: userId,
                 image: coverUrl || projectData.image || '', // Prefer uploaded cover
                 images: galleryUrls.length > 0 ? galleryUrls : (projectData.images || []),
                 createdAt: new Date().toISOString(), // Store as string for easy serialization
-                views: '0',
-                likes: '0',
+                views: 0,
+                likes: 0,
+                artistUsername: (projectData as any).artistUsername || '',
                 stats: { // Keep numeric stats for internal logic
                     viewCount: 0,
                     likeCount: 0
@@ -103,6 +111,20 @@ export const projectsService = {
      */
     deleteProject: async (userId: string, projectId: string): Promise<void> => {
         try {
+            // 1. Delete Storage Files (Images) recursively
+            // We attempt to clean up files first. If this fails partially, we still proceed to delete the DB record.
+            const deleteFolder = async (path: string) => {
+                const folderRef = ref(storage, path);
+                try {
+                    const list = await listAll(folderRef);
+                    await Promise.all(list.items.map(item => deleteObject(item)));
+                    await Promise.all(list.prefixes.map(prefix => deleteFolder(prefix.fullPath)));
+                } catch (err) {
+                    console.warn(`Storage cleanup warning for ${path}:`, err);
+                }
+            };
+            await deleteFolder(`users/${userId}/projects/${projectId}`);
+
             const batch = writeBatch(db);
 
             // Operation A: Delete Project Document
@@ -116,11 +138,43 @@ export const projectsService = {
             });
 
             await batch.commit();
-
-            // TODO: Trigger a Cloud Function to recursively delete 'users/{userId}/projects/{projectId}' folder in Storage
-            // Deleting storage files client-side is risky and slow for the user.
         } catch (error) {
             console.error("Error deleting project:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Get paginated projects for the global feed.
+     * Uses cursor-based pagination for performance.
+     */
+    getProjects: async (lastDoc: QueryDocumentSnapshot<DocumentData> | null = null, pageSize: number = 20): Promise<PaginatedResult<PortfolioItem>> => {
+        try {
+            let q = query(
+                collection(db, 'projects'),
+                orderBy('createdAt', 'desc'),
+                limit(pageSize)
+            );
+
+            if (lastDoc) {
+                q = query(
+                    collection(db, 'projects'),
+                    orderBy('createdAt', 'desc'),
+                    startAfter(lastDoc),
+                    limit(pageSize)
+                );
+            }
+
+            const snapshot = await getDocs(q);
+            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PortfolioItem));
+
+            return {
+                data,
+                lastDoc: snapshot.docs[snapshot.docs.length - 1] || null,
+                hasMore: snapshot.docs.length === pageSize
+            };
+        } catch (error) {
+            console.error("Error fetching paginated projects:", error);
             throw error;
         }
     },
@@ -130,13 +184,45 @@ export const projectsService = {
      */
     getUserProjects: async (userId: string): Promise<PortfolioItem[]> => {
         try {
-            const q = query(
-                collection(db, 'projects'),
-                where('authorId', '==', userId),
-                orderBy('createdAt', 'desc')
-            );
-            const snapshot = await getDocs(q);
-            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PortfolioItem));
+            // Strategy: Dual Query to support old (artistId) and new (authorId) items
+            // We run both to ensure we catch legacy projects and newly created ones.
+            const queries = [
+                // 1. Query by authorId (Standard)
+                query(
+                    collection(db, 'projects'),
+                    where('authorId', '==', userId),
+                    orderBy('createdAt', 'desc')
+                ),
+                // 2. Query by artistId (Legacy/Compatibility)
+                query(
+                    collection(db, 'projects'),
+                    where('artistId', '==', userId),
+                    orderBy('createdAt', 'desc')
+                )
+            ];
+
+            const snapshots = await Promise.all(queries.map(q => getDocs(q).catch(e => {
+                console.warn("Error in partial project query (likely missing index):", e);
+                return { docs: [] }; // Return empty result on individual query failure
+            })));
+
+            // Merge and Deduplicate
+            const projectsMap = new Map<string, PortfolioItem>();
+
+            snapshots.forEach(snapshot => {
+                // @ts-ignore - snapshot type might vary slightly due to catch block mock return
+                snapshot.docs.forEach((doc: any) => {
+                    projectsMap.set(doc.id, { id: doc.id, ...doc.data() as object } as PortfolioItem);
+                });
+            });
+
+            // Convert back to array and sort
+            return Array.from(projectsMap.values()).sort((a, b) => {
+                const dateA = new Date(a.createdAt || 0).getTime();
+                const dateB = new Date(b.createdAt || 0).getTime();
+                return dateB - dateA;
+            });
+
         } catch (error) {
             console.error("Error fetching user projects:", error);
             return [];
@@ -161,6 +247,24 @@ export const projectsService = {
     },
 
     /**
+     * Get recent projects for the global feed
+     */
+    getRecentProjects: async (limitCount: number = 20): Promise<PortfolioItem[]> => {
+        try {
+            const q = query(
+                collection(db, 'projects'),
+                orderBy('createdAt', 'desc'),
+                limit(limitCount)
+            );
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PortfolioItem));
+        } catch (error) {
+            console.error("Error fetching recent projects:", error);
+            return [];
+        }
+    },
+
+    /**
      * Real-time listener for a user's projects
      */
     listenToUserProjects: (userId: string, callback: (projects: PortfolioItem[]) => void) => {
@@ -174,5 +278,68 @@ export const projectsService = {
             const projects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PortfolioItem));
             callback(projects);
         });
+    },
+
+    // --- Interactions ---
+
+    incrementProjectView: async (projectId: string): Promise<void> => {
+        try {
+            const ref = doc(db, 'projects', projectId);
+            await updateDoc(ref, {
+                'stats.viewCount': increment(1)
+            });
+        } catch (error) {
+            console.error("Error incrementing view:", error);
+        }
+    },
+
+    toggleProjectLike: async (projectId: string, userId: string): Promise<boolean> => {
+        try {
+            // Reference to the "like" document in a subcollection
+            // This prevents a user from liking the same project twice
+            const likeRef = doc(db, 'projects', projectId, 'likes', userId);
+            const projectRef = doc(db, 'projects', projectId);
+
+            const likeSnap = await getDoc(likeRef);
+            const batch = writeBatch(db);
+            let isLiked = false;
+
+            if (likeSnap.exists()) {
+                // Unlike: Remove doc and decrement counter
+                batch.delete(likeRef);
+                batch.update(projectRef, {
+                    'stats.likeCount': increment(-1),
+                    'likes': increment(-1)
+                });
+                isLiked = false;
+            } else {
+                // Like: Create doc and increment counter
+                batch.set(likeRef, {
+                    userId,
+                    createdAt: new Date().toISOString()
+                });
+                batch.update(projectRef, {
+                    'stats.likeCount': increment(1),
+                    'likes': increment(1)
+                });
+                isLiked = true;
+            }
+
+            await batch.commit();
+            return isLiked;
+        } catch (error) {
+            console.error("Error toggling like:", error);
+            throw error;
+        }
+    },
+
+    getProjectLikeStatus: async (projectId: string, userId: string): Promise<boolean> => {
+        try {
+            const likeRef = doc(db, 'projects', projectId, 'likes', userId);
+            const snap = await getDoc(likeRef);
+            return snap.exists();
+        } catch (error) {
+            return false;
+        }
     }
 };

@@ -24,7 +24,7 @@ import { PaginatedResult, withTimeout, sanitizeData } from './utils';
 import { usersService } from './users';
 import { notificationsService } from './notifications';
 
-export const blogService = {
+export const articlesService = {
     getArticles: async (lastDoc: QueryDocumentSnapshot<DocumentData> | null = null, pageSize = 10, sortField: 'date' | 'likes' = 'date', sortDirection: 'desc' | 'asc' = 'desc'): Promise<PaginatedResult<ArticleItem>> => {
         try {
             let q = query(
@@ -193,7 +193,7 @@ export const blogService = {
 
             snapshots.forEach(snap => {
                 snap.forEach(doc => {
-                    articlesMap.set(doc.id, { id: doc.id, ...doc.data() } as ArticleItem);
+                    articlesMap.set(doc.id, { id: doc.id, ...doc.data() as object } as ArticleItem);
                 });
             });
 

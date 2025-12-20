@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, Share2, MessageSquare, Briefcase, UserPlus, CheckCircle2, Maximize2, X, Bookmark, Trash2, Edit } from 'lucide-react';
-import { PORTFOLIO_ITEMS } from '../../data/content';
 import { useAppStore } from '../../hooks/useAppStore';
 import { useDeleteProject, useProject } from '../../hooks/useFirebase';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
+import { projectsService } from '../../services/modules/projects';
 
 interface PortfolioPostViewProps {
   itemId?: string;
@@ -18,8 +18,6 @@ interface PortfolioPostViewProps {
 export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, onBack, onAuthorClick, onSave, onShare }) => {
   const { state, actions } = useAppStore();
   const navigate = useNavigate();
-  const createdItems = state.createdItems || [];
-  const allItems = [...createdItems, ...PORTFOLIO_ITEMS];
 
   const { id: paramId } = useParams<{ id: string }>();
   const id = itemId || paramId;
@@ -28,10 +26,40 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
   const { project: fetchedProject, loading: isFetching } = useProject(id);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [relatedProjects, setRelatedProjects] = useState<any[]>([]);
 
-  const item = allItems.find(p => p.id === id) || fetchedProject;
+  // La única fuente de la verdad es el proyecto traído desde Firebase.
+  const item = fetchedProject;
+
+  // --- Efectos de Interacción y Carga de Datos ---
+  useEffect(() => {
+    if (item && item.id) {
+      // 1. Incrementar Vistas (Solo si es un proyecto real de la BD)
+      if (!item.isLocal) { // Asumiendo que los items locales no necesitan contar vistas aún
+        projectsService.incrementProjectView(item.id);
+      }
+
+      // 2. Verificar estado del Like
+      if (state.user) {
+        projectsService.getProjectLikeStatus(item.id, state.user.id).then(setIsLiked);
+      }
+
+      // Inicializar contador
+      setLikeCount(Number(item.likes || 0));
+
+      // 3. Cargar Proyectos Relacionados (Del mismo autor)
+      const authorId = item.authorId || item.artistId;
+      if (authorId) {
+        projectsService.getUserProjects(authorId).then(projects => {
+          // Filtrar el proyecto actual y tomar los primeros 4
+          setRelatedProjects(projects.filter(p => p.id !== item.id).slice(0, 4));
+        });
+      }
+    }
+  }, [item?.id, state.user?.id]);
 
   if (isFetching) {
     return (
@@ -40,6 +68,28 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
       </div>
     );
   }
+
+  const handleToggleLike = async () => {
+    if (!state.user) {
+      actions.showToast('Inicia sesión para dar like', 'info');
+      return;
+    }
+
+    // Optimistic UI: Actualizar visualmente antes de la petición
+    const prevLiked = isLiked;
+    setIsLiked(!prevLiked);
+    setLikeCount(prev => prevLiked ? prev - 1 : prev + 1);
+
+    try {
+      const newStatus = await projectsService.toggleProjectLike(item.id, state.user.id);
+      setIsLiked(newStatus);
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      // Rollback si falla
+      setIsLiked(prevLiked);
+      setLikeCount(prev => prevLiked ? prev + 1 : prev - 1);
+    }
+  };
 
   if (!item) {
     return (
@@ -71,18 +121,11 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
     }
   };
 
-  const relatedItems = allItems.filter(p => p.id !== id && p.category === item.category).slice(0, 4);
+  // Usar solo los proyectos relacionados que vienen del servicio.
+  const displayRelated = relatedProjects;
 
-
-
-  const projectImages = item.images && item.images.length > 0
-    ? item.images
-    : [
-      item.image,
-      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1600&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1614728263952-84ea256f9679?q=80&w=1600&auto=format&fit=crop'
-    ];
+  // Combina la imagen de portada con la galería, asegurando que no haya valores nulos.
+  const projectImages = [item.image, ...(item.images || [])].filter(Boolean);
 
   // Colors for software tags
   const getSoftwareColor = (name: string) => {
@@ -129,7 +172,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
           <div className="hidden md:flex flex-col">
             <h1 className="text-sm font-bold text-white leading-tight line-clamp-1">{item.title}</h1>
             <div className="flex items-center gap-2 text-[10px] text-slate-400">
-              <span className="hover:text-amber-500 cursor-pointer transition-colors" onClick={() => onAuthorClick?.(item.artist)}>{item.artist}</span>
+              <span className="hover:text-amber-500 cursor-pointer transition-colors" onClick={() => onAuthorClick?.(item.artistUsername || item.artist)}>{item.artist}</span>
               <span>•</span>
               <span className="text-amber-500">{item.category}</span>
             </div>
@@ -139,7 +182,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
         <div className="flex items-center gap-2">
           {/* Like Button */}
           <button
-            onClick={() => setIsLiked(!isLiked)}
+            onClick={handleToggleLike}
             className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all border ${isLiked
               ? 'bg-amber-500 border-amber-500 text-black'
               : 'bg-white/5 border-white/5 text-slate-300 hover:bg-white/10'
@@ -324,7 +367,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
             <div className="bg-[#0A0A0C] p-6 rounded-2xl border border-white/5 shadow-xl relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 to-purple-500"></div>
 
-              <div className="flex items-center gap-4 mb-6 cursor-pointer" onClick={() => onAuthorClick?.(item.artist)}>
+              <div className="flex items-center gap-4 mb-6 cursor-pointer" onClick={() => onAuthorClick?.(item.artistUsername || item.artist)}>
                 <div className="relative">
                   <div className="h-16 w-16 rounded-full overflow-hidden p-[2px] bg-gradient-to-tr from-amber-500 to-transparent">
                     <div className="h-full w-full rounded-full bg-black p-[2px]">
@@ -369,7 +412,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
                   <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-1">Vistas</div>
                 </div>
                 <div>
-                  <div className="text-white font-bold">{item.likes.toLocaleString()}</div>
+                  <div className="text-white font-bold">{likeCount.toLocaleString()}</div>
                   <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-1">Likes</div>
                 </div>
                 <div>
@@ -394,13 +437,13 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
             {/* More from Author/Category */}
             <div>
               <div className="flex items-center justify-between mb-4 px-2">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Más como esto</h4>
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Más de {item.artist}</h4>
                 <button className="text-xs text-amber-500 hover:underline font-bold">Ver todo</button>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {relatedItems.map(rel => (
+                {displayRelated.map(rel => (
                   <div key={rel.id} className="group aspect-square rounded-xl bg-white/5 overflow-hidden cursor-pointer relative">
-                    <img src={rel.image} alt={rel.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    <img src={rel.image || rel.coverImage} alt={rel.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
                       <span className="text-xs font-bold text-white line-clamp-1">{rel.title}</span>
                     </div>
@@ -417,9 +460,9 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
       {/* MOBILE BOTTOM ACTIONS */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0C]/90 backdrop-blur-xl border-t border-white/10 p-4 lg:hidden flex items-center justify-between z-50">
         <div className="flex items-center gap-6">
-          <button className={`${isLiked ? 'text-amber-500' : 'text-slate-400'} flex flex-col items-center gap-1`} onClick={() => setIsLiked(!isLiked)}>
+          <button className={`${isLiked ? 'text-amber-500' : 'text-slate-400'} flex flex-col items-center gap-1`} onClick={handleToggleLike}>
             <Heart className={`h-6 w-6 ${isLiked ? 'fill-current' : ''}`} />
-            <span className="text-[10px] font-bold">{item.likes}</span>
+            <span className="text-[10px] font-bold">{likeCount}</span>
           </button>
           <button className="text-slate-400 flex flex-col items-center gap-1">
             <MessageSquare className="h-6 w-6" />
