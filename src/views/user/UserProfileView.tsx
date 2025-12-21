@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Link as LinkIcon, Calendar, CheckCircle2, UserPlus, Mail, MessageSquare, Layers, Twitter, Instagram, Globe, MoreHorizontal, Briefcase, GraduationCap, UserCheck, Zap, Award, Trophy, Bookmark, Heart, Lock, Plus, Image as ImageIcon, Video, Box, Newspaper, Download, PlayCircle, FileText, Settings, Github, Linkedin, Palette, Trash2 } from 'lucide-react';
 import { ARTIST_DIRECTORY, ARTIST_TIERS } from '../../data/content';
 import { PortfolioCard } from '../../components/cards/PortfolioCard';
@@ -24,6 +25,7 @@ interface UserProfileViewProps {
 
 export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, authorName, onBack, onItemSelect, onOpenChat }) => {
     const { state, actions } = useAppStore();
+    const navigate = useNavigate();
     const { isOwnProfile, displayUser, fetchedUser } = useUserProfileData(author, authorName);
 
     const sanitizeName = (val: any) => {
@@ -596,17 +598,18 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
                                         <div key={item.id} className="relative group">
                                             <PortfolioCard
                                                 item={item}
-                                                onClick={() => onItemSelect(item.id, 'portfolio')}
+                                                onClick={() => navigate(`/portfolio/${item.id}`)}
                                                 onSave={actions.openSaveModal}
                                                 extraAction={
                                                     isOwnProfile ? (
                                                         <button
+                                                            type="button"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 handleDeleteProject(item.id);
                                                             }}
                                                             // Removed absolute positioning and opacity transitions as parent handles them
-                                                            className="p-2 bg-red-500/90 text-white rounded-full transition-all hover:bg-red-600 hover:scale-110 shadow-lg"
+                                                            className="pointer-events-auto p-2 bg-red-500/90 text-white rounded-full transition-all hover:bg-red-600 hover:scale-110 shadow-lg"
                                                             title="Eliminar proyecto"
                                                         >
                                                             <Trash2 className="h-4 w-4" />

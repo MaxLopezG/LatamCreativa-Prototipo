@@ -6,8 +6,9 @@ import { usersService } from '../services/modules/users';
 import { api } from '../services/api';
 
 export function useUserProfileData(
-    author?: { name: string; avatar?: string; id?: string } | null,
-    authorName?: string
+    author?: { name: string; avatar?: string; id?: string; role?: string; location?: string } | null,
+    authorName?: string,
+    options: { preventRedirect?: boolean } = {}
 ) {
     const { state } = useAppStore();
     const { username } = useParams<{ username: string }>();
@@ -39,7 +40,7 @@ export function useUserProfileData(
     }, [state.user, author, authorName, username]);
 
     useEffect(() => {
-        if (isOwnProfile && state.user?.username) {
+        if (isOwnProfile && state.user?.username && !options.preventRedirect) {
             // If current 'username' param is missing OR different from actual username
             if (username !== state.user.username) {
                 // Avoid redirect loop if they are equivalent
@@ -147,8 +148,8 @@ export function useUserProfileData(
         name: finalName,
         id: fetchedUser?.id || author?.id || 'unknown',
         avatar: fetchedUser?.avatar || author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=random&size=512`,
-        role: fetchedUser?.role || 'Digital Artist',
-        location: fetchedUser?.location || 'Latam',
+        role: fetchedUser?.role || fetchedUser?.profession || fetchedUser?.specialty || author?.role,
+        location: fetchedUser?.location || fetchedUser?.country || fetchedUser?.city || author?.location,
         bio: fetchedUser?.bio,
         createdAt: fetchedUser?.createdAt,
         skills: fetchedUser?.skills,
@@ -157,7 +158,8 @@ export function useUserProfileData(
         socialLinks: fetchedUser?.socialLinks,
         username: fetchedUser?.username,
         coverImage: fetchedUser?.coverImage,
-        stats: fetchedUser?.stats
+        stats: fetchedUser?.stats,
+        availableForWork: fetchedUser?.availableForWork
     };
 
     return {

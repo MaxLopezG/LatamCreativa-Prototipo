@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, Share2, MessageSquare, Briefcase, UserPlus, CheckCircle2, Maximize2, X, Bookmark, Trash2, Edit } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
-import { useDeleteProject, useProject, useProjectComments, useAddProjectComment, useDeleteProjectComment, useUserProfile } from '../../hooks/useFirebase';
+import { useDeleteProject, useProject, useProjectComments, useAddProjectComment, useDeleteProjectComment } from '../../hooks/useFirebase';
+import { useUserProfileData } from '../../hooks/useUserProfileData';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
 import { projectsService } from '../../services/modules/projects';
 
@@ -84,7 +85,19 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
 
   // La única fuente de la verdad es el proyecto traído desde Firebase.
   const item = fetchedProject;
-  const { profile: authorProfile } = useUserProfile(item ? (item.authorId || item.artistId) : null);
+
+  // Use robust user profile data fetching
+  const { displayUser: authorProfile } = useUserProfileData(
+    item ? {
+      name: item.artist,
+      id: item.authorId || item.artistId,
+      avatar: item.artistAvatar,
+      role: (item as any).artistRole,
+      location: (item as any).location
+    } : null,
+    undefined, // authorName
+    { preventRedirect: true }
+  );
 
   // --- Efecto 1: Contabilizar Vistas (Solo una vez al cargar el proyecto) ---
   useEffect(() => {
@@ -521,7 +534,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
                 <div>
                   <h3 className="font-bold text-white text-lg hover:underline decoration-amber-500 underline-offset-4 decoration-2">{item.artist}</h3>
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-xs text-slate-400">{authorProfile?.role || (item as any).artistRole || authorProfile?.headline || (item as any).artistHeadline || 'Artista'}</p>
+                    <p className="text-xs text-slate-400">{authorProfile?.role}</p>
                     {item.availableForWork === true && (
                       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-500/10 text-green-500 text-[10px] font-bold border border-green-500/20">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
@@ -530,7 +543,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
                     )}
                   </div>
                   <p className="text-[10px] text-slate-500 mt-1">
-                    {authorProfile?.location || (item as any).location || 'Latam'}
+                    {authorProfile?.location}
                   </p>
                 </div>
               </div>
@@ -606,7 +619,11 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {displayRelated.map(rel => (
-                  <div key={rel.id} className="group aspect-square rounded-xl bg-white/5 overflow-hidden cursor-pointer relative">
+                  <div
+                    key={rel.id}
+                    className="group aspect-square rounded-xl bg-white/5 overflow-hidden cursor-pointer relative"
+                    onClick={() => navigate(`/portfolio/${rel.id}`)}
+                  >
                     <img src={rel.image || rel.coverImage} alt={rel.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
                       <span className="text-xs font-bold text-white line-clamp-1">{rel.title}</span>
