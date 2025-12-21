@@ -19,7 +19,7 @@ export const useUserProfile = (userId: string | null) => {
         const fetchProfile = async () => {
             setLoading(true);
             try {
-                const data = await api.getUserProfile(userId);
+                const data = await usersService.getPublicProfile(userId);
                 setProfile(data);
             } catch (error) {
                 console.error(error);
@@ -36,14 +36,41 @@ export const useUserProfile = (userId: string | null) => {
 
 // --- Hook for Creating Project ---
 export const useCreateProject = () => {
+    const { state } = useAppStore();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [progress, setProgress] = useState(0);
 
-    const create = async (data: any, file?: File) => {
+    const create = async (
+        projectData: Partial<PortfolioItem>,
+        files: { cover?: File | null; gallery?: File[] },
+        uploadOptions: {
+            maxSizeMB: number;
+            galleryMetadata?: { type: 'image' | 'youtube'; caption: string; fileIndex?: number; url?: string }[]
+        }
+    ) => {
+        if (!state.user?.id) {
+            throw new Error("Debes iniciar sesión para crear un proyecto.");
+        }
+
         setLoading(true);
+        setProgress(0);
         setError(null);
         try {
-            const id = await api.createProject(data, file);
+            const finalFiles = {
+                cover: files.cover || undefined,
+                gallery: files.gallery
+            };
+
+            const id = await projectsService.createProject(
+                state.user.id,
+                projectData,
+                finalFiles,
+                {
+                    ...uploadOptions,
+                    onProgress: setProgress
+                }
+            );
             return id;
         } catch (err: any) {
             setError(err.message);
@@ -53,7 +80,134 @@ export const useCreateProject = () => {
         }
     };
 
-    return { create, loading, error };
+    return { create, loading, error, progress };
+};
+
+// --- Hook for Updating Project ---
+export const useUpdateProject = () => {
+    const { state } = useAppStore();
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [progress, setProgress] = useState(0);
+
+    const update = async (
+        projectId: string,
+        projectData: Partial<PortfolioItem>,
+        files: { cover?: File | null; gallery?: File[] },
+        uploadOptions: {
+            maxSizeMB: number;
+            galleryMetadata?: { type: 'image' | 'youtube'; caption: string; fileIndex?: number; url?: string }[]
+        }
+    ) => {
+        if (!state.user?.id) {
+            throw new Error("Debes iniciar sesión para editar un proyecto.");
+        }
+
+        setLoading(true);
+        setProgress(0);
+        setError(null);
+        try {
+            const finalFiles = {
+                cover: files.cover || undefined,
+                gallery: files.gallery
+            };
+
+            await projectsService.updateProject(
+                state.user.id,
+                projectId,
+                projectData,
+                finalFiles,
+                {
+                    ...uploadOptions,
+                    onProgress: setProgress
+                }
+            );
+        } catch (err: any) {
+            setError(err.message);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return { update, loading, error, progress };
+};
+
+// --- Hook for Project Comments ---
+export const useProjectComments = (projectId: string | undefined) => {
+    const [comments, setComments] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!projectId) {
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const unsubscribe = projectsService.listenToComments(projectId, (newComments) => {
+                setComments(newComments);
+                setLoading(false);
+            });
+            return () => unsubscribe();
+        } catch (err: any) {
+            setError(err.message);
+            setLoading(false);
+        }
+    }, [projectId]);
+
+    return { comments, loading, error };
+};
+
+export const useAddProjectComment = () => {
+    const { state } = useAppStore();
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const add = async (projectId: string, text: string) => {
+        if (!state.user) {
+            throw new Error("Debes iniciar sesión para comentar.");
+        }
+        setLoading(true);
+        setError(null);
+        try {
+            await projectsService.addComment(projectId, {
+                authorId: state.user.id,
+                authorName: state.user.name,
+                authorAvatar: state.user.avatar,
+                text,
+            });
+        } catch (err: any) {
+            setError(err.message);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return { add, loading, error };
+};
+
+export const useDeleteProjectComment = () => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const remove = async (projectId: string, commentId: string) => {
+        setLoading(true);
+        setError(null);
+        try {
+            await projectsService.deleteComment(projectId, commentId);
+        } catch (err: any) {
+            setError(err.message);
+            throw err;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return { remove, loading, error };
 };
 
 // --- Hook for Deleting Project ---

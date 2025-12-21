@@ -35,9 +35,21 @@ export const projectsService = {
         userId: string,
         projectData: Partial<PortfolioItem>,
         files: { cover?: File; gallery?: File[] },
-        uploadOptions: { maxSizeMB: number }
+        uploadOptions: {
+            maxSizeMB: number;
+            galleryMetadata?: { type: 'image' | 'video' | 'youtube'; caption?: string; fileIndex?: number; url?: string }[];
+            onProgress?: (progress: number) => void;
+        }
     ): Promise<string> => {
         try {
+            // Initialize progress tracking
+            const totalOps = (files.cover ? 1 : 0) + (files.gallery?.length || 0) + 1; // +1 for DB write
+            let completedOps = 0;
+            const updateProgress = () => {
+                completedOps++;
+                if (uploadOptions.onProgress) uploadOptions.onProgress(Math.round((completedOps / totalOps) * 100));
+            };
+
             // 1. Generate ID first to create storage paths
             const newProjectRef = doc(collection(db, 'projects'));
             const projectId = newProjectRef.id;
@@ -47,29 +59,76 @@ export const projectsService = {
             if (files.cover) {
                 const path = `users/${userId}/projects/${projectId}/cover.jpg`;
                 coverUrl = await storageService.uploadImage(files.cover, path, uploadOptions);
+                updateProgress();
             }
 
             // 3. Upload Gallery Images
-            const galleryUrls: string[] = [];
+            // We upload all files first, obtaining a list of URLs
+            const uploadedUrls: string[] = [];
             if (files.gallery && files.gallery.length > 0) {
                 const uploadPromises = files.gallery.map(async (file, index) => {
                     // Unique names for gallery items
                     const timestamp = Date.now();
                     const path = `users/${userId}/projects/${projectId}/gallery/${timestamp}_${index}.jpg`;
-                    return await storageService.uploadImage(file, path, uploadOptions);
+                    const url = await storageService.uploadImage(file, path, uploadOptions);
+                    updateProgress();
+                    return url;
                 });
-                const urls = await Promise.all(uploadPromises);
-                galleryUrls.push(...urls);
+                uploadedUrls.push(...(await Promise.all(uploadPromises)));
             }
 
             // 4. Prepare Final Data
+            // Construct detailed gallery array based on metadata + uploaded content
+            let galleryObjects: any[] = [];
+
+            if (uploadOptions.galleryMetadata) {
+                // New logic: Use metadata to reconstruct order
+                galleryObjects = uploadOptions.galleryMetadata.map(meta => {
+                    if (meta.type === 'image' && meta.fileIndex !== undefined) {
+                        return {
+                            type: 'image',
+                            caption: meta.caption || '',
+                            url: uploadedUrls[meta.fileIndex] || ''
+                        };
+                    } else if (meta.type === 'youtube') {
+                        return {
+                            type: 'youtube',
+                            caption: meta.caption || '',
+                            url: meta.url || ''
+                        };
+                    }
+                    return null;
+                }).filter(Boolean);
+            } else {
+                // Backward compatibility: Map 1-to-1 with basic captions
+                galleryObjects = uploadedUrls.map((url, index) => ({
+                    type: 'image',
+                    url,
+                    caption: '' // galleryCaptions is deprecated
+                }));
+            }
+
+            // Re-construct simple string array for legacy compatibility
+            // Only include image URLs in the main 'images' array for compatibility with older viewers
+            const legacyImages = galleryObjects
+                .filter(item => item.type === 'image')
+                .map(item => item.url);
+
+            // Explicitly fetch and set the author's availability to ensure it's saved with the project.
+            // This is a denormalization step for performance and to allow public viewing.
+            const authorDocRef = doc(db, 'users', userId);
+            const authorDocSnap = await getDoc(authorDocRef);
+            const isAuthorAvailable = authorDocSnap.data()?.availableForWork || false;
+
             const finalData = {
                 ...projectData,
                 domain: projectData.domain || 'creative', // Ensure domain is saved
                 id: projectId,
                 authorId: userId,
                 image: coverUrl || projectData.image || '', // Prefer uploaded cover
-                images: galleryUrls.length > 0 ? galleryUrls : (projectData.images || []),
+                images: legacyImages.length > 0 ? legacyImages : (projectData.images || []), // Backward compatibility
+                gallery: galleryObjects, // New rich data
+                availableForWork: isAuthorAvailable, // Ensure this is saved
                 createdAt: new Date().toISOString(), // Store as string for easy serialization
                 views: 0,
                 likes: 0,
@@ -96,12 +155,145 @@ export const projectsService = {
             });
 
             await batch.commit();
+            updateProgress();
+
+            // 6. Notificar a los Seguidores
+            // Buscamos la subcolección 'followers' del usuario y creamos una notificación para cada uno.
+            try {
+                const followersRef = collection(db, 'users', userId, 'followers');
+                const followersSnap = await getDocs(followersRef);
+
+                if (!followersSnap.empty) {
+                    const notifBatch = writeBatch(db);
+                    let opCount = 0;
+                    const MAX_BATCH_SIZE = 450; // Límite de seguridad por lote de Firestore
+
+                    for (const followerDoc of followersSnap.docs) {
+                        const followerId = followerDoc.id;
+                        const notifRef = doc(collection(db, 'users', followerId, 'notifications'));
+
+                        notifBatch.set(notifRef, {
+                            type: 'new_project',
+                            senderId: userId,
+                            senderName: (projectData as any).artist || 'Artista',
+                            senderAvatar: (projectData as any).artistAvatar || '',
+                            projectId: projectId,
+                            projectTitle: projectData.title || 'Nuevo Proyecto',
+                            projectImage: coverUrl || projectData.image || '',
+                            read: false,
+                            createdAt: new Date().toISOString()
+                        });
+
+                        opCount++;
+                        if (opCount >= MAX_BATCH_SIZE) break; // Prevenir errores en lotes muy grandes
+                    }
+
+                    if (opCount > 0) {
+                        await notifBatch.commit();
+                    }
+                }
+            } catch (error) {
+                console.error("Error enviando notificaciones a seguidores:", error);
+                // No interrumpimos el flujo principal si falla la notificación
+            }
 
             return projectId;
         } catch (error) {
             console.error("Error creating project:", error);
             // NOTE: If batch fails, we might have orphaned files in Storage.
             // In a production env, a Cloud Function should clean up orphaned files periodically.
+            throw error;
+        }
+    },
+
+    /**
+     * Updates an existing project.
+     * Handles uploading new files and merging with existing content.
+     */
+    updateProject: async (
+        userId: string,
+        projectId: string,
+        projectData: Partial<PortfolioItem>,
+        files: { cover?: File; gallery?: File[] },
+        uploadOptions: {
+            maxSizeMB: number;
+            galleryMetadata?: { type: 'image' | 'video' | 'youtube'; caption?: string; fileIndex?: number; url?: string }[];
+            onProgress?: (progress: number) => void;
+        }
+    ): Promise<void> => {
+        try {
+            // Initialize progress tracking
+            const totalOps = (files.cover ? 1 : 0) + (files.gallery?.length || 0) + 1;
+            let completedOps = 0;
+            const updateProgress = () => {
+                completedOps++;
+                if (uploadOptions.onProgress) uploadOptions.onProgress(Math.round((completedOps / totalOps) * 100));
+            };
+
+            const projectRef = doc(db, 'projects', projectId);
+
+            // 1. Upload Cover Image if provided
+            let coverUrl = projectData.image; // Default to existing if not replaced
+            if (files.cover) {
+                const path = `users/${userId}/projects/${projectId}/cover_${Date.now()}.jpg`;
+                coverUrl = await storageService.uploadImage(files.cover, path, uploadOptions);
+                updateProgress();
+            }
+
+            // 2. Upload New Gallery Images
+            const uploadedUrls: string[] = [];
+            if (files.gallery && files.gallery.length > 0) {
+                const uploadPromises = files.gallery.map(async (file, index) => {
+                    const timestamp = Date.now();
+                    const path = `users/${userId}/projects/${projectId}/gallery/${timestamp}_${index}.jpg`;
+                    const url = await storageService.uploadImage(file, path, uploadOptions);
+                    updateProgress();
+                    return url;
+                });
+                uploadedUrls.push(...(await Promise.all(uploadPromises)));
+            }
+
+            // 3. Construct Gallery Objects (Merge existing URLs with new Uploads)
+            let galleryObjects: any[] = [];
+            if (uploadOptions.galleryMetadata) {
+                galleryObjects = uploadOptions.galleryMetadata.map(meta => {
+                    if (meta.type === 'image') {
+                        // If fileIndex is present, it's a new upload
+                        if (meta.fileIndex !== undefined) {
+                            return { type: 'image', caption: meta.caption || '', url: uploadedUrls[meta.fileIndex] || '' };
+                        }
+                        // If url is present, it's an existing image
+                        else if (meta.url) {
+                            return { type: 'image', caption: meta.caption || '', url: meta.url };
+                        }
+                    } else if (meta.type === 'youtube') {
+                        return { type: 'youtube', caption: meta.caption || '', url: meta.url || '' };
+                    }
+                    return null;
+                }).filter(Boolean);
+            }
+
+            // Explicitly fetch and set the author's availability to ensure it's saved with the project.
+            const authorDocRef = doc(db, 'users', userId);
+            const authorDocSnap = await getDoc(authorDocRef);
+            const isAuthorAvailable = authorDocSnap.data()?.availableForWork || false;
+
+            const finalData = {
+                ...projectData,
+                image: coverUrl,
+                availableForWork: isAuthorAvailable, // Ensure this is saved on update
+                images: galleryObjects.filter(item => item.type === 'image').map(item => item.url), // Legacy support
+                gallery: galleryObjects,
+                updatedAt: new Date().toISOString()
+            };
+
+            // Remove undefined values
+            Object.keys(finalData).forEach(key => (finalData as any)[key] === undefined && delete (finalData as any)[key]);
+
+            await updateDoc(projectRef, finalData);
+            updateProgress();
+        } catch (error) {
+            console.error("Error updating project:", error);
             throw error;
         }
     },
@@ -286,7 +478,8 @@ export const projectsService = {
         try {
             const ref = doc(db, 'projects', projectId);
             await updateDoc(ref, {
-                'stats.viewCount': increment(1)
+                'stats.viewCount': increment(1),
+                'views': increment(1)
             });
         } catch (error) {
             console.error("Error incrementing view:", error);
@@ -341,5 +534,53 @@ export const projectsService = {
         } catch (error) {
             return false;
         }
+    }
+    ,
+
+    // --- Comments ---
+
+    addComment: async (projectId: string, commentData: { authorId: string; authorName: string; authorAvatar: string; text: string; }) => {
+        const commentsCol = collection(db, 'projects', projectId, 'comments');
+        const newCommentRef = doc(commentsCol);
+        await setDoc(newCommentRef, {
+            ...commentData,
+            id: newCommentRef.id,
+            createdAt: new Date().toISOString(),
+            likes: 0,
+            replies: []
+        });
+        // Also increment comment count on the project
+        const projectRef = doc(db, 'projects', projectId);
+        await updateDoc(projectRef, {
+            'stats.commentCount': increment(1)
+        });
+    },
+
+    listenToComments: (projectId: string, callback: (comments: any[]) => void) => {
+        const commentsQuery = query(
+            collection(db, 'projects', projectId, 'comments'),
+            orderBy('createdAt', 'desc')
+        );
+
+        return onSnapshot(commentsQuery, (snapshot) => {
+            const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            callback(comments);
+        });
+    },
+
+    deleteComment: async (projectId: string, commentId: string) => {
+        const commentRef = doc(db, 'projects', projectId, 'comments', commentId);
+        await deleteDoc(commentRef);
+        // Also decrement comment count
+        const projectRef = doc(db, 'projects', projectId);
+        await updateDoc(projectRef, {
+            'stats.commentCount': increment(-1)
+        });
+    },
+
+    likeComment: async (projectId: string, commentId: string, userId: string) => {
+        // Placeholder for like logic
+        console.log(`Liking comment ${commentId} on project ${projectId} by user ${userId}`);
+        // Actual logic would involve a subcollection on the comment document
     }
 };

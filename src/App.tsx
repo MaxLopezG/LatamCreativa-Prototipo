@@ -43,6 +43,7 @@ const App: React.FC = () => {
               const isAdmin = firebaseUser.email === 'admin@latamcreativa.com';
 
               const appUser = {
+                ...userData,
                 id: firebaseUser.uid,
                 name: userData.name || firebaseUser.displayName || 'Usuario',
                 avatar: userData.avatar || firebaseUser.photoURL || 'https://ui-avatars.com/api/?name=' + (firebaseUser.displayName || 'U'),
@@ -51,10 +52,10 @@ const App: React.FC = () => {
                 email: firebaseUser.email || '',
                 isAdmin: isAdminFromStore || isAdmin,
                 createdAt: userData.createdAt || (firebaseUser.metadata.creationTime || new Date().toISOString()),
-                ...userData
+                availableForWork: userData.availableForWork || false
               };
 
-              actions.setUser(appUser);
+              actions.setUser(appUser as any);
 
               // Restore Content Mode Logic
               const devKeywords = ['developer', 'desarrollador', 'engineer', 'ingeniero', 'coder', 'programmer', 'programador', 'software', 'tech', 'web', 'app', 'mobile', 'backend', 'frontend', 'fullstack', 'devops', 'data', 'ai'];

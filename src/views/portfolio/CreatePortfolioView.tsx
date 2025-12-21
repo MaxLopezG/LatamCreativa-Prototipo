@@ -1,8 +1,27 @@
 
-import React, { useState, useRef } from 'react';
-import { Image as ImageIcon, X, Trash2, ArrowLeft, Layers, Monitor, Upload, Check, Loader2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
+import {
+  ArrowLeft,
+  Upload,
+  X,
+  Plus,
+  Image as ImageIcon,
+  Loader2,
+  Monitor,
+  Layers,
+  Trash2,
+  Type,
+  Save,
+  Calendar,
+  Globe,
+  ChevronDown,
+  Users
+} from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
-import { projectsService } from '../../services/modules/projects';
+import { useCreateProject, useProject, useUpdateProject } from '../../hooks/useFirebase';
 
 interface CreatePortfolioViewProps {
   onBack: () => void;
@@ -24,6 +43,8 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
   const { state, actions } = useAppStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const [searchParams] = useSearchParams();
+  const editId = searchParams.get('edit');
 
   // Form State
   const [title, setTitle] = useState('');
@@ -31,18 +52,49 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
   const [category, setCategory] = useState('');
   const [softwares, setSoftwares] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
+  const [collaborators, setCollaborators] = useState<string[]>([]);
 
   // Media State
   const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
-  const [galleryPreviews, setGalleryPreviews] = useState<string[]>([]);
+  const [originalCoverImage, setOriginalCoverImage] = useState<string | null>(null);
+
+  // Crop State
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [crop, setCrop] = useState<Crop>();
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  interface GalleryItem {
+    id: string;
+    file?: File; // Optional now, as YouTube items don't have files
+    url?: string; // For YouTube items
+    preview: string;
+    caption: string;
+    type: 'image' | 'video' | 'youtube';
+  }
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
+
+  // YouTube Input State
+  const [isAddingYoutube, setIsAddingYoutube] = useState(false);
+  const [youtubeLink, setYoutubeLink] = useState('');
+
+  // Publishing State
+  const [publishStatus, setPublishStatus] = useState<'draft' | 'published'>('draft');
+  const [isStatusOpen, setIsStatusOpen] = useState(false);
 
   // UX State
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { create: createProject, loading: isCreating, progress: createProgress } = useCreateProject();
+  const { update: updateProject, loading: isUpdating, progress: updateProgress } = useUpdateProject();
+  const { project: projectToEdit, loading: isLoadingEdit } = useProject(editId || undefined);
+
   const [softwareInput, setSoftwareInput] = useState('');
   const [tagInput, setTagInput] = useState('');
+  const [collaboratorInput, setCollaboratorInput] = useState('');
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+
+  const isSubmitting = isCreating || isUpdating;
+  const progress = isCreating ? createProgress : updateProgress;
 
   // Lógica de Límite Inteligente
   // Aquí verificamos si el usuario tiene un rol premium.
@@ -50,13 +102,120 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
   const isProUser = state.user?.role === 'Pro' || state.user?.role === 'Master' || state.user?.role === 'Expert';
   const maxFileSize = isProUser ? MAX_SIZE_PRO : MAX_SIZE_FREE;
 
+  // --- Effect: Load Data for Editing ---
+  useEffect(() => {
+    if (projectToEdit) {
+      setTitle(projectToEdit.title);
+      setDescription(projectToEdit.description || '');
+      setCategory(projectToEdit.category);
+      setSoftwares(projectToEdit.software || []);
+      setTags(projectToEdit.tags || []);
+      setCollaborators(projectToEdit.collaborators || []);
+
+      // Set Cover
+      if (projectToEdit.image) {
+        setCoverPreview(projectToEdit.image);
+        setOriginalCoverImage(projectToEdit.image); // For cropping existing image (might need CORS handling)
+      }
+
+      // Set Gallery
+      if (projectToEdit.gallery) {
+        const mappedItems: GalleryItem[] = projectToEdit.gallery.map((item: any) => {
+          let preview = item.url;
+          if (item.type === 'youtube') {
+            const videoId = getYoutubeVideoId(item.url);
+            preview = videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : '';
+          }
+          return {
+            id: Math.random().toString(36).substr(2, 9),
+            url: item.url, // Keep URL for existing items
+            preview: preview,
+            caption: item.caption || '',
+            type: item.type
+          };
+        });
+        setGalleryItems(mappedItems);
+      }
+    }
+  }, [projectToEdit]);
+
   const validateFile = (file: File): boolean => {
     if (file.size > maxFileSize) {
       const limitMb = maxFileSize / (1024 * 1024);
-      actions.showToast(`El archivo "${file.name}" excede el límite de ${limitMb}MB. ${!isProUser ? 'Suscríbete a Pro para subir en 4K.' : ''}`, 'error');
+      actions.showToast(`El archivo "${file.name}" excede el límite de ${limitMb} MB.${!isProUser ? 'Suscríbete a Pro para subir en 4K.' : ''} `, 'error');
       return false;
     }
     return true;
+  };
+
+  // --- Helpers: Cropping ---
+  function onImageLoad(e: React.SyntheticEvent<HTMLImageElement>) {
+    const { width, height } = e.currentTarget;
+    const newCrop = centerCrop(
+      makeAspectCrop(
+        {
+          unit: '%',
+          width: 90,
+        },
+        1, // Aspect Ratio 1:1
+        width,
+        height,
+      ),
+      width,
+      height,
+    );
+    setCrop(newCrop);
+    setCompletedCrop(newCrop);
+  }
+
+  const getCroppedImg = (image: HTMLImageElement, crop: PixelCrop, fileName: string): Promise<File> => {
+    const canvas = document.createElement('canvas');
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    canvas.width = crop.width * scaleX;
+    canvas.height = crop.height * scaleY;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      throw new Error('No 2d context');
+    }
+
+    ctx.drawImage(
+      image,
+      crop.x * scaleX,
+      crop.y * scaleY,
+      crop.width * scaleX,
+      crop.height * scaleY,
+      0,
+      0,
+      crop.width * scaleX,
+      crop.height * scaleY
+    );
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(blob => {
+        if (!blob) {
+          reject(new Error('Canvas is empty'));
+          return;
+        }
+        const file = new File([blob], fileName, { type: 'image/jpeg' });
+        resolve(file);
+      }, 'image/jpeg', 0.95);
+    });
+  };
+
+  const handleCropConfirm = async () => {
+    if (imgRef.current && completedCrop?.width && completedCrop?.height) {
+      try {
+        const croppedFile = await getCroppedImg(imgRef.current, completedCrop, 'thumbnail.jpg');
+        setCoverFile(croppedFile);
+        setCoverPreview(URL.createObjectURL(croppedFile));
+        setImageToCrop(null); // Cerrar modal
+      } catch (e) {
+        console.error(e);
+        actions.showToast('Error al recortar la imagen', 'error');
+      }
+    }
   };
 
   // --- Handlers: Cover Image ---
@@ -64,11 +223,16 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
     const file = e.target.files?.[0];
     if (file) {
       if (!validateFile(file)) return;
-      setCoverFile(file);
+      // En lugar de guardar directamente, abrimos el cropper
       const reader = new FileReader();
-      reader.onloadend = () => setCoverPreview(reader.result as string);
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setImageToCrop(result);
+        setOriginalCoverImage(result);
+      };
       reader.readAsDataURL(file);
     }
+    e.target.value = ''; // Reset para permitir re-seleccionar el mismo archivo
   };
 
   const handleDropCover = (e: React.DragEvent) => {
@@ -76,59 +240,116 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
     const file = e.dataTransfer.files?.[0];
     if (file && file.type.startsWith('image/')) {
       if (!validateFile(file)) return;
-      setCoverFile(file);
+      // En lugar de guardar directamente, abrimos el cropper
       const reader = new FileReader();
-      reader.onloadend = () => setCoverPreview(reader.result as string);
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setImageToCrop(result);
+        setOriginalCoverImage(result);
+      };
       reader.readAsDataURL(file);
     }
   };
 
   // --- Handlers: Gallery ---
-  const handleGallerySelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGallerySelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const rawFiles = Array.from(e.target.files) as File[];
       const files = rawFiles.filter(validateFile); // Filtrar archivos que exceden el peso
-      addGalleryFiles(files);
+      await addGalleryFiles(files);
       e.target.value = ''; // Reset input to allow selecting same files again
     }
   };
 
-  const handleDropGallery = (e: React.DragEvent) => {
+  const handleDropGallery = async (e: React.DragEvent) => {
     e.preventDefault();
     if (e.dataTransfer.files) {
       const files = (Array.from(e.dataTransfer.files) as File[])
         .filter(f => f.type.startsWith('image/'))
         .filter(validateFile); // Filtrar archivos que exceden el peso
-      addGalleryFiles(files);
+      await addGalleryFiles(files);
     }
   };
 
   const addGalleryFiles = async (files: File[]) => {
     // Filter out duplicates based on name and size
     const newFiles = files.filter(file =>
-      !galleryFiles.some(existing =>
-        existing.name === file.name && existing.size === file.size
+      !galleryItems.some(existing =>
+        existing.file?.name === file.name && existing.file?.size === file.size
       )
     );
 
     if (newFiles.length === 0) return;
 
-    setGalleryFiles(prev => [...prev, ...newFiles]);
-
-    // Generate previews preserving order
-    const previewPromises = newFiles.map(file => new Promise<string>((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.readAsDataURL(file);
+    const newItems = await Promise.all(newFiles.map(async (file) => {
+      const preview = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+      return {
+        id: Math.random().toString(36).substr(2, 9), // Simple unique ID
+        file,
+        preview,
+        caption: '',
+        type: 'image' as const
+      };
     }));
 
-    const newPreviews = await Promise.all(previewPromises);
-    setGalleryPreviews(prev => [...prev, ...newPreviews]);
+    setGalleryItems(prev => [...prev, ...newItems]);
   };
 
-  const removeGalleryImage = (index: number) => {
-    setGalleryFiles(prev => prev.filter((_, i) => i !== index));
-    setGalleryPreviews(prev => prev.filter((_, i) => i !== index));
+  // --- Helpers: YouTube ---
+  const getYoutubeVideoId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  const handleAddYoutube = () => {
+    const videoId = getYoutubeVideoId(youtubeLink);
+    if (!videoId) {
+      actions.showToast('Enlace de YouTube inválido', 'error');
+      return;
+    }
+
+    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    // Use standard mq if maxres doesn't exist (can't check easily client side without try/catch fetch, assuming maxres for now or user can update?)
+    // Actually standard fallback is safest visually if we don't check. 
+    // User won't see it if we use simple img tag.
+
+    const newItem: GalleryItem = {
+      id: Math.random().toString(36).substr(2, 9),
+      url: youtubeLink,
+      preview: thumbnailUrl,
+      caption: '',
+      type: 'youtube'
+    };
+
+    setGalleryItems(prev => [...prev, newItem]);
+    setYoutubeLink('');
+    setIsAddingYoutube(false);
+  };
+
+  const removeGalleryItem = (id: string) => {
+    setGalleryItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  const moveGalleryItem = (index: number, direction: 'up' | 'down') => {
+    if ((direction === 'up' && index === 0) || (direction === 'down' && index === galleryItems.length - 1)) return;
+
+    setGalleryItems(prev => {
+      const newItems = [...prev];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      [newItems[index], newItems[targetIndex]] = [newItems[targetIndex], newItems[index]];
+      return newItems;
+    });
+  };
+
+  const updateGalleryCaption = (id: string, caption: string) => {
+    setGalleryItems(prev => prev.map(item =>
+      item.id === id ? { ...item, caption } : item
+    ));
   };
 
   // --- Handlers: Inputs ---
@@ -148,17 +369,23 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
     setTagInput('');
   };
 
+  const addCollaborator = (name: string) => {
+    const trimmed = name.trim();
+    if (trimmed && !collaborators.includes(trimmed)) {
+      setCollaborators([...collaborators, trimmed]);
+    }
+    setCollaboratorInput('');
+  };
+
   const handleSubmit = async () => {
     if (!title.trim()) return actions.showToast('El título es obligatorio', 'error');
     if (!coverFile && !coverPreview) return actions.showToast('La portada es obligatoria', 'error'); // Allow optional no-cover if user really wants? No, better require it.
     if (!category) return actions.showToast('Selecciona una categoría', 'error');
 
-    setIsSubmitting(true);
-
     try {
       if (!state.user) throw new Error("No user authenticated");
 
-      const projectData = {
+      const projectData: any = {
         title,
         description,
         category,
@@ -168,268 +395,610 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
         artistId: state.user.id,
         authorId: state.user.id,
         artistAvatar: state.user.avatar,
+        artistHeadline: state.user.headline,
+        artistRole: state.user.role,
         artistUsername: state.user.username,
-        domain: state.contentMode // Pass the current content mode as the domain
+        location: state.user.location,
+        domain: state.contentMode, // Pass the current content mode as the domain
+        collaborators // Added collaborators field
       };
 
-      const projectId = await projectsService.createProject(
-        state.user.id,
-        projectData,
-        {
-          cover: coverFile || undefined,
-          gallery: galleryFiles
-        },
-        {
-          maxSizeMB: maxFileSize / (1024 * 1024) // Pass the calculated limit in MB
-        }
-      );
+      // Si estamos editando y no se sube una nueva portada, nos aseguramos de conservar la URL de la imagen existente.
+      if (editId && !coverFile && projectToEdit) {
+        projectData.image = projectToEdit.image;
+      }
 
-      actions.showToast('Proyecto publicado con éxito', 'success');
-      // Optimistic addition to list could happen here if we had the full object returned
-      setIsSubmitting(false);
+      // Separation of concerns:
+      // 1. Files to upload (only where type === 'image' and file is present)
+      // 2. Metadata map to reconstruct the order
+
+      const filesToUpload: File[] = [];
+      const galleryMetadata: any[] = [];
+
+      galleryItems.forEach(item => {
+        // Case 1: New Image File
+        if (item.type === 'image' && item.file) {
+          filesToUpload.push(item.file);
+          galleryMetadata.push({
+            type: 'image',
+            caption: item.caption,
+            fileIndex: filesToUpload.length - 1 // 0-based index in the 'filesToUpload' array
+          });
+        }
+        // Case 2: Existing Image (Editing) or YouTube Video
+        else if (item.url) {
+          galleryMetadata.push({
+            type: item.type,
+            caption: item.caption,
+            url: item.url
+          });
+        }
+      });
+
+      if (editId) {
+        // UPDATE MODE
+        await updateProject(
+          editId,
+          projectData,
+          {
+            cover: coverFile,
+            gallery: filesToUpload
+          },
+          {
+            maxSizeMB: maxFileSize / (1024 * 1024),
+            galleryMetadata
+          }
+        );
+        actions.showToast('Proyecto actualizado con éxito', 'success');
+      } else {
+        // CREATE MODE
+        await createProject(
+          projectData,
+          {
+            cover: coverFile,
+            gallery: filesToUpload
+          },
+          {
+            maxSizeMB: maxFileSize / (1024 * 1024),
+            galleryMetadata // We pass this new config to the service
+          }
+        );
+        actions.showToast('Proyecto publicado con éxito', 'success');
+      }
+
       onBack();
     } catch (error: any) {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : 'Error al publicar el proyecto';
       actions.showToast(errorMessage, 'error');
-      setIsSubmitting(false);
     }
   };
 
+  const handleThumbnailClick = () => {
+    if (originalCoverImage) {
+      setImageToCrop(originalCoverImage);
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
+  if (isLoadingEdit) {
+    return (
+      <div className="min-h-screen bg-[#030304] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 text-amber-500 animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0B0C] text-slate-900 dark:text-white pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-[#0B0B0C]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/5">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <button onClick={onBack} className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full transition-colors">
-            <ArrowLeft className="h-5 w-5" />
+    <div className="min-h-screen bg-[#030304] text-slate-300 flex flex-col font-sans selection:bg-indigo-500/30">
+
+      {/* Header - Fixed & Minimal via Glassmorphism */}
+      <header className="sticky top-0 z-50 bg-[#030304]/80 backdrop-blur-xl border-b border-white/[0.06] h-16 flex items-center justify-between px-6">
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors flex items-center gap-2 group">
+            <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="font-medium text-sm hidden md:inline">Cancelar</span>
           </button>
-          <span className="font-bold text-lg">Nuevo Proyecto</span>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-full font-bold text-sm transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isSubmitting ? 'Publicando...' : 'Publicar'}
-          </button>
+          <div className="h-6 w-px bg-white/[0.06] hidden md:block"></div>
+          <span className="font-bold text-white tracking-wide">{editId ? 'Editar Proyecto' : 'Publicar en Portafolio'}</span>
         </div>
+
+        {/* Header Actions removed in favor of Sidebar Panel */}
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto p-6 md:p-8 grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-10">
 
-        {/* ROW 1: Cover Image (Left) & Basic Info (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* LEFT COLUMN: Main Content */}
+        <div className="flex flex-col gap-8 min-w-0 animate-fade-in">
 
-          {/* Cover Image - 5 Columns */}
-          <div className="lg:col-span-5 space-y-2">
-            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">
-              Portada del Proyecto *
-            </label>
+          {/* Title & Description Section (Moved to Main) */}
+          <div className="space-y-6 bg-[#0A0A0C] border border-white/[0.06] rounded-2xl p-8 shadow-xl shadow-black/20">
+            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-2">
+              <Type className="h-4 w-4" /> Información del Proyecto
+            </h3>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Título del Proyecto"
+              className="w-full bg-transparent text-4xl md:text-5xl font-bold text-white border-none px-0 py-2 focus:ring-0 placeholder-slate-700 transition-colors"
+            />
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe tu proceso, herramientas y objetivo..."
+              rows={3}
+              className="w-full bg-transparent text-lg text-slate-300 border-none px-0 py-2 focus:ring-0 placeholder-slate-600 resize-none leading-relaxed"
+            />
+          </div>
+
+          <div className="h-px bg-white/[0.06] w-full" />
+
+          {/* Gallery Section - Vertical Stack */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Layers className="h-4 w-4" /> Contenido del Proyecto
+              </h3>
+              <span className="text-xs text-slate-600 font-mono">{galleryItems.length} items</span>
+            </div>
+
+            <div className="space-y-8">
+              {/* Existing Items - Vertical Stack */}
+              {galleryItems.map((item, index) => (
+                <div key={item.id} className="bg-[#0A0A0C] border border-white/[0.06] rounded-2xl overflow-hidden animate-fade-in group hover:border-white/10 transition-colors">
+                  <div className="relative bg-black/50 min-h-[400px] flex items-center justify-center p-4">
+                    <img src={item.preview} alt={`Gallery ${index}`} className="max-w-full max-h-[600px] object-contain shadow-2xl" />
+
+                    {item.type === 'youtube' && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-xl">
+                          <svg className="w-8 h-8 text-white fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Item Actions (Delete) */}
+                    <button
+                      onClick={() => removeGalleryItem(item.id)}
+                      className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-red-500 text-white rounded-lg backdrop-blur-md transition-all opacity-0 group-hover:opacity-100"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+
+                    {/* Item Actions (Reorder) */}
+                    <div className="absolute top-4 right-16 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                      <button
+                        onClick={() => moveGalleryItem(index, 'up')}
+                        disabled={index === 0}
+                        className="p-1.5 bg-black/50 hover:bg-amber-500 text-white rounded-lg backdrop-blur-md disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6" /></svg>
+                      </button>
+                      <button
+                        onClick={() => moveGalleryItem(index, 'down')}
+                        disabled={index === galleryItems.length - 1}
+                        className="p-1.5 bg-black/50 hover:bg-amber-500 text-white rounded-lg backdrop-blur-md disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                      </button>
+                    </div>
+
+                    <span className="absolute top-4 left-4 bg-black/50 text-white text-xs font-bold px-3 py-1 rounded backdrop-blur-sm border border-white/10 flex items-center gap-2">
+                      {item.type === 'youtube' ? <span className="text-red-500">YouTube</span> : 'Imagen'} {index + 1}
+                    </span>
+                  </div>
+
+                  {/* Caption Input */}
+                  <div className="p-6 bg-[#0E0E10] border-t border-white/[0.06]">
+                    <div className="flex items-start gap-4">
+                      <div className="mt-1">
+                        <div className="w-8 h-8 rounded-full bg-white/[0.05] flex items-center justify-center text-slate-500 font-bold text-xs">
+                          Aa
+                        </div>
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <textarea
+                          value={item.caption}
+                          onChange={(e) => updateGalleryCaption(item.id, e.target.value)}
+                          placeholder="Escribe una descripción, historia o contexto para esta imagen..."
+                          className="w-full bg-transparent text-slate-300 placeholder-slate-600 text-sm focus:outline-none resize-none leading-relaxed border-none focus:ring-0 p-0"
+                          rows={2}
+                        />
+                        <div className="h-px bg-white/[0.06] w-full" />
+                        <div className="flex justify-end">
+                          <span className="text-[10px] text-slate-600 uppercase font-bold tracking-widest">{item.caption.length}/500</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Add Button Area - Support for Images and YouTube */}
+              {!isAddingYoutube ? (
+                <div className="border-2 border-dashed border-white/[0.06] rounded-2xl p-8 flex flex-col items-center justify-center gap-6 hover:bg-white/[0.01] transition-colors">
+                  <div className="flex flex-col items-center justify-center gap-2 text-center pointer-events-none">
+                    <div className="p-4 bg-white/[0.03] rounded-full text-slate-500">
+                      <Upload className="h-6 w-6" />
+                    </div>
+                    <h4 className="text-sm font-bold text-slate-400">Añadir recursos multimedia</h4>
+                    <p className="text-xs text-slate-600">Imágenes (JPG, PNG) o Video ID (YouTube)</p>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <button
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="px-5 py-2.5 bg-white text-black rounded-lg font-bold text-sm hover:bg-slate-200 transition-colors"
+                    >
+                      Subir Imágenes
+                    </button>
+                    <span className="text-sm text-slate-600 font-bold">O</span>
+                    <button
+                      onClick={() => setIsAddingYoutube(true)}
+                      className="px-5 py-2.5 bg-[#FF0000]/10 text-[#FF0000] border border-[#FF0000]/20 rounded-lg font-bold text-sm hover:bg-[#FF0000]/20 transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M21.582 5.184c-.596-2.062-2.316-3.832-4.482-4.148-3.085-.45-11.115-.45-14.2 0-2.166.316-3.886 2.086-4.482 4.148C-1.808 10.375-1.808 19.625.582 24.816c.596 2.062 2.316 3.832 4.482 4.148 3.085.45 11.115.45 14.2 0 2.166-.316 3.886-2.086 4.482-4.148 2.39-5.191 2.39-14.441 0-19.632zM10 20v-10l8.333 5L10 20z" transform="scale(0.8) translate(5,2)" /></svg>
+                      Video de YouTube
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="border border-white/[0.06] bg-[#0A0A0C] rounded-2xl p-8 flex flex-col items-center justify-center gap-4 animate-fade-in">
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <svg className="w-5 h-5 text-red-500 fill-current" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 4-8 4z" /></svg>
+                    Añadir video de YouTube
+                  </h4>
+                  <div className="flex gap-2 w-full max-w-lg">
+                    <input
+                      type="text"
+                      value={youtubeLink}
+                      onChange={(e) => setYoutubeLink(e.target.value)}
+                      placeholder="Pega el enlace aquí (ej: https://www.youtube.com/watch?v=...)"
+                      className="flex-1 bg-[#030304] border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-red-500 transition-colors placeholder-slate-600"
+                      autoFocus
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddYoutube()}
+                    />
+                    <button
+                      onClick={handleAddYoutube}
+                      className="px-6 py-2 bg-white text-black rounded-lg font-bold text-sm hover:bg-slate-200"
+                    >
+                      Añadir
+                    </button>
+                  </div>
+                  <button onClick={() => setIsAddingYoutube(false)} className="text-xs text-slate-500 hover:text-white underline">
+                    Cancelar
+                  </button>
+                </div>
+              )}
+
+              <input ref={galleryInputRef} type="file" multiple accept="image/*" onChange={handleGallerySelect} className="hidden" />
+            </div>
+          </div>
+
+
+
+        </div>
+
+        {/* RIGHT COLUMN: Settings Sidebar */}
+        <div className="space-y-6">
+
+          {/* Publishing Options (New) */}
+          <div className="bg-[#0A0A0C] rounded-2xl border border-white/[0.06] shadow-xl shadow-black/20 overflow-hidden">
+            <div className="bg-white/[0.02] border-b border-white/[0.06] px-6 py-4">
+              <h3 className="text-sm font-bold text-slate-300">Opciones de Publicación</h3>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</label>
+                <div className="relative">
+                  <button
+                    onClick={() => setIsStatusOpen(!isStatusOpen)}
+                    className={`w-full text-left px-4 py-2.5 bg-[#030304] border rounded-xl text-sm transition-all flex items-center justify-between ${isStatusOpen
+                      ? 'border-indigo-500/50 ring-1 ring-indigo-500/20 text-white'
+                      : 'border-white/[0.06] text-slate-300 hover:border-white/20 hover:text-white'
+                      }`}
+                  >
+                    <span>{publishStatus === 'draft' ? 'No publicado' : 'Publicado'}</span>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${publishStatus === 'published' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]' : 'bg-slate-600'}`} />
+                      <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${isStatusOpen ? 'rotate-180' : ''}`} />
+                    </div>
+                  </button>
+
+                  {/* Custom Dropdown Menu */}
+                  {isStatusOpen && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setIsStatusOpen(false)} />
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-[#0A0A0C] border border-white/[0.06] rounded-xl shadow-2xl overflow-hidden z-20 animate-fade-in">
+                        <button
+                          onClick={() => { setPublishStatus('draft'); setIsStatusOpen(false); }}
+                          className="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-white/[0.05] hover:text-white transition-colors flex items-center justify-between group"
+                        >
+                          <span>No publicado</span>
+                          {publishStatus === 'draft' && <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />}
+                        </button>
+                        <button
+                          onClick={() => { setPublishStatus('published'); setIsStatusOpen(false); }}
+                          className="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-white/[0.05] hover:text-white transition-colors flex items-center justify-between group"
+                        >
+                          <span>Publicado</span>
+                          {publishStatus === 'published' && <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+
+                {/* Publish Button (Primary) */}
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+                >
+                  {isSubmitting && (
+                    <div
+                      className="absolute inset-0 bg-green-700 transition-all duration-300 ease-out"
+                      style={{ width: `${progress}%` }}
+                    />
+                  )}
+                  <div className="relative flex items-center gap-2 z-10">
+                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+                    <span>{isSubmitting ? `Subiendo ${progress}%` : (editId ? 'Guardar Cambios' : 'Publicar')}</span>
+                  </div>
+                </button>
+
+                {/* Save Draft Button (Secondary) */}
+                <button
+                  onClick={() => actions.showToast('Guardado como borrador (Simulado)', 'success')}
+                  disabled={isSubmitting}
+                  className="w-full py-3 bg-[#3B82F6]/10 hover:bg-[#3B82F6]/20 border border-[#3B82F6]/30 text-[#60A5FA] rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  Guardar Borrador
+                </button>
+
+                <div className="relative group">
+                  <button
+                    disabled
+                    className="w-full py-3 bg-transparent border border-white/[0.06] text-slate-500 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed opacity-60"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Programar
+                  </button>
+                  <span className="absolute top-1/2 -translate-y-1/2 right-4 bg-[#3B82F6] text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                    PRO
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Thumbnail / Cover Setting (Moved to Sidebar) */}
+          <div className="bg-[#0A0A0C] p-4 rounded-xl border border-white/[0.06] shadow-xl shadow-black/20">
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-4 flex items-center justify-between">
+              <span>Miniatura del Feed</span>
+              {coverPreview && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCoverFile(null);
+                    setCoverPreview(null);
+                    setOriginalCoverImage(null);
+                  }}
+                  className="text-slate-500 hover:text-red-400 text-xs font-bold uppercase transition-colors"
+                >
+                  Remover
+                </button>
+              )}
+            </span>
+
             <div
+              onClick={handleThumbnailClick}
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDropCover}
-              onClick={() => fileInputRef.current?.click()}
-              className={`aspect-[4/3] rounded-2xl border-2 border-dashed relative overflow-hidden cursor-pointer group transition-all 
-                ${coverPreview
-                  ? 'border-transparent'
-                  : 'border-slate-300 dark:border-white/10 hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10'
-                }`}
+              className="aspect-square w-full rounded-lg border-2 border-dashed border-white/[0.1] hover:border-white/20 hover:bg-white/[0.02] cursor-pointer relative overflow-hidden group transition-all"
             >
               {coverPreview ? (
                 <>
-                  <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
+                  <img src={coverPreview} alt="Thumbnail" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span className="text-white font-medium flex items-center gap-2">
-                      <ImageIcon className="h-5 w-5" /> Cambiar Portada
-                    </span>
+                    <span className="text-xs font-bold text-white bg-black/50 px-2 py-1 rounded">Modificar Recorte</span>
                   </div>
                 </>
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-3 p-4 text-center">
-                  <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center">
-                    <Upload className="h-8 w-8 text-slate-300 group-hover:text-amber-500 transition-colors" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-slate-600 dark:text-slate-300">Arrastra tu portada aquí</p>
-                    <p className="text-xs text-slate-400 mt-1">Máx {maxFileSize / (1024 * 1024)}MB • {isProUser ? 'Soporte 4K' : 'Calidad HD'}</p>
-                  </div>
+                <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-2">
+                  <ImageIcon className="h-6 w-6" />
+                  <span className="text-xs font-medium">Subir Cover</span>
                 </div>
               )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleCoverSelect}
-                className="hidden"
-              />
             </div>
+            <div className="mt-3 text-[10px] text-slate-500 leading-relaxed space-y-1">
+              <p>Esta imagen se usará **solo** como miniatura en el feed. No aparecerá en el detalle del proyecto.</p>
+              <p className="text-slate-400 font-medium">• Recomendado: 1080x1080px. Es el balance ideal entre calidad y peso para el feed.</p>
+            </div>
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleCoverSelect} className="hidden" />
           </div>
 
-          {/* Info - 7 Columns */}
-          <div className="lg:col-span-7 space-y-6">
+          {/* Classification */}
+          <div className="bg-[#0A0A0C] p-6 rounded-2xl border border-white/[0.06] space-y-6 shadow-xl shadow-black/20">
 
-            {/* Title */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Título *</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Nombra tu obra maestra..."
-                className="w-full bg-transparent text-3xl md:text-4xl font-bold border-b border-slate-200 dark:border-white/10 focus:border-amber-500 px-0 py-2 focus:ring-0 placeholder-slate-300 dark:placeholder-slate-700 transition-colors"
-              />
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Descripción</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Cuenta la historia detrás de este proyecto..."
-                rows={4}
-                className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 resize-none transition-all"
-              />
-            </div>
-
-            {/* Category & Software */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-              {/* Category Select */}
-              <div className="space-y-2 relative">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Layers className="h-3 w-3" /> Categoría *
-                </label>
-                <button
-                  onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                  className={`w-full text-left bg-slate-100 dark:bg-white/5 border rounded-xl px-4 py-3 text-sm font-medium transition-all flex items-center justify-between
-                    ${isCategoryOpen ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-slate-200 dark:border-white/10 hover:border-slate-300'}`}
-                >
-                  <span className={category ? 'text-slate-900 dark:text-white' : 'text-slate-500'}>
-                    {category || 'Seleccionar...'}
-                  </span>
-                </button>
-                {isCategoryOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1A1A1C] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto">
-                    {PORTFOLIO_CATEGORIES.map(cat => (
-                      <button
-                        key={cat}
-                        onClick={() => { setCategory(cat); setIsCategoryOpen(false); }}
-                        className="w-full text-left px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between"
-                      >
-                        {cat}
-                        {category === cat && <Check className="h-4 w-4 text-amber-500" />}
-                      </button>
-                    ))}
-                  </div>
-                )}
+            {/* Category */}
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Categoría</label>
+              <div className="grid grid-cols-2 gap-2">
+                {PORTFOLIO_CATEGORIES.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setCategory(cat)}
+                    className={`px-3 py-2.5 text-xs font-bold border rounded-lg transition-all text-left ${category === cat
+                      ? 'bg-amber-500 text-black border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
+                      : 'bg-[#030304] border-white/[0.06] text-slate-400 hover:border-white/20 hover:text-white'
+                      }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              {/* Software Input */}
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Monitor className="h-3 w-3" /> Software
-                </label>
-                <div className="bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 flex flex-wrap gap-2 min-h-[46px]">
-                  {softwares.map(soft => (
-                    <span key={soft} className="bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1">
-                      {soft}
-                      <button onClick={() => setSoftwares(s => s.filter(i => i !== soft))}><X className="h-3 w-3" /></button>
-                    </span>
+            <hr className="border-white/[0.06]" />
+
+            {/* Software */}
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Monitor className="h-3 w-3" /> Software Usado
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {softwares.map(soft => (
+                  <span key={soft} className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/[0.05] border border-white/[0.06] text-slate-200 text-xs font-medium rounded-full hover:bg-white/[0.1] transition-colors">
+                    {soft}
+                    <button onClick={() => setSoftwares(s => s.filter(i => i !== soft))} className="text-slate-500 hover:text-red-400">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="relative group">
+                <input
+                  type="text"
+                  value={softwareInput}
+                  onChange={(e) => setSoftwareInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSoftware(softwareInput))}
+                  placeholder="+ Añadir Software"
+                  className="w-full bg-[#030304] border border-white/[0.06] text-sm text-white rounded-xl px-4 py-2.5 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/20 transition-all placeholder-slate-600 peer"
+                />
+
+                {/* Custom Autocomplete Dropdown */}
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[#0A0A0C] border border-white/[0.06] rounded-xl shadow-2xl overflow-hidden z-20 hidden peer-focus:block hover:block animate-fade-in max-h-60 overflow-y-auto custom-scrollbar">
+                  {COMMON_SOFTWARE.filter(s => s.toLowerCase().includes(softwareInput.toLowerCase()) && !softwares.includes(s)).map(soft => (
+                    <button
+                      key={soft}
+                      onMouseDown={(e) => { e.preventDefault(); addSoftware(soft); }}
+                      className="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-white/[0.05] hover:text-white transition-colors flex items-center gap-2"
+                    >
+                      <img
+                        src={`https://cdn.worldvectorlogo.com/logos/${soft.toLowerCase().replace(/\s+/g, '-')}.svg`}
+                        onError={(e) => (e.currentTarget.style.display = 'none')}
+                        className="w-4 h-4 object-contain opacity-70"
+                        alt=""
+                      />
+                      <span>{soft}</span>
+                    </button>
                   ))}
-                  <input
-                    type="text"
-                    list="software-suggestions"
-                    value={softwareInput}
-                    onChange={(e) => setSoftwareInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSoftware(softwareInput))}
-                    placeholder={softwares.length === 0 ? "Ej: Blender..." : ""}
-                    className="flex-1 bg-transparent border-none p-0 text-sm focus:ring-0 min-w-[80px]"
-                  />
-                  <datalist id="software-suggestions">
-                    {COMMON_SOFTWARE.map(soft => (
-                      <option key={soft} value={soft} />
-                    ))}
-                  </datalist>
+
+                  {softwareInput && !COMMON_SOFTWARE.some(s => s.toLowerCase() === softwareInput.toLowerCase()) && (
+                    <button
+                      onMouseDown={(e) => { e.preventDefault(); addSoftware(softwareInput); }}
+                      className="w-full text-left px-4 py-3 text-sm text-indigo-400 hover:bg-indigo-500/10 transition-colors border-t border-white/[0.06]"
+                    >
+                      <span className="font-bold">+ Añadir "{softwareInput}"</span>
+                    </button>
+                  )}
                 </div>
               </div>
+            </div>
 
+            {/* Tags */}
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Etiquetas</label>
+              <div className="flex flex-wrap gap-2">
+                {tags.map(tag => (
+                  <span key={tag} className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/[0.05] border border-white/[0.06] text-slate-300 text-xs font-medium rounded-full hover:bg-white/[0.1] transition-colors">
+                    #{tag}
+                    <button onClick={() => setTags(t => t.filter(i => i !== tag))} className="text-slate-500 hover:text-red-400">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ',') && (e.preventDefault(), addTag(tagInput))}
+                placeholder="+ Añadir Etiquetas"
+                className="w-full bg-[#030304] border border-white/[0.06] text-sm text-white rounded-xl px-4 py-2.5 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/20 transition-all placeholder-slate-600"
+              />
+            </div>
+
+            {/* Collaborators */}
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Users className="h-3 w-3" /> Colaboradores
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {collaborators.map(person => (
+                  <span key={person} className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/[0.05] border border-white/[0.06] text-slate-300 text-xs font-medium rounded-full hover:bg-white/[0.1] transition-colors">
+                    @{person}
+                    <button onClick={() => setCollaborators(c => c.filter(i => i !== person))} className="text-slate-500 hover:text-red-400">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <input
+                type="text"
+                value={collaboratorInput}
+                onChange={(e) => setCollaboratorInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCollaborator(collaboratorInput))}
+                placeholder="+ Etiquetar perfil"
+                className="w-full bg-[#030304] border border-white/[0.06] text-sm text-white rounded-xl px-4 py-2.5 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/20 transition-all placeholder-slate-600"
+              />
             </div>
 
           </div>
-        </div>
 
-        <hr className="border-slate-200 dark:border-white/5" />
-
-        {/* ROW 2: Gallery */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Galería del Proyecto</h2>
-            <span className="text-sm text-slate-500">{galleryFiles.length} Imágenes seleccionadas</span>
-          </div>
-
-          <div
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={handleDropGallery}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4"
-          >
-            {/* Upload Button Block */}
-            <div
-              onClick={() => galleryInputRef.current?.click()}
-              className="aspect-square rounded-2xl border-2 border-dashed border-slate-300 dark:border-white/10 hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 cursor-pointer flex flex-col items-center justify-center gap-2 transition-all p-4 text-center group"
-            >
-              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Upload className="h-6 w-6 text-slate-400 group-hover:text-amber-500" />
-              </div>
-              <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-amber-500">Añadir más imágenes</span>
-            </div>
-            <input
-              ref={galleryInputRef}
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleGallerySelect}
-              className="hidden"
-            />
-
-            {/* Gallery Previews */}
-            {galleryPreviews.map((url, index) => (
-              <div key={index} className="aspect-square rounded-2xl overflow-hidden relative group bg-black/20">
-                <img src={url} alt={`Gallery ${index}`} className="w-full h-full object-cover" />
-                <button
-                  onClick={() => removeGalleryImage(index)}
-                  className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 transform hover:scale-110"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ROW 3: Tags */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold">Etiquetas</h2>
-          <div className="flex flex-wrap items-center gap-2 p-4 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl">
-            {tags.map(tag => (
-              <span key={tag} className="bg-white dark:bg-white/10 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
-                # {tag}
-                <button onClick={() => setTags(t => t.filter(i => i !== tag))} className="text-slate-400 hover:text-red-500"><X className="h-3 w-3" /></button>
-              </span>
-            ))}
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => (e.key === 'Enter' || e.key === ',') && (e.preventDefault(), addTag(tagInput))}
-              placeholder="Añadir etiquetas (Enter)..."
-              className="bg-transparent border-none focus:ring-0 text-sm flex-1 min-w-[150px]"
-            />
-          </div>
         </div>
 
       </main>
+
+      {/* Crop Modal */}
+      {imageToCrop && (
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-[#0A0A0C] border border-white/10 rounded-2xl p-6 max-w-2xl w-full flex flex-col gap-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white">Recortar Miniatura (1:1)</h3>
+              <button onClick={() => setImageToCrop(null)} className="text-slate-400 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="relative flex-1 min-h-[300px] bg-black/50 rounded-xl overflow-hidden flex items-center justify-center">
+              <ReactCrop
+                crop={crop}
+                onChange={(_, percentCrop) => setCrop(percentCrop)}
+                onComplete={(c) => setCompletedCrop(c)}
+                aspect={1}
+                minWidth={50}
+                keepSelection
+                className="max-h-[60vh]"
+              >
+                <img
+                  ref={imgRef}
+                  src={imageToCrop}
+                  alt="Crop me"
+                  onLoad={onImageLoad}
+                  crossOrigin="anonymous"
+                  className="max-w-full max-h-[60vh] object-contain"
+                />
+              </ReactCrop>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setImageToCrop(null)} className="px-4 py-2 text-slate-300 hover:text-white font-medium text-sm">Cancelar</button>
+              <button onClick={handleCropConfirm} className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-lg text-sm transition-colors">
+                Confirmar Recorte
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

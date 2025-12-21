@@ -15,7 +15,7 @@ export const CreateProjectView: React.FC<CreateProjectViewProps> = ({ onBack }) 
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState('');
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  
+
   // Form States
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [projectName, setProjectName] = useState('');
@@ -56,220 +56,237 @@ export const CreateProjectView: React.FC<CreateProjectViewProps> = ({ onBack }) 
   };
 
   const handleSubmit = () => {
-      if (!projectName.trim()) {
-          setFormStatus('error');
-          actions.showToast('El nombre del proyecto es obligatorio', 'error');
-          setTimeout(() => setFormStatus('idle'), 2000);
-          return;
-      }
+    if (!projectName.trim()) {
+      setFormStatus('error');
+      actions.showToast('El nombre del proyecto es obligatorio', 'error');
+      setTimeout(() => setFormStatus('idle'), 2000);
+      return;
+    }
 
-      setFormStatus('submitting');
-      
-      // Simulate API
+    setFormStatus('submitting');
+
+    // Simulate API
+    setTimeout(() => {
+      setFormStatus('success');
+      actions.showToast('Proyecto publicado con éxito', 'success');
+
       setTimeout(() => {
-          setFormStatus('success');
-          actions.showToast('Proyecto publicado con éxito', 'success');
-          
-          setTimeout(() => {
-              onBack();
-          }, 1500);
-      }, 2000);
+        onBack();
+      }, 1500);
+    }, 2000);
   };
 
   if (formStatus === 'success') {
-      return (
-          <div className="fixed inset-0 z-50 bg-[#030304] flex flex-col items-center justify-center animate-fade-in">
-              <div className="w-24 h-24 rounded-full bg-green-500/20 flex items-center justify-center mb-6 animate-scale-in">
-                  <CheckCircle2 className="h-12 w-12 text-green-500" />
-              </div>
-              <h2 className="text-3xl font-bold text-white mb-2">¡Proyecto Publicado!</h2>
-              <p className="text-slate-400">Redirigiendo a la comunidad...</p>
-          </div>
-      );
+    return (
+      <div className="fixed inset-0 z-50 bg-[#030304] flex flex-col items-center justify-center animate-fade-in">
+        <div className="w-24 h-24 rounded-full bg-green-500/20 flex items-center justify-center mb-6 animate-scale-in">
+          <CheckCircle2 className="h-12 w-12 text-green-500" />
+        </div>
+        <h2 className="text-3xl font-bold text-white mb-2">¡Proyecto Publicado!</h2>
+        <p className="text-slate-400">Redirigiendo a la comunidad...</p>
+      </div>
+    );
   }
 
   return (
-    <CreatePageLayout 
-      title="Publicar Nuevo Proyecto" 
+    <CreatePageLayout
+      title="Publicar Nuevo Proyecto"
       onBack={onBack}
-      actionColorClass="bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+      actionColorClass="bg-[#2a2a2a] hover:bg-[#3a3a3a] text-white border border-[#444] disabled:opacity-50 disabled:cursor-not-allowed"
       actionLabel={formStatus === 'submitting' ? 'Publicando...' : 'Publicar'}
       onAction={handleSubmit}
     >
-      <div className={`grid grid-cols-1 lg:grid-cols-3 gap-10 ${formStatus === 'submitting' ? 'opacity-50 pointer-events-none' : ''} transition-opacity`}>
-        
-        {/* Main Form */}
-        <div className="lg:col-span-2 space-y-8">
-          
-          {/* Basic Info */}
-          <div className={`bg-white dark:bg-white/[0.02] p-6 rounded-2xl border transition-colors space-y-6 ${formStatus === 'error' && !projectName ? 'border-red-500/50' : 'border-slate-200 dark:border-white/10'}`}>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Type className="h-5 w-5 text-purple-500" /> Detalles Básicos
-            </h2>
-            
-            <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-                Nombre del Proyecto <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                  <input 
-                    type="text" 
-                    value={projectName}
-                    onChange={(e) => setProjectName(e.target.value)}
-                    placeholder="Ej: Chronos RPG, Cortometraje 'El Viaje'..."
-                    className={`w-full bg-slate-50 dark:bg-white/5 border rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none transition-all ${formStatus === 'error' && !projectName ? 'border-red-500 focus:ring-red-500' : 'border-slate-200 dark:border-white/10 focus:border-purple-500'}`}
-                  />
-                  {formStatus === 'error' && !projectName && (
-                      <AlertCircle className="absolute right-4 top-3.5 h-5 w-5 text-red-500 animate-pulse" />
-                  )}
-              </div>
-            </div>
+      <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8 ${formStatus === 'submitting' ? 'opacity-50 pointer-events-none' : ''} transition-opacity`}>
 
-            <div>
-              <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-                Descripción
-              </label>
-              <textarea 
-                rows={6}
-                placeholder="Describe la idea, la historia, el estilo visual y el estado actual del proyecto..."
-                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:outline-none focus:border-purple-500 transition-colors resize-none"
-              ></textarea>
-              <p className="text-xs text-slate-500 mt-2 text-right">Mínimo 100 caracteres para inspirar a tu equipo.</p>
-            </div>
+        {/* Main Content - Canvas Area */}
+        <div className="lg:col-span-8 space-y-6">
+
+          {/* Title Input - H1 Style */}
+          <div className="relative group">
+            <input
+              type="text"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              placeholder="Título del Proyecto"
+              className="w-full bg-transparent text-4xl font-bold text-slate-900 dark:text-white placeholder-slate-300 dark:placeholder-[#333] border-b-2 border-transparent focus:border-purple-500 focus:outline-none py-2 transition-all"
+            />
+            {!projectName && (
+              <div className="absolute top-4 right-0 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 pointer-events-none">
+                <span className="text-xs font-bold uppercase tracking-wider">Requerido</span>
+                <AlertCircle className="h-5 w-5" />
+              </div>
+            )}
           </div>
 
-          {/* Media */}
-          <div className="bg-white dark:bg-white/[0.02] p-6 rounded-2xl border border-slate-200 dark:border-white/10 space-y-6">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <ImageIcon className="h-5 w-5 text-purple-500" /> Portada del Proyecto
-              </h2>
-              
-              <div className="border-2 border-dashed border-slate-300 dark:border-white/10 rounded-2xl p-8 flex flex-col items-center justify-center bg-slate-50 dark:bg-white/[0.01] hover:bg-slate-100 dark:hover:bg-white/[0.03] transition-colors relative overflow-hidden group cursor-pointer">
-                {previewImage ? (
-                  <>
-                    <img src={previewImage} alt="Preview" className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-40 transition-opacity" />
-                    <div className="relative z-10 flex flex-col items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <UploadCloud className="h-10 w-10 text-white mb-3" />
-                        <span className="text-white font-bold">Cambiar imagen</span>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="h-16 w-16 bg-purple-500/10 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        <UploadCloud className="h-8 w-8 text-purple-500" />
-                    </div>
-                    <p className="text-slate-900 dark:text-white font-bold mb-1">Haz clic para subir o arrastra aquí</p>
-                    <p className="text-slate-500 text-sm">PNG, JPG hasta 10MB (1920x1080 recomendado)</p>
-                  </>
-                )}
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handleImageUpload}
-                  className="absolute inset-0 cursor-pointer opacity-0" 
-                />
+          {/* Media Upload Area - The "Canvas" */}
+          <div className="bg-[#f0f0f0] dark:bg-[#0a0a0a] rounded-xl overflow-hidden min-h-[500px] flex flex-col relative border border-slate-200 dark:border-[#222]">
+            {/* Toolbar (Visual Only) */}
+            <div className="h-10 bg-slate-200 dark:bg-[#111] border-b border-slate-300 dark:border-[#222] flex items-center px-4 gap-4">
+              <div className="flex gap-2">
+                <div className="h-3 w-3 rounded-full bg-red-400/20"></div>
+                <div className="h-3 w-3 rounded-full bg-yellow-400/20"></div>
+                <div className="h-3 w-3 rounded-full bg-green-400/20"></div>
               </div>
-          </div>
+              <span className="text-xs font-mono text-slate-400 dark:text-[#444] uppercase tracking-wider">Media Canvas</span>
+            </div>
 
-          {/* Roles & Team */}
-          <div className="bg-white dark:bg-white/[0.02] p-6 rounded-2xl border border-slate-200 dark:border-white/10 space-y-6">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Users className="h-5 w-5 text-purple-500" /> Equipo y Roles
-              </h2>
-              
-              <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
-                  ¿Qué perfiles buscas?
-                </label>
-                <div className="flex gap-2 mb-4">
-                    <input 
-                      type="text" 
-                      value={currentRole}
-                      onChange={(e) => setCurrentRole(e.target.value)}
-                      placeholder="Ej: Concept Artist, Unity Dev..."
-                      className="flex-1 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-purple-500"
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddRole(e)}
+            {/* Upload Zone */}
+            <div className="flex-1 p-8 flex flex-col items-center justify-center relative group">
+              {previewImage ? (
+                <div className="relative w-full h-full flex items-center justify-center">
+                  <img src={previewImage} alt="Preview" className="max-w-full max-h-[600px] object-contain shadow-2xl rounded-lg" />
+
+                  <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm cursor-pointer">
+                    <UploadCloud className="h-16 w-16 text-white mb-4 animate-bounce" />
+                    <span className="text-xl font-light text-white tracking-widest uppercase">Cambiar Contenido</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="absolute inset-0 cursor-pointer opacity-0"
                     />
-                    <button 
-                      onClick={handleAddRole}
-                      className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-xl transition-colors"
-                    >
-                      <Plus className="h-6 w-6" />
-                    </button>
+                  </div>
                 </div>
-                
-                <div className="flex flex-wrap gap-2">
-                    {roles.map((role, idx) => (
-                      <span key={idx} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 text-sm font-bold border border-purple-500/20 animate-scale-in">
-                          {role}
-                          <button onClick={() => removeRole(role)} className="hover:text-purple-700 dark:hover:text-white">
-                            <X className="h-3 w-3" />
-                          </button>
-                      </span>
-                    ))}
-                    {roles.length === 0 && (
-                      <p className="text-sm text-slate-400 italic">No has agregado roles aún.</p>
-                    )}
+              ) : (
+                <div className="text-center space-y-6">
+                  <div className="w-32 h-32 rounded-full bg-[#151515] flex items-center justify-center mx-auto border border-[#222] group-hover:border-purple-500/50 group-hover:scale-105 transition-all duration-500 relative">
+                    <div className="absolute inset-0 rounded-full bg-purple-500/10 animate-pulse delay-75"></div>
+                    <ImageIcon className="h-12 w-12 text-[#444] group-hover:text-purple-400 transition-colors" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                    />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-medium text-slate-700 dark:text-[#ddd] mb-2">Carga tu arte aquí</h3>
+                    <p className="text-slate-500 dark:text-[#555] max-w-sm mx-auto">
+                      Arrastra y suelta o haz clic para subir imágenes (JPG, PNG, GIF) o videos (MP4).
+                      <br /> <span className="text-xs opacity-50">Hasta 15MB por archivo.</span>
+                    </p>
+                  </div>
+                  <button className="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-full font-bold transition-colors">
+                    Seleccionar Archivos
+                  </button>
+                  {/* Invisible Input covering the button area as well just in case */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                  />
                 </div>
-              </div>
+              )}
+            </div>
+          </div>
+
+          <div className="p-4 rounded-lg bg-orange-500/5 border border-orange-500/20 text-orange-600 dark:text-orange-400 text-sm flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+            <p>Asegúrate de que tienes los derechos para publicar este contenido. El contenido pirata o robado será eliminado inmediatamente.</p>
           </div>
 
         </div>
 
-        {/* Sidebar Settings */}
-        <div className="space-y-8">
-            
-            {/* Tags */}
-            <div className="bg-white dark:bg-white/[0.02] p-6 rounded-2xl border border-slate-200 dark:border-white/10 space-y-4">
-              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Target className="h-4 w-4" /> Etiquetas
-              </h3>
-              
-              <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    value={currentTag}
-                    onChange={(e) => setCurrentTag(e.target.value)}
-                    placeholder="Ej: Sci-Fi, Pixel Art..."
-                    className="flex-1 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-purple-500"
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddTag(e)}
-                  />
-                  <button onClick={handleAddTag} className="bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white p-2 rounded-lg hover:bg-slate-300 dark:hover:bg-white/20">
-                    <Plus className="h-4 w-4" />
-                  </button>
-              </div>
-              
-              <div className="flex flex-wrap gap-2">
-                  {tags.map((tag, idx) => (
-                    <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-white/5 animate-scale-in">
-                        #{tag}
-                        <button onClick={() => removeTag(tag)} className="hover:text-red-500 ml-1">
-                          <X className="h-3 w-3" />
-                        </button>
-                    </span>
-                  ))}
-              </div>
-            </div>
+        {/* Sidebar - Details */}
+        <div className="lg:col-span-4 space-y-8">
 
-            {/* Publish Actions */}
-            <div className="bg-white dark:bg-white/[0.02] p-6 rounded-2xl border border-slate-200 dark:border-white/10 sticky top-24">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Resumen</h3>
-              <p className="text-sm text-slate-500 mb-6">
-                  Tu proyecto pasará a estado "Reclutando" inmediatamente. Podrás editarlo más tarde.
-              </p>
-              <div className="space-y-3">
-                  <button 
-                    onClick={handleSubmit}
-                    disabled={formStatus === 'submitting'}
-                    className="w-full py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait"
-                  >
-                    {formStatus === 'submitting' ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Publicar Proyecto'}
-                  </button>
-                  <button className="w-full py-3 bg-transparent border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                    Guardar Borrador
-                  </button>
+          {/* Description */}
+          <div className="space-y-4">
+            <label className="text-sm font-bold text-slate-400 dark:text-[#666] uppercase tracking-widest flex items-center gap-2">
+              <Type className="h-4 w-4" /> Descripción
+            </label>
+            <textarea
+              rows={8}
+              placeholder="Cuenta la historia detrás de tu proyecto..."
+              className="w-full bg-slate-50 dark:bg-[#121212] border border-slate-200 dark:border-[#222] rounded-xl px-4 py-3 text-slate-900 dark:text-[#ccc] focus:outline-none focus:border-purple-500 focus:bg-[#151515] transition-all resize-none text-sm leading-relaxed"
+            ></textarea>
+          </div>
+
+          {/* Tags with "chips" look */}
+          <div className="space-y-4">
+            <label className="text-sm font-bold text-slate-400 dark:text-[#666] uppercase tracking-widest flex items-center gap-2">
+              <Target className="h-4 w-4" /> Etiquetas
+            </label>
+
+            <div className="bg-slate-50 dark:bg-[#121212] p-4 rounded-xl border border-slate-200 dark:border-[#222]">
+              <div className="flex gap-2 mb-3">
+                <input
+                  type="text"
+                  value={currentTag}
+                  onChange={(e) => setCurrentTag(e.target.value)}
+                  placeholder="Añadir etiqueta"
+                  className="flex-1 bg-transparent border-0 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-[#444] text-sm focus:outline-none"
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddTag(e)}
+                />
+                <button onClick={handleAddTag} className="text-slate-400 hover:text-white transition-colors">
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="h-px bg-slate-200 dark:bg-[#222] mb-3"></div>
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag, idx) => (
+                  <span key={idx} className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-200 dark:bg-[#1c1c1c] text-slate-700 dark:text-[#aaa] text-xs hover:bg-slate-300 dark:hover:bg-[#252525] transition-colors cursor-default">
+                    #{tag}
+                    <button onClick={() => removeTag(tag)} className="hover:text-red-500 ml-1">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+                {tags.length === 0 && (
+                  <span className="text-xs text-slate-400 dark:text-[#333] italic">Sin etiquetas</span>
+                )}
               </div>
             </div>
+          </div>
+
+          {/* Team / Collaborators */}
+          <div className="space-y-4">
+            <label className="text-sm font-bold text-slate-400 dark:text-[#666] uppercase tracking-widest flex items-center gap-2">
+              <Users className="h-4 w-4" /> Equipo / Créditos
+            </label>
+
+            <div className="bg-slate-50 dark:bg-[#121212] p-4 rounded-xl border border-slate-200 dark:border-[#222] space-y-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={currentRole}
+                  onChange={(e) => setCurrentRole(e.target.value)}
+                  placeholder="Rol (ej: Artista 3D)"
+                  className="flex-1 bg-slate-200 dark:bg-[#1a1a1a] rounded px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none"
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddRole(e)}
+                />
+                <button
+                  onClick={handleAddRole}
+                  className="bg-slate-300 dark:bg-[#2a2a2a] hover:bg-slate-400 dark:hover:bg-[#333] text-slate-700 dark:text-white p-2 rounded transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {roles.map((role, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2 rounded bg-slate-100 dark:bg-[#0f0f0f] border border-slate-200 dark:border-[#1f1f1f]">
+                    <span className="text-sm text-slate-600 dark:text-[#999]">{role}</span>
+                    <button onClick={() => removeRole(role)} className="text-slate-400 hover:text-red-500">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Sticky Action Footer for Mobile, mostly hidden on Desktop since we have header actions */}
+          <div className="block lg:hidden pt-8">
+            <button
+              onClick={handleSubmit}
+              disabled={formStatus === 'submitting'}
+              className="w-full py-4 bg-purple-600 text-white font-bold rounded-xl"
+            >
+              Publicar Proyecto
+            </button>
+          </div>
 
         </div>
       </div>

@@ -3,9 +3,56 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, Share2, MessageSquare, Briefcase, UserPlus, CheckCircle2, Maximize2, X, Bookmark, Trash2, Edit } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
-import { useDeleteProject, useProject } from '../../hooks/useFirebase';
+import { useDeleteProject, useProject, useProjectComments, useAddProjectComment, useDeleteProjectComment, useUserProfile } from '../../hooks/useFirebase';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
 import { projectsService } from '../../services/modules/projects';
+
+// --- Helpers ---
+const timeAgo = (dateString: string) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  let interval = seconds / 31536000;
+  if (interval > 1) return "hace " + Math.floor(interval) + " años";
+  interval = seconds / 2592000;
+  if (interval > 1) return "hace " + Math.floor(interval) + " meses";
+  interval = seconds / 86400;
+  if (interval > 1) return "hace " + Math.floor(interval) + " días";
+  interval = seconds / 3600;
+  if (interval > 1) return "hace " + Math.floor(interval) + " horas";
+  interval = seconds / 60;
+  if (interval > 1) return "hace " + Math.floor(interval) + " min";
+  return "hace un momento";
+};
+
+const getYoutubeVideoId = (url: string) => {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? match[2] : null;
+};
+
+const renderDescriptionWithLinks = (text: string) => {
+  const urlRegex = /((?:https?:\/\/|www\.)[^\s]+)/g;
+  return text.split(urlRegex).map((part, index) => {
+    if (part.match(urlRegex)) {
+      const href = part.startsWith('www.') ? `https://${part}` : part;
+      return (
+        <a
+          key={index}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-amber-500 hover:underline break-all"
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+};
 
 interface PortfolioPostViewProps {
   itemId?: string;
@@ -24,7 +71,11 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
 
   const { deleteProject, loading: isDeleting } = useDeleteProject();
   const { project: fetchedProject, loading: isFetching } = useProject(id);
+  const { comments, loading: isLoadingComments } = useProjectComments(id);
+  const { add: addComment, loading: isAddingComment } = useAddProjectComment();
+  const { remove: deleteComment } = useDeleteProjectComment();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [newComment, setNewComment] = useState('');
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
@@ -33,16 +84,21 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
 
   // La única fuente de la verdad es el proyecto traído desde Firebase.
   const item = fetchedProject;
+  const { profile: authorProfile } = useUserProfile(item ? (item.authorId || item.artistId) : null);
 
-  // --- Efectos de Interacción y Carga de Datos ---
+  // --- Efecto 1: Contabilizar Vistas (Solo una vez al cargar el proyecto) ---
   useEffect(() => {
     if (item && item.id) {
-      // 1. Incrementar Vistas (Solo si es un proyecto real de la BD)
-      if (!item.isLocal) { // Asumiendo que los items locales no necesitan contar vistas aún
+      if (!(item as any).isLocal) {
         projectsService.incrementProjectView(item.id);
       }
+    }
+  }, [item?.id]); // Dependencia solo del ID del proyecto, no del usuario
 
-      // 2. Verificar estado del Like
+  // --- Efecto 2: Datos dependientes del Usuario y Relacionados ---
+  useEffect(() => {
+    if (item && item.id) {
+      // Verificar Like (Solo si hay usuario)
       if (state.user) {
         projectsService.getProjectLikeStatus(item.id, state.user.id).then(setIsLiked);
       }
@@ -50,7 +106,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
       // Inicializar contador
       setLikeCount(Number(item.likes || 0));
 
-      // 3. Cargar Proyectos Relacionados (Del mismo autor)
+      // Cargar Proyectos Relacionados
       const authorId = item.authorId || item.artistId;
       if (authorId) {
         projectsService.getUserProjects(authorId).then(projects => {
@@ -91,6 +147,27 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
     }
   };
 
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !item?.id) return;
+    try {
+      await addComment(item.id, newComment.trim());
+      setNewComment(''); // Clear input on success
+    } catch (error: any) {
+      actions.showToast(error.message, 'error');
+    }
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    if (!item?.id) return;
+    // TODO: Add a confirmation modal here
+    try {
+      await deleteComment(item.id, commentId);
+      actions.showToast('Comentario eliminado', 'success');
+    } catch (error: any) {
+      actions.showToast(error.message, 'error');
+    }
+  };
+
   if (!item) {
     return (
       <div className="min-h-screen bg-[#030304] flex flex-col items-center justify-center p-8 text-center">
@@ -124,9 +201,13 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
   // Usar solo los proyectos relacionados que vienen del servicio.
   const displayRelated = relatedProjects;
 
-  // Combina la imagen de portada con la galería, asegurando que no haya valores nulos.
-  const projectImages = [item.image, ...(item.images || [])].filter(Boolean);
+  // Construye la galería, dando prioridad a la nueva estructura `gallery` pero con fallback a `images` para datos antiguos.
+  const galleryContent = (item.gallery && item.gallery.length > 0)
+    ? item.gallery
+    : (item.images || []).map(url => ({ url, caption: '', type: 'image' as const }));
 
+  const heroContent = galleryContent.length > 0 ? galleryContent[0] : null;
+  const additionalContent = galleryContent.slice(1);
   // Colors for software tags
   const getSoftwareColor = (name: string) => {
     const map: Record<string, string> = {
@@ -140,9 +221,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
     return map[name] || 'text-slate-400 bg-slate-500/10 border-slate-500/20';
   };
 
-  const softwares = item.software && item.software.length > 0
-    ? item.software
-    : ['Blender', 'Photoshop', 'Substance Painter'];
+  const softwares = item.software || [];
 
   return (
     <div className="min-h-screen bg-[#030304] animate-fade-in pb-20 relative">
@@ -215,7 +294,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
               <>
                 <div className="w-px bg-white/10 my-1 mx-1"></div>
                 <button
-                  onClick={() => navigate(`/create?edit=${item.id}`)}
+                  onClick={() => navigate(`/create/portfolio?edit=${item.id}`)}
                   className="p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-blue-500 transition-colors"
                   title="Editar Proyecto"
                 >
@@ -236,12 +315,15 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
 
       <div className="max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 p-4 md:p-8">
 
-        {/* --- LEFT: MAIN IMAGE GALLERY --- */}
-        <div className="lg:col-span-9 space-y-4">
+        {/* --- LEFT: MAIN CONTENT --- */}
+        <div className="lg:col-span-9 space-y-12">
 
           {/* Title and Metadata (Moved to Top) */}
           <div className="mb-6">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">{item.title}</h1>
+            {item.createdAt && (
+              <p className="text-slate-400 text-sm mb-4">Publicado el {new Date(item.createdAt).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            )}
             <div className="flex flex-wrap gap-2">
               {softwares.map(soft => (
                 <div key={soft} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold border ${getSoftwareColor(soft)}`}>
@@ -251,51 +333,94 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
             </div>
           </div>
 
-          {/* Main Hero Image */}
-          <div
-            className="group relative w-full bg-black rounded-sm overflow-hidden shadow-2xl shadow-black/50 cursor-zoom-in"
-            onClick={() => setLightboxImage(projectImages[0])}
-          >
-            <img
-              src={projectImages[0]}
-              alt="Main View"
-              className="w-full h-auto object-cover"
-            />
-            {/* Hover Actions */}
-            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <button className="bg-black/60 backdrop-blur-md text-white p-2.5 rounded-lg hover:bg-black/80 transition-colors">
-                <Maximize2 className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
           {/* Description Block */}
-          <div className="bg-[#0A0A0C] border border-white/5 p-8 rounded-xl shadow-lg relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none"></div>
-
-            <div className="prose prose-invert prose-lg max-w-none text-slate-300 relative z-10 font-light">
-              <p>
-                {item.description || "Este proyecto representa una exploración profunda de técnicas avanzadas de renderizado y composición. Inspirado en la estética cyberpunk y la arquitectura brutalista, busqué crear una atmósfera que se sintiera tanto futurista como vivida. Utilicé Blender para el modelado principal y Substance Painter para texturizado procedural, finalizando en Photoshop para corrección de color."}
-              </p>
+          {item.description && (
+            <div className="prose prose-invert prose-lg max-w-none text-slate-300 font-light">
+              <p className="whitespace-pre-wrap">{renderDescriptionWithLinks(item.description)}</p>
             </div>
-          </div>
+          )}
 
-          {/* Additional Images Grid */}
-          {projectImages.length > 1 && (
-            <div className="grid grid-cols-1 gap-4">
-              {projectImages.slice(1).map((img, index) => (
-                <div
-                  key={index}
-                  className="group relative w-full bg-black rounded-sm overflow-hidden shadow-xl cursor-zoom-in"
-                  onClick={() => setLightboxImage(img)}
-                >
-                  {/* Lazy load simulation */}
-                  <img src={img} alt={`Detail ${index + 1}`} className="w-full h-auto object-cover" loading="lazy" />
-                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <button className="bg-black/60 backdrop-blur-md text-white p-2 rounded-lg hover:bg-black/80">
-                      <Maximize2 className="h-4 w-4" />
-                    </button>
+          {/* Main Hero Content */}
+          {heroContent && (
+            <div className="space-y-4">
+              <div
+                className={`group relative w-full bg-black rounded-sm overflow-hidden shadow-2xl shadow-black/50 ${heroContent.type === 'image' ? 'cursor-zoom-in' : ''}`}
+                onClick={() => heroContent.type === 'image' && heroContent.url && setLightboxImage(heroContent.url)}
+              >
+                {heroContent.type === 'youtube' ? (
+                  <div className="relative pt-[56.25%] w-full">
+                    <iframe
+                      className="absolute inset-0 w-full h-full"
+                      src={`https://www.youtube.com/embed/${getYoutubeVideoId(heroContent.url || '') || ''}`}
+                      title={heroContent.caption || "YouTube video"}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
                   </div>
+                ) : (
+                  <>
+                    <img
+                      src={heroContent.url}
+                      alt="Main View"
+                      className="w-full h-auto object-cover"
+                    />
+                    <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <button className="bg-black/60 backdrop-blur-md text-white p-2.5 rounded-lg hover:bg-black/80 transition-colors">
+                        <Maximize2 className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+              {heroContent.caption && (
+                <div className="bg-[#0A0A0C] border-l-2 border-amber-500 pl-4 py-2">
+                  <p className="text-slate-300 text-sm italic">{heroContent.caption}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Additional Content Grid */}
+          {additionalContent.length > 0 && (
+            <div className="grid grid-cols-1 gap-8">
+              {additionalContent.map((imgItem, index) => (
+                <div key={index} className="space-y-4">
+                  {/* Media Container */}
+                  <div
+                    className={`group relative w-full bg-black rounded-sm overflow-hidden shadow-xl ${imgItem.type === 'image' ? 'cursor-zoom-in' : ''}`}
+                    onClick={() => imgItem.type === 'image' && imgItem.url && setLightboxImage(imgItem.url)}
+                  >
+                    {/* YouTube Render */}
+                    {imgItem.type === 'youtube' ? (
+                      <div className="relative pt-[56.25%] w-full">
+                        <iframe
+                          className="absolute inset-0 w-full h-full"
+                          src={`https://www.youtube.com/embed/${getYoutubeVideoId(imgItem.url || '') || ''}`}
+                          title={imgItem.caption || "YouTube video"}
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        ></iframe>
+                      </div>
+                    ) : (
+                      /* Image Render */
+                      <>
+                        <img src={imgItem.url || ''} alt={`Detail ${index + 1}`} className="w-full h-auto object-cover" loading="lazy" />
+                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <button className="bg-black/60 backdrop-blur-md text-white p-2 rounded-lg hover:bg-black/80">
+                            <Maximize2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {/* Caption Display */}
+                  {imgItem.caption && (
+                    <div className="border-l-2 border-white/10 pl-4">
+                      <p className="text-slate-400 text-sm italic">{imgItem.caption}</p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -304,56 +429,71 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
           {/* Comments Section */}
           <div className="pt-8 max-w-4xl mx-auto">
             <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-amber-500" /> Comentarios <span className="text-slate-500 text-sm font-normal">(124)</span>
+              <MessageSquare className="h-5 w-5 text-amber-500" /> Comentarios <span className="text-slate-500 text-sm font-normal">({comments.length})</span>
             </h3>
 
             {/* Input */}
-            <div className="flex gap-4 mb-8 bg-[#0A0A0C] p-4 rounded-xl border border-white/5">
-              <div className="h-10 w-10 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center font-bold text-sm">
-                TÚ
-              </div>
-              <div className="flex-1">
-                <textarea
-                  className="w-full bg-transparent text-white text-sm placeholder-slate-500 focus:outline-none resize-none min-h-[40px]"
-                  placeholder="Escribe un comentario constructivo..."
-                  rows={2}
-                ></textarea>
-                <div className="flex justify-end mt-2">
-                  <button className="px-5 py-1.5 bg-amber-500 text-black font-bold rounded-lg hover:bg-amber-400 text-xs transition-colors">Publicar</button>
+            {state.user ? (
+              <div className="flex gap-4 mb-8 bg-[#0A0A0C] p-4 rounded-xl border border-white/5">
+                <img src={state.user.avatar} className="h-10 w-10 rounded-full object-cover" alt="Tu avatar" />
+                <div className="flex-1">
+                  <textarea
+                    className="w-full bg-transparent text-white text-sm placeholder-slate-500 focus:outline-none resize-none min-h-[40px]"
+                    placeholder="Escribe un comentario constructivo..."
+                    rows={2}
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    disabled={isAddingComment}
+                  ></textarea>
+                  <div className="flex justify-end mt-2">
+                    <button
+                      onClick={handleAddComment}
+                      disabled={isAddingComment || !newComment.trim()}
+                      className="px-5 py-1.5 bg-amber-500 text-black font-bold rounded-lg hover:bg-amber-400 text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isAddingComment ? 'Publicando...' : 'Publicar'}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="text-center text-slate-500 text-sm mb-8 p-4 bg-[#0A0A0C] rounded-xl border border-white/5">
+                <a href="/auth" className="text-amber-500 font-bold hover:underline">Inicia sesión</a> para dejar un comentario.
+              </div>
+            )}
 
-            {/* Fake Comments */}
+            {/* Comments List */}
             <div className="space-y-6">
-              <div className="flex gap-4">
-                <img src="https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&auto=format&fit=crop" className="h-10 w-10 rounded-full object-cover" alt="User" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-white font-bold text-sm">Marcus Chen</span>
-                    <span className="text-[10px] text-slate-500">hace 2 días</span>
+              {isLoadingComments ? (
+                <div className="text-slate-500 text-center py-4">Cargando comentarios...</div>
+              ) : (
+                comments.map(comment => (
+                  <div key={comment.id} className="flex gap-4 animate-fade-in">
+                    <img src={comment.authorAvatar} className="h-10 w-10 rounded-full object-cover" alt={comment.authorName} />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-white font-bold text-sm">{comment.authorName}</span>
+                          <span className="text-[10px] text-slate-500">{timeAgo(comment.createdAt)}</span>
+                        </div>
+                        {(state.user?.id === comment.authorId || state.user?.id === item.authorId) && (
+                          <button onClick={() => handleDeleteComment(comment.id)} className="text-slate-500 hover:text-red-500" title="Eliminar comentario">
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-slate-300 text-sm whitespace-pre-wrap">{comment.text}</p>
+                      <div className="flex items-center gap-4 mt-2">
+                        <button className="text-xs text-slate-500 hover:text-white flex items-center gap-1"><Heart className="h-3 w-3" /> {comment.likes || 0}</button>
+                        <button className="text-xs text-slate-500 hover:text-white">Responder</button>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-slate-300 text-sm">¡La iluminación en la tercera imagen es increíble! ¿Usaste Cycles o Eevee?</p>
-                  <div className="flex items-center gap-4 mt-2">
-                    <button className="text-xs text-slate-500 hover:text-white flex items-center gap-1"><Heart className="h-3 w-3" /> 12</button>
-                    <button className="text-xs text-slate-500 hover:text-white">Responder</button>
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop" className="h-10 w-10 rounded-full object-cover" alt="User" />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-white font-bold text-sm">Sarah Jenkins</span>
-                    <span className="text-[10px] text-slate-500">hace 1 semana</span>
-                  </div>
-                  <p className="text-slate-300 text-sm">Me encanta la composición y las texturas del suelo. Gran trabajo.</p>
-                  <div className="flex items-center gap-4 mt-2">
-                    <button className="text-xs text-slate-500 hover:text-white flex items-center gap-1"><Heart className="h-3 w-3" /> 8</button>
-                    <button className="text-xs text-slate-500 hover:text-white">Responder</button>
-                  </div>
-                </div>
-              </div>
+                ))
+              )}
+              {comments.length === 0 && !isLoadingComments && (
+                <div className="text-center text-slate-600 py-8">Sé el primero en comentar.</div>
+              )}
             </div>
           </div>
 
@@ -380,9 +520,17 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
                 </div>
                 <div>
                   <h3 className="font-bold text-white text-lg hover:underline decoration-amber-500 underline-offset-4 decoration-2">{item.artist}</h3>
-                  <p className="text-xs text-slate-400">Senior Environment Artist</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-xs text-slate-400">{authorProfile?.role || (item as any).artistRole || authorProfile?.headline || (item as any).artistHeadline || 'Artista'}</p>
+                    {item.availableForWork === true && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-500/10 text-green-500 text-[10px] font-bold border border-green-500/20">
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                        Disponible
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[10px] text-slate-500 mt-1">
-                    {state.user && state.user.name === item.artist ? state.user.location : 'Tokio, Japón'}
+                    {authorProfile?.location || (item as any).location || 'Latam'}
                   </p>
                 </div>
               </div>
@@ -408,7 +556,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
             <div className="bg-[#0A0A0C] p-5 rounded-2xl border border-white/5">
               <div className="grid grid-cols-3 gap-2 text-center divide-x divide-white/5">
                 <div>
-                  <div className="text-white font-bold">{item.views.toLocaleString()}</div>
+                  <div className="text-white font-bold">{(item.views || 0).toLocaleString()}</div>
                   <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-1">Vistas</div>
                 </div>
                 <div>
@@ -416,7 +564,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
                   <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-1">Likes</div>
                 </div>
                 <div>
-                  <div className="text-white font-bold">124</div>
+                  <div className="text-white font-bold">{comments.length}</div>
                   <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-1">Coment.</div>
                 </div>
               </div>
@@ -426,11 +574,27 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
             <div className="bg-[#0A0A0C] p-5 rounded-2xl border border-white/5">
               <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Etiquetas</h4>
               <div className="flex flex-wrap gap-2">
-                {[item.category, 'Concept Art', 'Sci-Fi', 'Environment', '2024'].map(tag => (
+                {(item.tags && item.tags.length > 0 ? item.tags : [item.category]).map(tag => (
                   <span key={tag} className="px-3 py-1.5 rounded-lg bg-white/5 text-xs text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer transition-colors border border-transparent hover:border-white/10">
                     #{tag}
                   </span>
                 ))}
+              </div>
+            </div>
+
+            {/* Collaborators */}
+            <div className="bg-[#0A0A0C] p-5 rounded-2xl border border-white/5">
+              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Colaboradores</h4>
+              <div className="flex flex-wrap gap-2">
+                {item.collaborators && item.collaborators.length > 0 ? (
+                  item.collaborators.map(person => (
+                    <span key={person} className="px-3 py-1.5 rounded-lg bg-white/5 text-xs text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer transition-colors border border-transparent hover:border-white/10">
+                      @{person}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-slate-600 italic">Sin colaboradores</span>
+                )}
               </div>
             </div>
 
@@ -466,7 +630,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
           </button>
           <button className="text-slate-400 flex flex-col items-center gap-1">
             <MessageSquare className="h-6 w-6" />
-            <span className="text-[10px] font-bold">124</span>
+            <span className="text-[10px] font-bold">{comments.length}</span>
           </button>
         </div>
         <button className="px-8 py-3 bg-white text-black rounded-xl font-bold text-sm">

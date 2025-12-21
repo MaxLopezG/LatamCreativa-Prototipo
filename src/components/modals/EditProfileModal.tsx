@@ -168,10 +168,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                 />
                             </div>
 
-                            <div className="px-6 md:px-12 relative -mt-16 md:-mt-20 z-10">
-                                <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start md:items-end">
-                                    <div className="relative group">
-                                        <div className="h-32 w-32 md:h-40 md:w-40 rounded-3xl p-1 bg-[#030304]">
+                            <div className="px-6 md:px-12 relative -mt-12 md:-mt-14 z-10">
+                                <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
+                                    <div className="relative group shrink-0">
+                                        <div className="h-36 w-36 md:h-44 md:w-44 rounded-3xl p-1 bg-[#030304]">
                                             <img
                                                 src={images.previewAvatar || user.avatar || "https://cdn.ui-avatars.com/api/?name=User&background=random"}
                                                 alt="Avatar"
@@ -194,33 +194,36 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                             />
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                            {/* Nombres y Apellidos */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nombres *</label>
-                                    <div className="relative">
-                                        <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
-                                        <input
-                                            type="text"
-                                            value={formData.firstName}
-                                            onChange={(e) => handleInputChange('firstName', e.target.value)}
-                                            className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
-                                            placeholder="Tus nombres"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Apellidos *</label>
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            value={formData.lastName}
-                                            onChange={(e) => handleInputChange('lastName', e.target.value)}
-                                            className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
-                                            placeholder="Tus apellidos"
-                                        />
+
+                                    {/* Nombres y Apellidos */}
+                                    <div className="flex-1 w-full pb-1">
+                                        <div className="flex flex-col gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Nombres *</label>
+                                                <div className="relative">
+                                                    <User className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                                                    <input
+                                                        type="text"
+                                                        value={formData.firstName}
+                                                        onChange={(e) => handleInputChange('firstName', e.target.value)}
+                                                        className="w-full pl-10 pr-4 py-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
+                                                        placeholder="Tus nombres"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Apellidos *</label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        value={formData.lastName}
+                                                        onChange={(e) => handleInputChange('lastName', e.target.value)}
+                                                        className="w-full px-4 py-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none transition-all text-slate-900 dark:text-white"
+                                                        placeholder="Tus apellidos"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

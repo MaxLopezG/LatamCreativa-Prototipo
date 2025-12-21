@@ -87,6 +87,11 @@ export interface PortfolioItem {
   isExclusive?: boolean; // Locked content
   description?: string; // New: Specific project description
   images?: string[]; // New: Project gallery (wireframes, details)
+  gallery?: {
+    url: string;
+    caption: string;
+    type?: 'image' | 'video' | 'youtube';
+  }[]; // New: Detailed gallery with captions and types
   software?: string[]; // New: Software used
   domain?: 'creative' | 'dev'; // For filtering mode
   createdAt?: string;
