@@ -1,19 +1,59 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lock, Bookmark } from 'lucide-react';
 import { PortfolioItem } from '../../types';
 import { useAppStore } from '../../hooks/useAppStore';
+import { usersService } from '../../services/modules/users';
+
+// Simple in-memory cache for author profiles to avoid redundant fetches
+const authorProfileCache: Map<string, { name: string; avatar: string; timestamp: number }> = new Map();
+const CACHE_TTL = 60000; // 1 minute cache TTL
 
 interface PortfolioCardProps {
   item: PortfolioItem;
   onClick?: () => void;
   onSave?: (id: string, image: string, type: 'project' | 'article') => void;
   itemType?: 'project' | 'article';
-  extraAction?: React.ReactNode; // New prop for additional actions
+  extraAction?: React.ReactNode;
 }
 
-export const PortfolioCard: React.FC<PortfolioCardProps> = ({ item, onClick, onSave, itemType = 'project', extraAction }) => {
-  const { state, actions } = useAppStore();
+export const PortfolioCard: React.FC<PortfolioCardProps> = ({
+  item,
+  onClick,
+  onSave,
+  itemType = 'project',
+  extraAction
+}) => {
+  const { state } = useAppStore();
+  const [authorProfile, setAuthorProfile] = useState<{ name: string; avatar: string } | null>(null);
 
+  // Fetch author profile with caching
+  useEffect(() => {
+    const authorId = item.authorId || item.artistId;
+    if (!authorId) return;
+
+    // Check cache first
+    const cached = authorProfileCache.get(authorId);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      setAuthorProfile({ name: cached.name, avatar: cached.avatar });
+      return;
+    }
+
+    // Fetch fresh profile
+    usersService.getUserProfile(authorId).then(profile => {
+      if (profile) {
+        const profileData = { name: profile.name, avatar: profile.avatar };
+        setAuthorProfile(profileData);
+        // Update cache
+        authorProfileCache.set(authorId, { ...profileData, timestamp: Date.now() });
+      }
+    }).catch(err => {
+      console.warn('Could not fetch author profile:', err);
+    });
+  }, [item.authorId, item.artistId]);
+
+  // Use live author profile data if available, fallback to item's snapshot data
+  const displayName = authorProfile?.name || item.artist || 'Unknown';
+  const displayAvatar = authorProfile?.avatar || item.artistAvatar || '';
 
   const handleSave = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -65,11 +105,11 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({ item, onClick, onS
           </h3>
           <div className="flex items-center gap-2">
             <img
-              src={item.artistAvatar}
-              alt={item.artist}
+              src={displayAvatar}
+              alt={displayName}
               className="h-5 w-5 rounded-full object-cover ring-1 ring-white/30"
             />
-            <span className="text-xs text-slate-300 font-medium truncate">{item.artist}</span>
+            <span className="text-xs text-slate-300 font-medium truncate">{displayName}</span>
           </div>
         </div>
 

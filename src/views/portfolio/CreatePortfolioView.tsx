@@ -64,6 +64,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   interface GalleryItem {
     id: string;
@@ -107,6 +108,13 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
     if (projectToEdit) {
       setTitle(projectToEdit.title);
       setDescription(projectToEdit.description || '');
+      // Auto-resize description textarea after data loads
+      setTimeout(() => {
+        if (descriptionRef.current) {
+          descriptionRef.current.style.height = 'auto';
+          descriptionRef.current.style.height = `${descriptionRef.current.scrollHeight}px`;
+        }
+      }, 0);
       setCategory(projectToEdit.category);
       setSoftwares(projectToEdit.software || []);
       setTags(projectToEdit.tags || []);
@@ -392,10 +400,9 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
         software: softwares,
         tags,
         artist: state.user.name,
-        artistId: state.user.id,
         authorId: state.user.id,
         artistAvatar: state.user.avatar,
-        artistHeadline: state.user.headline,
+        artistHeadline: state.user.role,
         artistRole: state.user.role,
         artistUsername: state.user.username,
         location: state.user.location,
@@ -507,7 +514,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
         {/* Header Actions removed in favor of Sidebar Panel */}
       </header>
 
-      <main className="flex-1 max-w-[1600px] w-full mx-auto p-6 md:p-8 grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-10">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto p-6 md:p-8 pb-28 lg:pb-8 grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-10">
 
         {/* LEFT COLUMN: Main Content */}
         <div className="flex flex-col gap-8 min-w-0 animate-fade-in">
@@ -525,11 +532,18 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
               className="w-full bg-transparent text-4xl md:text-5xl font-bold text-white border-none px-0 py-2 focus:ring-0 placeholder-slate-700 transition-colors"
             />
             <textarea
+              ref={descriptionRef}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = `${target.scrollHeight}px`;
+              }}
               placeholder="Describe tu proceso, herramientas y objetivo..."
               rows={3}
-              className="w-full bg-transparent text-lg text-slate-300 border-none px-0 py-2 focus:ring-0 placeholder-slate-600 resize-none leading-relaxed"
+              className="w-full bg-transparent text-lg text-slate-300 border-none px-0 py-2 focus:ring-0 placeholder-slate-600 resize-none leading-relaxed overflow-hidden"
+              style={{ minHeight: '80px' }}
             />
           </div>
 
@@ -999,6 +1013,34 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
           </div>
         </div>
       )}
+
+      {/* Mobile Floating Action Bar */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#030304]/95 backdrop-blur-xl border-t border-white/10 p-4 flex gap-3 animate-slide-up">
+        <button
+          onClick={() => actions.showToast('Guardado como borrador', 'success')}
+          disabled={isSubmitting}
+          className="flex-1 py-3 bg-[#0A0A0C] border border-white/10 text-slate-300 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+        >
+          <Save className="h-4 w-4" />
+          Borrador
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={isSubmitting || !title.trim() || !coverPreview}
+          className="flex-[2] relative py-3 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSubmitting && (
+            <div
+              className="absolute inset-0 bg-green-700 transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          )}
+          <div className="relative flex items-center gap-2 z-10">
+            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+            <span>{isSubmitting ? `${progress}%` : (editId ? 'Guardar' : 'Publicar')}</span>
+          </div>
+        </button>
+      </div>
     </div>
   );
 };

@@ -106,6 +106,7 @@ export const AuthView: React.FC = () => {
                 const isAdmin = user.email === 'admin@latamcreativa.com';
                 const appUser = {
                     id: user.uid,
+                    uid: user.uid,
                     name: user.displayName || (firstName ? `${firstName} ${lastName}`.trim() : 'Usuario'),
                     avatar: user.photoURL || 'https://ui-avatars.com/api/?name=' + (user.displayName || firstName || 'U'),
                     role: isAdmin ? 'Administrator' : 'Creative Member',
@@ -155,6 +156,7 @@ export const AuthView: React.FC = () => {
                 const isAdmin = user.email === 'admin@latamcreativa.com';
                 const appUser = {
                     id: user.uid,
+                    uid: user.uid,
                     name: userData.name || user.displayName || 'Usuario',
                     avatar: userData.avatar || user.photoURL || 'https://ui-avatars.com/api/?name=U',
                     role: isAdmin ? 'Administrator' : (userData.role || 'Creative Member'),

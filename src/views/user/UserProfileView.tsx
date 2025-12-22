@@ -125,8 +125,35 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
     // DISABLED: We want real data or empty state
     // const showMockData = false; 
 
-    // Stats
-    const stats = { views: 0, likes: 0, followers: 0, ...(displayUser['stats'] as any) };
+    // Stats state
+    const [totalLikes, setTotalLikes] = useState<number>(0);
+
+    // Effect: Increment profile views (only for visitors, not own profile)
+    useEffect(() => {
+        if (displayUser.id && displayUser.id !== 'unknown' && !isOwnProfile) {
+            usersService.incrementProfileViews(displayUser.id);
+        }
+    }, [displayUser.id, isOwnProfile]);
+
+    // Effect: Calculate total likes from all user's projects
+    useEffect(() => {
+        const loadTotalLikes = async () => {
+            const userId = isOwnProfile ? state.user?.id : fetchedUser?.id;
+            if (userId) {
+                const likes = await usersService.getTotalProjectLikes(userId);
+                setTotalLikes(likes);
+            }
+        };
+        loadTotalLikes();
+    }, [isOwnProfile, state.user?.id, fetchedUser?.id]);
+
+    // Stats - combine stored stats with computed totalLikes
+    const storedStats = (displayUser['stats'] as any) || {};
+    const stats = {
+        views: storedStats.views || 0,
+        likes: totalLikes || storedStats.likes || 0,
+        followers: storedStats.followers || 0
+    };
 
     // 2. Courses
     const userCourses = useMemo(() => {

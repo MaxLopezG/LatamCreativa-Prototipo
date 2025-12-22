@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { PrimarySidebar, SecondarySidebar } from '../components/Navigation';
-import { Header } from '../components/Header';
+import { PrimarySidebar, SecondarySidebar } from '../components/layout/Navigation';
+import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
 import { ChatWidget } from '../components/chat/ChatWidget';
 import { MobileTabBar } from '../components/layout/MobileTabBar';

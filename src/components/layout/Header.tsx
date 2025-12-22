@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Menu, Bell, Plus, FileText, Layers, Video, Box, Users, Search, Command, Briefcase, MessageCircleQuestion, CalendarDays, Heart, UserPlus, Check, ShoppingCart, Building2, Aperture, Trash2, Sparkles, ArrowRight } from 'lucide-react';
-import { Notification } from '../types';
-import { ContentMode, useAppStore } from '../hooks/useAppStore';
+import { Notification } from '../../types';
+import { ContentMode, useAppStore } from '../../hooks/useAppStore';
 
 interface HeaderProps {
     onMenuClick?: () => void;

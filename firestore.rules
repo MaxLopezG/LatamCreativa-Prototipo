@@ -1,18 +1,175 @@
-rules_version='2'
+rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    
+    // Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if the user is the owner of the document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Check if the user is the author of a resource
+    function isAuthor() {
+      return isAuthenticated() && resource.data.authorId == request.auth.uid;
+    }
+    
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+    match /users/{userId} {
+      // Anyone can read user profiles (public profiles)
+      allow read: if true;
+      
+      // Only the owner can create their own profile
+      allow create: if isOwner(userId);
+      
+      // Update rules:
+      // - Owner can update anything on their profile
+      // - Any authenticated user can update stats (followers, following counts)
+      allow update: if isOwner(userId) || (
+        isAuthenticated() && 
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['stats'])
+      );
+      
+      // Users cannot delete their own profile (admin only or not allowed)
+      allow delete: if false;
+      
+      // --- Followers Subcollection ---
+      match /followers/{followerId} {
+        allow read: if true;
+        // Any authenticated user can follow (create) or unfollow (delete)
+        allow create, delete: if isAuthenticated();
+        allow update: if false; // Followers docs shouldn't be updated
+      }
+      
+      // --- Following Subcollection ---
+      match /following/{followingId} {
+        allow read: if true;
+        // Any authenticated user can manage their own following list
+        allow create, delete: if isAuthenticated();
+        allow update: if false;
+      }
+      
+      // --- Notifications Subcollection ---
+      match /notifications/{notificationId} {
+        // Only the owner can read their notifications
+        allow read: if isOwner(userId);
+        // Any authenticated user can create notifications (for follows, likes, etc.)
+        allow create: if isAuthenticated();
+        // Only the owner can update (mark as read) or delete their notifications
+        allow update, delete: if isOwner(userId);
+      }
+    }
+    
+    // ============================================
+    // PROJECTS COLLECTION
+    // ============================================
+    match /projects/{projectId} {
+      // Anyone can read projects (public portfolio)
+      allow read: if true;
+      
+      // Only authenticated users can create projects
+      allow create: if isAuthenticated();
+      
+      // Update rules:
+      // - Author can update anything on their project
+      // - Any authenticated user can update view/like counters
+      allow update: if isAuthor() || (
+        isAuthenticated() && 
+        // Only allow updates to these specific stat fields
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['views', 'likes', 'stats'])
+        &&
+        // Make sure they're not trying to change other critical fields
+        !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['title', 'description', 'image', 'images', 'gallery', 'authorId', 'artist', 'category', 'software', 'tags', 'domain', 'isPrivate', 'collaborators'])
+      );
+      
+      // Only the author can delete their project
+      allow delete: if isAuthor();
+      
+      // --- Likes Subcollection ---
+      match /likes/{likeUserId} {
+        allow read: if true;
+        // Users can only create/delete their own likes
+        allow create, delete: if isAuthenticated() && request.auth.uid == likeUserId;
+        allow update: if false;
+      }
+      
+      // --- Comments Subcollection ---
+      match /comments/{commentId} {
+        allow read: if true;
+        // Any authenticated user can create comments
+        allow create: if isAuthenticated();
+        // Comment author can update their comment text
+        // Any authenticated user can update likes count
+        allow update: if isAuthenticated() && (
+          resource.data.authorId == request.auth.uid ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+        );
+        // Comment author OR project author can delete comments
+        allow delete: if isAuthenticated() && (
+          resource.data.authorId == request.auth.uid ||
+          get(/databases/$(database)/documents/projects/$(projectId)).data.authorId == request.auth.uid
+        );
+        
+        // --- Likes on Comments Subcollection ---
+        match /likes/{likeUserId} {
+          allow read: if true;
+          allow create, delete: if isAuthenticated() && request.auth.uid == likeUserId;
+          allow update: if false;
+        }
+      }
+    }
+    
+    // ============================================
+    // ARTICLES COLLECTION (Blog Posts)
+    // ============================================
+    match /articles/{articleId} {
+      // Anyone can read articles
+      allow read: if true;
+      
+      // Only authenticated users can create articles
+      allow create: if isAuthenticated();
+      
+      // Only the author can update or delete their article
+      allow update, delete: if isAuthor();
+      
+      // --- Likes Subcollection ---
+      match /likes/{likeUserId} {
+        allow read: if true;
+        allow create, delete: if isAuthenticated() && request.auth.uid == likeUserId;
+        allow update: if false;
+      }
+      
+      // --- Comments Subcollection ---
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isAuthenticated();
+        allow update: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+        allow delete: if isAuthenticated() && (
+          resource.data.authorId == request.auth.uid ||
+          get(/databases/$(database)/documents/articles/$(articleId)).data.authorId == request.auth.uid
+        );
+      }
+    }
+    
+    // ============================================
+    // CATCH-ALL: Deny everything else by default
+    // ============================================
+    // This ensures any collections not explicitly defined above are protected
     match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2026, 1, 6);
+      allow read, write: if false;
     }
   }
 }

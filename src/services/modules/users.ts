@@ -326,5 +326,47 @@ export const usersService = {
     getArtistDirectory: async (): Promise<any[]> => {
 
         return [];
+    },
+
+    /**
+     * Increment the view count on a user's profile
+     * Should be called when someone visits a profile (not own profile)
+     */
+    incrementProfileViews: async (userId: string): Promise<void> => {
+        try {
+            const userRef = doc(db, 'users', userId);
+            await updateDoc(userRef, {
+                'stats.views': increment(1)
+            });
+        } catch (error) {
+            console.error("Error incrementing profile views:", error);
+            // Don't throw - this is non-critical
+        }
+    },
+
+    /**
+     * Calculate total likes across all user's projects
+     * Returns the sum of likes from all projects by this user
+     */
+    getTotalProjectLikes: async (userId: string): Promise<number> => {
+        try {
+            const projectsQuery = query(
+                collection(db, 'projects'),
+                where('authorId', '==', userId)
+            );
+
+            const snapshot = await getDocs(projectsQuery);
+            let totalLikes = 0;
+
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                totalLikes += Number(data.likes || 0) + Number(data.stats?.likeCount || 0);
+            });
+
+            return totalLikes;
+        } catch (error) {
+            console.error("Error calculating total project likes:", error);
+            return 0;
+        }
     }
 };

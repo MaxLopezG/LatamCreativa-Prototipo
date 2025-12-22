@@ -2,11 +2,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Settings, Search, X, Sliders, Code, Palette, ChevronDown, ChevronRight, User, DollarSign, LogOut, LogIn } from 'lucide-react';
-import { auth } from '../lib/firebase';
+import { auth } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
-import { PRIMARY_NAV_ITEMS, NAV_SECTIONS, NAV_SECTIONS_DEV, SUBSCRIPTIONS } from '../data/navigation';
-import { ContentMode, useAppStore } from '../hooks/useAppStore';
-import { usersService } from '../services/modules/users';
+import { PRIMARY_NAV_ITEMS, NAV_SECTIONS, NAV_SECTIONS_DEV, SUBSCRIPTIONS } from '../../data/navigation';
+import { ContentMode, useAppStore } from '../../hooks/useAppStore';
+import { usersService } from '../../services/modules/users';
 
 interface PrimarySidebarProps {
   activeModule?: string;

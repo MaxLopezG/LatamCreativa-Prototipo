@@ -340,24 +340,29 @@ export const projectsService = {
 
     /**
      * Fetch all projects for a specific user
+     * 
+     * Uses dual query strategy for backward compatibility:
+     * - New projects use `authorId` (standard)
+     * - Legacy projects may only have `artistId` (deprecated)
+     * 
+     * TODO: After running migration script to copy artistId → authorId,
+     *       simplify to single query on `authorId` only.
      */
     getUserProjects: async (userId: string, limitCount?: number): Promise<PortfolioItem[]> => {
         try {
-            // Strategy: Dual Query to support old (artistId) and new (authorId) items
-            // We run both to ensure we catch legacy projects and newly created ones.
             const constraints: any[] = [orderBy('createdAt', 'desc')];
             if (limitCount) {
                 constraints.push(limit(limitCount));
             }
 
             const queries = [
-                // 1. Query by authorId (Standard)
+                // Primary: Query by authorId (standard field)
                 query(
                     collection(db, 'projects'),
                     where('authorId', '==', userId),
                     ...constraints
                 ),
-                // 2. Query by artistId (Legacy/Compatibility)
+                // Legacy: Query by artistId (deprecated, for backward compatibility)
                 query(
                     collection(db, 'projects'),
                     where('artistId', '==', userId),
@@ -407,6 +412,37 @@ export const projectsService = {
         } catch (error) {
             console.error("Error fetching project:", error);
             return null;
+        }
+    },
+
+    /**
+     * Get multiple projects by their IDs
+     * Handles Firestore's 10-item limit for 'in' queries by chunking
+     */
+    getProjectsByIds: async (ids: string[]): Promise<PortfolioItem[]> => {
+        if (!ids || ids.length === 0) return [];
+
+        // Firestore 'in' query limit is 10
+        const chunks = [];
+        for (let i = 0; i < ids.length; i += 10) {
+            chunks.push(ids.slice(i, i + 10));
+        }
+
+        try {
+            const { documentId } = await import('firebase/firestore');
+            const results = await Promise.all(chunks.map(async chunk => {
+                const q = query(
+                    collection(db, 'projects'),
+                    where(documentId(), 'in', chunk)
+                );
+                const snapshot = await getDocs(q);
+                return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as PortfolioItem));
+            }));
+
+            return results.flat();
+        } catch (error) {
+            console.error("Error fetching projects by IDs:", error);
+            return [];
         }
     },
 
@@ -477,12 +513,6 @@ export const projectsService = {
 
             const batch = writeBatch(db);
 
-            // Notification Reference (Deterministic ID)
-            let notifRef = null;
-            if (projectData && projectData.authorId) {
-                notifRef = doc(db, 'users', projectData.authorId, 'notifications', `like_${projectId}_${userId}`);
-            }
-
             if (isLiked) {
                 // UNLIKE
                 batch.delete(likeRef);
@@ -490,10 +520,6 @@ export const projectsService = {
                     'stats.likeCount': increment(-1),
                     'likes': increment(-1)
                 });
-                // Remove notification if it exists (Atomic cleanup)
-                if (notifRef) {
-                    batch.delete(notifRef);
-                }
 
             } else {
                 // LIKE
@@ -505,24 +531,39 @@ export const projectsService = {
                     'stats.likeCount': increment(1),
                     'likes': increment(1)
                 });
-
-                // Create Notification (Atomic)
-                // Only if not self-like
-                if (projectData && projectData.authorId && projectData.authorId !== userId && notifRef) {
-                    batch.set(notifRef, {
-                        type: 'like',
-                        user: userData?.name || 'Alguien',
-                        avatar: userData?.avatar || '',
-                        content: `le gustó tu proyecto "${projectData.title || 'Sin título'}"`,
-                        image: projectData.image || '',
-                        time: new Date().toISOString(),
-                        read: false,
-                        link: `/portfolio/${projectId}`
-                    });
-                }
             }
 
             await batch.commit();
+
+            // Handle notifications AFTER the main batch (non-blocking)
+            // This ensures likes always work even if notifications fail
+            if (projectData && projectData.authorId && projectData.authorId !== userId) {
+                const notifId = `like_${projectId}_${userId}`;
+                const notifRef = doc(db, 'users', projectData.authorId, 'notifications', notifId);
+
+                try {
+                    if (isLiked) {
+                        // Remove notification on unlike
+                        await deleteDoc(notifRef);
+                    } else {
+                        // Create notification on like
+                        await setDoc(notifRef, {
+                            type: 'like',
+                            user: userData?.name || 'Alguien',
+                            avatar: userData?.avatar || '',
+                            content: `le gustó tu proyecto "${projectData.title || 'Sin título'}"`,
+                            image: projectData.image || '',
+                            time: new Date().toISOString(),
+                            read: false,
+                            link: `/portfolio/${projectId}`
+                        });
+                    }
+                } catch (notifError) {
+                    // Log but don't throw - likes should still work
+                    console.warn('Notification operation failed (non-critical):', notifError);
+                }
+            }
+
             return !isLiked; // Return the new status
         } catch (error) {
             console.error("Error toggling like:", error);
@@ -543,7 +584,7 @@ export const projectsService = {
 
     // --- Comments ---
 
-    addComment: async (projectId: string, commentData: { authorId: string; authorName: string; authorAvatar: string; text: string; }) => {
+    addComment: async (projectId: string, commentData: { authorId: string; authorName: string; authorUsername?: string; authorAvatar: string; text: string; }) => {
         const commentsCol = collection(db, 'projects', projectId, 'comments');
         const newCommentRef = doc(commentsCol);
         await setDoc(newCommentRef, {
@@ -605,9 +646,105 @@ export const projectsService = {
         });
     },
 
-    likeComment: async (projectId: string, commentId: string, userId: string) => {
-        // Placeholder for like logic
-        console.log(`Liking comment ${commentId} on project ${projectId} by user ${userId}`);
-        // Actual logic would involve a subcollection on the comment document
+    /**
+     * Toggle like on a comment
+     * Returns the new like status (true = liked, false = unliked)
+     */
+    toggleCommentLike: async (projectId: string, commentId: string, userId: string): Promise<boolean> => {
+        try {
+            const commentRef = doc(db, 'projects', projectId, 'comments', commentId);
+            const likeRef = doc(db, 'projects', projectId, 'comments', commentId, 'likes', userId);
+
+            const likeSnap = await getDoc(likeRef);
+            const isLiked = likeSnap.exists();
+
+            if (isLiked) {
+                // Unlike
+                await deleteDoc(likeRef);
+                await updateDoc(commentRef, { likes: increment(-1) });
+                return false;
+            } else {
+                // Like
+                await setDoc(likeRef, {
+                    userId,
+                    createdAt: new Date().toISOString()
+                });
+                await updateDoc(commentRef, { likes: increment(1) });
+                return true;
+            }
+        } catch (error) {
+            console.error("Error toggling comment like:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Check if user has liked a specific comment
+     */
+    getCommentLikeStatus: async (projectId: string, commentId: string, userId: string): Promise<boolean> => {
+        try {
+            const likeRef = doc(db, 'projects', projectId, 'comments', commentId, 'likes', userId);
+            const snap = await getDoc(likeRef);
+            return snap.exists();
+        } catch (error) {
+            console.error("Error checking comment like status:", error);
+            return false;
+        }
+    },
+
+    /**
+     * Get like statuses for multiple comments at once
+     */
+    getCommentsLikeStatuses: async (projectId: string, commentIds: string[], userId: string): Promise<Record<string, boolean>> => {
+        try {
+            const statuses: Record<string, boolean> = {};
+
+            // Fetch all like statuses in parallel
+            const promises = commentIds.map(async (commentId) => {
+                const likeRef = doc(db, 'projects', projectId, 'comments', commentId, 'likes', userId);
+                const snap = await getDoc(likeRef);
+                statuses[commentId] = snap.exists();
+            });
+
+            await Promise.all(promises);
+            return statuses;
+        } catch (error) {
+            console.error("Error fetching comment like statuses:", error);
+            return {};
+        }
+    },
+
+    /**
+     * Add a reply to a comment
+     * Replies are stored as regular comments with a parentId field
+     */
+    addCommentReply: async (
+        projectId: string,
+        parentCommentId: string,
+        replyData: { authorId: string; authorName: string; authorUsername?: string; authorAvatar: string; text: string; }
+    ) => {
+        try {
+            const commentsCol = collection(db, 'projects', projectId, 'comments');
+            const newReplyRef = doc(commentsCol);
+
+            await setDoc(newReplyRef, {
+                ...replyData,
+                id: newReplyRef.id,
+                parentId: parentCommentId,
+                createdAt: new Date().toISOString(),
+                likes: 0
+            });
+
+            // Increment comment count on the project
+            const projectRef = doc(db, 'projects', projectId);
+            await updateDoc(projectRef, {
+                'stats.commentCount': increment(1)
+            });
+
+            return newReplyRef.id;
+        } catch (error) {
+            console.error("Error adding reply:", error);
+            throw error;
+        }
     }
 };
