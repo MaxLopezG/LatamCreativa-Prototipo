@@ -15,6 +15,7 @@ import {
     increment,
     onSnapshot,
     startAfter,
+    addDoc,
     QueryDocumentSnapshot,
     DocumentData
 } from 'firebase/firestore';
@@ -158,44 +159,10 @@ export const projectsService = {
             updateProgress();
 
             // 6. Notificar a los Seguidores
-            // Buscamos la subcolección 'followers' del usuario y creamos una notificación para cada uno.
-            try {
-                const followersRef = collection(db, 'users', userId, 'followers');
-                const followersSnap = await getDocs(followersRef);
-
-                if (!followersSnap.empty) {
-                    const notifBatch = writeBatch(db);
-                    let opCount = 0;
-                    const MAX_BATCH_SIZE = 450; // Límite de seguridad por lote de Firestore
-
-                    for (const followerDoc of followersSnap.docs) {
-                        const followerId = followerDoc.id;
-                        const notifRef = doc(collection(db, 'users', followerId, 'notifications'));
-
-                        notifBatch.set(notifRef, {
-                            type: 'new_project',
-                            senderId: userId,
-                            senderName: (projectData as any).artist || 'Artista',
-                            senderAvatar: (projectData as any).artistAvatar || '',
-                            projectId: projectId,
-                            projectTitle: projectData.title || 'Nuevo Proyecto',
-                            projectImage: coverUrl || projectData.image || '',
-                            read: false,
-                            createdAt: new Date().toISOString()
-                        });
-
-                        opCount++;
-                        if (opCount >= MAX_BATCH_SIZE) break; // Prevenir errores en lotes muy grandes
-                    }
-
-                    if (opCount > 0) {
-                        await notifBatch.commit();
-                    }
-                }
-            } catch (error) {
-                console.error("Error enviando notificaciones a seguidores:", error);
-                // No interrumpimos el flujo principal si falla la notificación
-            }
+            // TODO: [SCALABILITY] La lógica de notificación a seguidores ha sido eliminada del cliente.
+            // Esto DEBE ser implementado como una Firebase Cloud Function que se active
+            // con el evento `onCreate` en la colección 'projects'.
+            // Hacerlo en el cliente no es escalable y fallará con usuarios populares.
 
             return projectId;
         } catch (error) {
@@ -374,22 +341,27 @@ export const projectsService = {
     /**
      * Fetch all projects for a specific user
      */
-    getUserProjects: async (userId: string): Promise<PortfolioItem[]> => {
+    getUserProjects: async (userId: string, limitCount?: number): Promise<PortfolioItem[]> => {
         try {
             // Strategy: Dual Query to support old (artistId) and new (authorId) items
             // We run both to ensure we catch legacy projects and newly created ones.
+            const constraints: any[] = [orderBy('createdAt', 'desc')];
+            if (limitCount) {
+                constraints.push(limit(limitCount));
+            }
+
             const queries = [
                 // 1. Query by authorId (Standard)
                 query(
                     collection(db, 'projects'),
                     where('authorId', '==', userId),
-                    orderBy('createdAt', 'desc')
+                    ...constraints
                 ),
                 // 2. Query by artistId (Legacy/Compatibility)
                 query(
                     collection(db, 'projects'),
                     where('artistId', '==', userId),
-                    orderBy('createdAt', 'desc')
+                    ...constraints
                 )
             ];
 
@@ -488,25 +460,43 @@ export const projectsService = {
 
     toggleProjectLike: async (projectId: string, userId: string): Promise<boolean> => {
         try {
-            // Reference to the "like" document in a subcollection
-            // This prevents a user from liking the same project twice
-            const likeRef = doc(db, 'projects', projectId, 'likes', userId);
             const projectRef = doc(db, 'projects', projectId);
+            const likeRef = doc(db, 'projects', projectId, 'likes', userId);
+            const userRef = doc(db, 'users', userId);
 
-            const likeSnap = await getDoc(likeRef);
+            // Fetch necessary data upfront for atomic operations
+            const [projectSnap, likeSnap, userSnap] = await Promise.all([
+                getDoc(projectRef),
+                getDoc(likeRef),
+                getDoc(userRef)
+            ]);
+
+            const projectData = projectSnap.data();
+            const userData = userSnap.data();
+            const isLiked = likeSnap.exists();
+
             const batch = writeBatch(db);
-            let isLiked = false;
 
-            if (likeSnap.exists()) {
-                // Unlike: Remove doc and decrement counter
+            // Notification Reference (Deterministic ID)
+            let notifRef = null;
+            if (projectData && projectData.authorId) {
+                notifRef = doc(db, 'users', projectData.authorId, 'notifications', `like_${projectId}_${userId}`);
+            }
+
+            if (isLiked) {
+                // UNLIKE
                 batch.delete(likeRef);
                 batch.update(projectRef, {
                     'stats.likeCount': increment(-1),
                     'likes': increment(-1)
                 });
-                isLiked = false;
+                // Remove notification if it exists (Atomic cleanup)
+                if (notifRef) {
+                    batch.delete(notifRef);
+                }
+
             } else {
-                // Like: Create doc and increment counter
+                // LIKE
                 batch.set(likeRef, {
                     userId,
                     createdAt: new Date().toISOString()
@@ -515,11 +505,25 @@ export const projectsService = {
                     'stats.likeCount': increment(1),
                     'likes': increment(1)
                 });
-                isLiked = true;
+
+                // Create Notification (Atomic)
+                // Only if not self-like
+                if (projectData && projectData.authorId && projectData.authorId !== userId && notifRef) {
+                    batch.set(notifRef, {
+                        type: 'like',
+                        user: userData?.name || 'Alguien',
+                        avatar: userData?.avatar || '',
+                        content: `le gustó tu proyecto "${projectData.title || 'Sin título'}"`,
+                        image: projectData.image || '',
+                        time: new Date().toISOString(),
+                        read: false,
+                        link: `/portfolio/${projectId}`
+                    });
+                }
             }
 
             await batch.commit();
-            return isLiked;
+            return !isLiked; // Return the new status
         } catch (error) {
             console.error("Error toggling like:", error);
             throw error;
@@ -554,6 +558,29 @@ export const projectsService = {
         await updateDoc(projectRef, {
             'stats.commentCount': increment(1)
         });
+
+        // Send Notification (async, fire and forget)
+        (async () => {
+            try {
+                const projectSnap = await getDoc(projectRef);
+                const projectData = projectSnap.data();
+
+                if (projectData && projectData.authorId && projectData.authorId !== commentData.authorId) {
+                    await addDoc(collection(db, 'users', projectData.authorId, 'notifications'), {
+                        type: 'comment',
+                        user: commentData.authorName,
+                        avatar: commentData.authorAvatar,
+                        content: `comentó en tu proyecto "${projectData.title || 'Sin título'}"`,
+                        image: projectData.image || '', // Project cover
+                        time: new Date().toISOString(),
+                        read: false,
+                        link: `/portfolio/${projectId}`
+                    });
+                }
+            } catch (error) {
+                console.error("Error creating comment notification:", error);
+            }
+        })();
     },
 
     listenToComments: (projectId: string, callback: (comments: any[]) => void) => {

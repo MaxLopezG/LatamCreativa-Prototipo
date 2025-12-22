@@ -7,53 +7,9 @@ import { useDeleteProject, useProject, useProjectComments, useAddProjectComment,
 import { useUserProfileData } from '../../hooks/useUserProfileData';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
 import { projectsService } from '../../services/modules/projects';
+import { usersService } from '../../services/modules/users';
+import { timeAgo, getYoutubeVideoId, renderDescriptionWithLinks } from '../../utils/helpers';
 
-// --- Helpers ---
-const timeAgo = (dateString: string) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  const now = new Date();
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  let interval = seconds / 31536000;
-  if (interval > 1) return "hace " + Math.floor(interval) + " años";
-  interval = seconds / 2592000;
-  if (interval > 1) return "hace " + Math.floor(interval) + " meses";
-  interval = seconds / 86400;
-  if (interval > 1) return "hace " + Math.floor(interval) + " días";
-  interval = seconds / 3600;
-  if (interval > 1) return "hace " + Math.floor(interval) + " horas";
-  interval = seconds / 60;
-  if (interval > 1) return "hace " + Math.floor(interval) + " min";
-  return "hace un momento";
-};
-
-const getYoutubeVideoId = (url: string) => {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : null;
-};
-
-const renderDescriptionWithLinks = (text: string) => {
-  const urlRegex = /((?:https?:\/\/|www\.)[^\s]+)/g;
-  return text.split(urlRegex).map((part, index) => {
-    if (part.match(urlRegex)) {
-      const href = part.startsWith('www.') ? `https://${part}` : part;
-      return (
-        <a
-          key={index}
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-amber-500 hover:underline break-all"
-        >
-          {part}
-        </a>
-      );
-    }
-    return part;
-  });
-};
 
 interface PortfolioPostViewProps {
   itemId?: string;
@@ -114,6 +70,12 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
       // Verificar Like (Solo si hay usuario)
       if (state.user) {
         projectsService.getProjectLikeStatus(item.id, state.user.id).then(setIsLiked);
+
+        // Verificar Follow status
+        const authorId = item.authorId || item.artistId;
+        if (authorId) {
+          usersService.getSubscriptionStatus(authorId, state.user.id).then(setIsFollowing);
+        }
       }
 
       // Inicializar contador
@@ -122,7 +84,8 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
       // Cargar Proyectos Relacionados
       const authorId = item.authorId || item.artistId;
       if (authorId) {
-        projectsService.getUserProjects(authorId).then(projects => {
+        // Optimized: Fetch only 5 projects (Current + 4 Related)
+        projectsService.getUserProjects(authorId, 5).then(projects => {
           // Filtrar el proyecto actual y tomar los primeros 4
           setRelatedProjects(projects.filter(p => p.id !== item.id).slice(0, 4));
         });
@@ -137,6 +100,35 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
       </div>
     );
   }
+
+  const handleFollowToggle = async () => {
+    if (!state.user) {
+      actions.showToast('Inicia sesión para seguir a creadores', 'info');
+      return;
+    }
+
+    const authorId = item?.authorId || item?.artistId;
+    if (!authorId) return;
+
+    // Optimistic UI
+    const prevFollowing = isFollowing;
+    setIsFollowing(!prevFollowing);
+
+    try {
+      if (prevFollowing) {
+        await usersService.unsubscribeFromUser(authorId, state.user.id);
+      } else {
+        await usersService.subscribeToUser(authorId, state.user.id);
+      }
+      // Update global subscription state to reflect changes in sidebar/other views
+      actions.triggerSubscriptionUpdate();
+    } catch (error) {
+      console.error("Error toggling follow:", error);
+      // Rollback
+      setIsFollowing(prevFollowing);
+      actions.showToast('Error al actualizar seguimiento', 'error');
+    }
+  };
 
   const handleToggleLike = async () => {
     if (!state.user) {
@@ -550,7 +542,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
 
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => setIsFollowing(!isFollowing)}
+                  onClick={handleFollowToggle}
                   className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${isFollowing
                     ? 'bg-white/5 text-white border border-white/5'
                     : 'bg-amber-500 text-black hover:bg-amber-400 shadow-lg shadow-amber-500/20'

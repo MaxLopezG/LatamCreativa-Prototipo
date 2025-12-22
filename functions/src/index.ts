@@ -3,11 +3,16 @@ import * as admin from "firebase-admin";
 
 admin.initializeApp();
 
-const db = admin.firestore();
+// const db = admin.firestore();
 
 export const onFollowerCreated = functions.firestore
     .document('users/{userId}/followers/{followerId}')
     .onCreate(async (snapshot, context) => {
+        // Disabled to favor client-side implementation (users.ts) which handles date formatting correctly
+        // and avoids duplicates.
+        return null;
+
+        /*
         const userId = context.params.userId;
         const followerData = snapshot.data();
 
@@ -33,4 +38,5 @@ export const onFollowerCreated = functions.firestore
             console.error(error);
         }
         return null;
+        */
     });

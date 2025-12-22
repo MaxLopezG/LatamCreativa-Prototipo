@@ -132,24 +132,24 @@ export function useUserProfileData(
 
     const finalName = getDisplayName();
 
-    // Safe user object creation
+    // Standardized user profile object
     const displayUser = isOwnProfile ? (state.user || {
+        // Minimal default for new users (avoiding 'Digital Artist' default if not set)
         name: 'Usuario Nuevo',
         id: 'new-user',
         avatar: 'https://ui-avatars.com/api/?name=U&background=random',
-        role: 'Creative Member',
-        location: 'Latam',
+        role: undefined, // Let UI handle empty state
+        location: undefined,
         email: '',
         createdAt: new Date().toISOString(),
-        coverImage: undefined,
-        // Merge fetched stats if available to show real-time followers count
         stats: fetchedUser?.stats || state.user?.stats
     }) : {
         name: finalName,
         id: fetchedUser?.id || author?.id || 'unknown',
         avatar: fetchedUser?.avatar || author?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(finalName)}&background=random&size=512`,
-        role: fetchedUser?.role || fetchedUser?.profession || fetchedUser?.specialty || author?.role,
-        location: fetchedUser?.location || fetchedUser?.country || fetchedUser?.city || author?.location,
+        // Prioritize explicit role, fallback to generalized fields, but NO static string default
+        role: fetchedUser?.role || author?.role,
+        location: fetchedUser?.location || author?.location,
         bio: fetchedUser?.bio,
         createdAt: fetchedUser?.createdAt,
         skills: fetchedUser?.skills,

@@ -11,6 +11,7 @@ import {
     updateDoc,
     increment,
     onSnapshot,
+    addDoc,
     writeBatch
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
@@ -236,8 +237,6 @@ export const usersService = {
                 followingId: targetUserId
             });
 
-            // TODO: Notification creation should be handled by a Cloud Function triggered by the creation of a document in the 'followers' subcollection.
-
             // Update Counters (Atomic Increment)
             const targetUserRef = doc(db, 'users', targetUserId);
             batch.update(targetUserRef, {
@@ -250,6 +249,23 @@ export const usersService = {
             });
 
             await batch.commit();
+
+            // Create Notification for the target user
+            // We do this AFTER the batch to ensure consistency, but failures here won't rollback the follow
+            try {
+                await addDoc(collection(db, 'users', targetUserId, 'notifications'), {
+                    type: 'follow',
+                    user: currentUserProfile?.name || 'Alguien',
+                    avatar: currentUserProfile?.avatar || '',
+                    content: 'ha comenzado a seguirte',
+                    time: new Date().toISOString(),
+                    read: false,
+                    link: `/profile/${currentUserId}` // Link to the follower's profile
+                });
+            } catch (notifError) {
+                console.error("Error sending follow notification:", notifError);
+            }
+
         } catch (error) {
             console.error("Error subscribing:", error);
             throw error;
