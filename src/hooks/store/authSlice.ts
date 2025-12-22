@@ -176,7 +176,6 @@ export const createAuthSlice: StateCreator<AppStore, [], [], AuthSlice> = (set, 
         if (!user) return;
 
         try {
-            console.log("Action: Creating collection...", { title, isPrivate, userId: user.id });
             const newCol = await api.createCollection(user.id, title, isPrivate);
 
             if (newCol) {

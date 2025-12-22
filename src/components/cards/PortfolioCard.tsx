@@ -98,6 +98,16 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
           </div>
         )}
 
+        {/* Status Badge - Draft or Scheduled */}
+        {item.status && item.status !== 'published' && (
+          <div className={`absolute top-3 ${item.isPrivate ? 'left-12' : 'left-3'} backdrop-blur-md px-2 py-1 rounded-md border z-20 text-[10px] font-bold uppercase tracking-wide ${item.status === 'draft'
+              ? 'bg-blue-500/20 border-blue-500/30 text-blue-400'
+              : 'bg-amber-500/20 border-amber-500/30 text-amber-400'
+            }`}>
+            {item.status === 'draft' ? 'Borrador' : 'Programado'}
+          </div>
+        )}
+
         {/* Info Overlay (Inside Image) */}
         <div className="absolute bottom-0 left-0 w-full p-4 flex flex-col justify-end z-10">
           <h3 className="font-bold text-white text-base leading-tight mb-2 line-clamp-2 group-hover:text-amber-400 transition-colors">

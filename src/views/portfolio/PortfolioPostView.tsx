@@ -9,6 +9,7 @@ import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
 import { projectsService } from '../../services/modules/projects';
 import { usersService } from '../../services/modules/users';
 import { timeAgo, getYoutubeVideoId, renderDescriptionWithLinks } from '../../utils/helpers';
+import { shouldCountView } from '../../utils/viewTracking';
 import { PortfolioItem } from '../../types';
 
 /** Helper to get author ID with backward compatibility for artistId */
@@ -40,7 +41,9 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
   const [newComment, setNewComment] = useState('');
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [relatedProjects, setRelatedProjects] = useState<any[]>([]);
 
@@ -69,10 +72,10 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
     { preventRedirect: true }
   );
 
-  // --- Efecto 1: Contabilizar Vistas (Solo una vez al cargar el proyecto) ---
+  // --- Efecto 1: Contabilizar Vistas (Solo una vez cada 24h por proyecto) ---
   useEffect(() => {
     if (item && item.id) {
-      if (!(item as any).isLocal) {
+      if (!(item as any).isLocal && shouldCountView('project', item.id)) {
         projectsService.incrementProjectView(item.id);
       }
     }
@@ -130,6 +133,11 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
 
     if (!itemAuthorId) return;
 
+    // Prevent rapid clicks
+    if (isFollowLoading) return;
+
+    setIsFollowLoading(true);
+
     // Optimistic UI
     const prevFollowing = isFollowing;
     setIsFollowing(!prevFollowing);
@@ -147,6 +155,8 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
       // Rollback
       setIsFollowing(prevFollowing);
       actions.showToast('Error al actualizar seguimiento', 'error');
+    } finally {
+      setIsFollowLoading(false);
     }
   };
 
@@ -156,19 +166,33 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
       return;
     }
 
-    // Optimistic UI: Actualizar visualmente antes de la petición
+    // Prevent rapid clicks - if already processing, ignore
+    if (isLikeLoading) return;
+
+    setIsLikeLoading(true);
+
+    // Store previous state for rollback
     const prevLiked = isLiked;
+    const prevCount = likeCount;
+
+    // Optimistic UI: Actualizar visualmente antes de la petición
     setIsLiked(!prevLiked);
-    setLikeCount(prev => prevLiked ? prev - 1 : prev + 1);
+    setLikeCount(prevLiked ? prevCount - 1 : prevCount + 1);
 
     try {
       const newStatus = await projectsService.toggleProjectLike(item.id, state.user.id);
+      // Sync with server response
       setIsLiked(newStatus);
+      // Adjust count based on actual server status
+      setLikeCount(newStatus ? prevCount + 1 : prevCount - 1);
     } catch (error) {
       console.error("Error toggling like:", error);
-      // Rollback si falla
+      // Rollback to previous state
       setIsLiked(prevLiked);
-      setLikeCount(prev => prevLiked ? prev + 1 : prev - 1);
+      setLikeCount(prevCount);
+      actions.showToast('Error al dar like', 'error');
+    } finally {
+      setIsLikeLoading(false);
     }
   };
 
@@ -353,7 +377,8 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
           {/* Like Button */}
           <button
             onClick={handleToggleLike}
-            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all border ${isLiked
+            disabled={isLikeLoading}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all border disabled:opacity-50 disabled:cursor-not-allowed ${isLiked
               ? 'bg-amber-500 border-amber-500 text-black'
               : 'bg-white/5 border-white/5 text-slate-300 hover:bg-white/10'
               }`}
@@ -384,13 +409,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
             {state.user?.name === item.artist && (
               <>
                 <div className="w-px bg-white/10 my-1 mx-1"></div>
-                <button
-                  onClick={() => navigate(`/create/portfolio?edit=${item.id}`)}
-                  className="p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-blue-500 transition-colors"
-                  title="Editar Proyecto"
-                >
-                  <Edit className="h-4 w-4" />
-                </button>
+
                 <button
                   onClick={handleDeleteClick}
                   className="p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-red-500 transition-colors"
@@ -736,7 +755,8 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={handleFollowToggle}
-                    className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${isFollowing
+                    disabled={isFollowLoading}
+                    className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isFollowing
                       ? 'bg-white/5 text-white border border-white/5'
                       : 'bg-amber-500 text-black hover:bg-amber-400 shadow-lg shadow-amber-500/20'
                       }`}

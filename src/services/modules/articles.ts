@@ -17,12 +17,12 @@ import {
     setDoc,
     documentId
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '../../lib/firebase';
+import { db } from '../../lib/firebase';
 import { ArticleItem, BlogComment, Notification } from '../../types';
 import { PaginatedResult, withTimeout, sanitizeData } from './utils';
 import { usersService } from './users';
 import { notificationsService } from './notifications';
+import { storageService } from './storage';
 
 export const articlesService = {
     getArticles: async (lastDoc: QueryDocumentSnapshot<DocumentData> | null = null, pageSize = 10, sortField: 'date' | 'likes' = 'date', sortDirection: 'desc' | 'asc' = 'desc'): Promise<PaginatedResult<ArticleItem>> => {
@@ -60,16 +60,15 @@ export const articlesService = {
         try {
             let imageUrl = articleData.image;
 
-            // 1. Upload Image if provided
+            // 1. Upload Image if provided (with compression)
             if (imageFile) {
                 try {
-                    const storageRef = ref(storage, `articles/${Date.now()}_${imageFile.name}`);
-                    const uploadResult = await withTimeout(
-                        uploadBytes(storageRef, imageFile),
-                        7000,
-                        "Image upload timed out (7s). Please check your connection."
+                    const imagePath = `articles/${Date.now()}_${imageFile.name}`;
+                    imageUrl = await withTimeout(
+                        storageService.uploadImage(imageFile, imagePath, { maxSizeMB: 5, compress: true }),
+                        15000,
+                        "Image upload timed out (15s). Please check your connection."
                     );
-                    imageUrl = await getDownloadURL(uploadResult.ref);
                 } catch (uploadError: any) {
                     console.error("Error uploading image:", uploadError);
                 }
@@ -81,7 +80,11 @@ export const articlesService = {
                 image: imageUrl,
                 date: new Date().toISOString(),
                 likes: 0,
-                comments: 0
+                comments: 0,
+                views: 0,
+                // Publication status - default to 'published' for backward compatibility
+                status: articleData.status || 'published',
+                scheduledAt: articleData.scheduledAt || null
             });
 
             const docRef = await withTimeout(
@@ -125,11 +128,14 @@ export const articlesService = {
         try {
             let imageUrl = articleData.image;
 
-            // 1. Upload New Image if provided
+            // 1. Upload New Image if provided (with compression)
             if (imageFile) {
-                const storageRef = ref(storage, `articles/${Date.now()}_${imageFile.name}`);
-                const uploadResult = await uploadBytes(storageRef, imageFile);
-                imageUrl = await getDownloadURL(uploadResult.ref);
+                try {
+                    const imagePath = `articles/${Date.now()}_${imageFile.name}`;
+                    imageUrl = await storageService.uploadImage(imageFile, imagePath, { maxSizeMB: 5, compress: true });
+                } catch (uploadError: any) {
+                    console.error("Error uploading new image:", uploadError);
+                }
             }
 
             // 2. Update Document
@@ -332,6 +338,20 @@ export const articlesService = {
         } catch (error) {
             console.error("Error deleting article:", error);
             throw error;
+        }
+    },
+
+    /**
+     * Increment article view count
+     */
+    incrementArticleViews: async (articleId: string): Promise<void> => {
+        try {
+            const articleRef = doc(db, 'articles', articleId);
+            await updateDoc(articleRef, {
+                views: increment(1)
+            });
+        } catch (error) {
+            console.error("Error incrementing article views:", error);
         }
     },
 

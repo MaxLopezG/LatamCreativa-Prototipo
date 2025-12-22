@@ -8,6 +8,7 @@ import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
 import { useUserArticles, useDeleteProject, useUserProjects } from '../../hooks/useFirebase';
 import { usersService } from '../../services/modules/users';
 import { useUserProfileData } from '../../hooks/useUserProfileData';
+import { shouldCountView } from '../../utils/viewTracking';
 import { UserProfileHeader } from './components/UserProfileHeader';
 import { UserProfileStats } from './components/UserProfileStats';
 import { UserProfileInfo } from './components/UserProfileInfo';
@@ -64,12 +65,17 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
             actions.showToast("Inicia sesión para seguir a creadores", "info");
             return;
         }
+
+        // Prevent rapid clicks
+        if (isFollowLoading) return;
+
         const targetId = displayUser.id;
         if (!targetId || targetId === 'unknown') {
             console.error("No user ID found for follow");
             return;
         }
 
+        setIsFollowLoading(true);
         const previousState = isFollowing;
         setIsFollowing(!previousState); // Optimistic UI
 
@@ -84,6 +90,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
             console.error("Follow toggle error:", error);
             setIsFollowing(previousState); // Rollback on error
             actions.showToast("Error al actualizar seguimiento", "error");
+        } finally {
+            setIsFollowLoading(false);
         }
     };
 
@@ -128,10 +136,12 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
     // Stats state
     const [totalLikes, setTotalLikes] = useState<number>(0);
 
-    // Effect: Increment profile views (only for visitors, not own profile)
+    // Effect: Increment profile views (only for visitors, not own profile, once per 24h)
     useEffect(() => {
         if (displayUser.id && displayUser.id !== 'unknown' && !isOwnProfile) {
-            usersService.incrementProfileViews(displayUser.id);
+            if (shouldCountView('profile', displayUser.id)) {
+                usersService.incrementProfileViews(displayUser.id);
+            }
         }
     }, [displayUser.id, isOwnProfile]);
 

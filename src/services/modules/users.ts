@@ -17,15 +17,17 @@ import {
 import { db } from '../../lib/firebase';
 import { User } from '../../types';
 
+type UserProfile = User | null;
+
 export const usersService = {
-    getUserProfile: async (userId: string): Promise<any> => {
+    getUserProfile: async (userId: string): Promise<UserProfile> => {
         try {
             if (!userId) return null;
             const docRef = doc(db, 'users', userId);
             const docSnap = await getDoc(docRef);
 
             if (docSnap.exists()) {
-                return { id: docSnap.id, ...docSnap.data() };
+                return { id: docSnap.id, ...docSnap.data() } as User;
             } else {
                 return null;
             }
@@ -35,23 +37,24 @@ export const usersService = {
         }
     },
 
-    updateUserProfile: async (userId: string, data: any): Promise<void> => {
+    updateUserProfile: async (userId: string, data: Partial<User>): Promise<void> => {
         try {
             const userRef = doc(db, 'users', userId);
 
             // Recursive function to remove undefined values
-            const sanitizeData = (obj: any): any => {
+            // Uses 'any' internally because Firestore data structure is dynamic
+            const sanitizeData = (obj: unknown): unknown => {
                 if (Array.isArray(obj)) {
                     return obj.map(v => sanitizeData(v)).filter(v => v !== undefined);
                 }
                 if (obj !== null && typeof obj === 'object') {
-                    return Object.entries(obj).reduce((acc, [key, value]) => {
+                    return Object.entries(obj as Record<string, unknown>).reduce((acc, [key, value]) => {
                         const sanitizedValue = sanitizeData(value);
                         if (sanitizedValue !== undefined) {
                             acc[key] = sanitizedValue;
                         }
                         return acc;
-                    }, {} as any);
+                    }, {} as Record<string, unknown>);
                 }
                 return obj;
             };
@@ -71,13 +74,13 @@ export const usersService = {
      * @param user Firebase Auth User object
      * @param additionalData Optional data to merge if creating a NEW document
      */
-    initializeUserProfile: async (user: any, additionalData: any = {}): Promise<any> => {
+    initializeUserProfile: async (user: { uid: string; displayName?: string | null; email?: string | null; photoURL?: string | null }, additionalData: Partial<User> = {}): Promise<UserProfile> => {
         try {
             const userRef = doc(db, 'users', user.uid);
             const userSnap = await getDoc(userRef);
 
             if (userSnap.exists()) {
-                return { id: userSnap.id, ...userSnap.data() };
+                return { id: userSnap.id, ...userSnap.data() } as User;
             }
 
             // Create new profile
@@ -100,7 +103,7 @@ export const usersService = {
             Object.keys(newUser).forEach(key => newUser[key] === undefined && delete newUser[key]);
 
             await setDoc(userRef, newUser);
-            return { id: user.uid, ...newUser };
+            return { id: user.uid, uid: user.uid, ...newUser } as User;
         } catch (error) {
             console.error("Error initializing user profile:", error);
             throw error;
@@ -135,25 +138,25 @@ export const usersService = {
         }
     },
 
-    listenToUserProfile: (userId: string, callback: (user: any) => void) => {
+    listenToUserProfile: (userId: string, callback: (user: UserProfile) => void) => {
         if (!userId) return () => { };
         const docRef = doc(db, 'users', userId);
         return onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
-                callback({ id: docSnap.id, ...docSnap.data() });
+                callback({ id: docSnap.id, ...docSnap.data() } as User);
             } else {
                 callback(null);
             }
         });
     },
 
-    listenToUserProfileByUsername: (username: string, callback: (user: any) => void) => {
+    listenToUserProfileByUsername: (username: string, callback: (user: UserProfile) => void) => {
         if (!username) return () => { };
         const q = query(collection(db, 'users'), where('username', '==', username), limit(1));
         return onSnapshot(q, (querySnapshot) => {
             if (!querySnapshot.empty) {
                 const doc = querySnapshot.docs[0];
-                callback({ id: doc.id, ...doc.data() });
+                callback({ id: doc.id, ...doc.data() } as User);
             } else {
                 callback(null);
             }
@@ -176,11 +179,11 @@ export const usersService = {
         }
     },
 
-    getAllUsers: async (): Promise<any[]> => {
+    getAllUsers: async (): Promise<User[]> => {
         try {
             const q = query(collection(db, 'users'));
             const snapshot = await getDocs(q);
-            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
         } catch (error) {
             console.error("Error fetching all users:", error);
             throw error;
@@ -260,7 +263,7 @@ export const usersService = {
                     content: 'ha comenzado a seguirte',
                     time: new Date().toISOString(),
                     read: false,
-                    link: `/profile/${currentUserId}` // Link to the follower's profile
+                    link: `/user/${currentUserProfile?.username || currentUserId}` // Link to follower's profile
                 });
             } catch (notifError) {
                 console.error("Error sending follow notification:", notifError);
@@ -312,7 +315,7 @@ export const usersService = {
     },
 
     // --- Chat Methods (Mock/Placeholder) ---
-    getChatMessages: async (friendId: string): Promise<any[]> => {
+    getChatMessages: async (friendId: string): Promise<{ id: string; text: string; senderId: string }[]> => {
         // Return empty array or mock data for now
         return [];
     },
@@ -323,7 +326,7 @@ export const usersService = {
         await new Promise(resolve => setTimeout(resolve, 500));
     },
 
-    getArtistDirectory: async (): Promise<any[]> => {
+    getArtistDirectory: async (): Promise<User[]> => {
 
         return [];
     },

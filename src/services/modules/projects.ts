@@ -134,6 +134,9 @@ export const projectsService = {
                 views: 0,
                 likes: 0,
                 artistUsername: (projectData as any).artistUsername || '',
+                // Publication status - default to 'published' for backward compatibility
+                status: projectData.status || 'published',
+                scheduledAt: projectData.scheduledAt || null,
                 stats: { // Keep numeric stats for internal logic
                     viewCount: 0,
                     likeCount: 0
@@ -199,9 +202,19 @@ export const projectsService = {
 
             const projectRef = doc(db, 'projects', projectId);
 
-            // 1. Upload Cover Image if provided
+            // Fetch existing project data to track old images for cleanup
+            const existingDoc = await getDoc(projectRef);
+            const existingData = existingDoc.data();
+            const oldCoverUrl = existingData?.image || '';
+            const oldGalleryUrls: string[] = existingData?.images || [];
+
+            // 1. Upload Cover Image if provided (delete old one first)
             let coverUrl = projectData.image; // Default to existing if not replaced
             if (files.cover) {
+                // Delete old cover image from storage
+                if (oldCoverUrl) {
+                    await storageService.deleteFromUrl(oldCoverUrl);
+                }
                 const path = `users/${userId}/projects/${projectId}/cover_${Date.now()}.jpg`;
                 coverUrl = await storageService.uploadImage(files.cover, path, uploadOptions);
                 updateProgress();
@@ -238,6 +251,20 @@ export const projectsService = {
                     }
                     return null;
                 }).filter(Boolean);
+            }
+
+            // 4. Cleanup: Delete gallery images that were removed
+            const newGalleryUrls = galleryObjects
+                .filter(item => item.type === 'image')
+                .map(item => item.url);
+
+            // Find URLs that exist in old gallery but not in new gallery
+            const removedGalleryUrls = oldGalleryUrls.filter(url => !newGalleryUrls.includes(url));
+
+            // Delete removed gallery images from storage (non-blocking, fire and forget)
+            if (removedGalleryUrls.length > 0) {
+                Promise.all(removedGalleryUrls.map(url => storageService.deleteFromUrl(url)))
+                    .catch(err => console.warn('Some gallery images could not be deleted:', err));
             }
 
             // Explicitly fetch and set the author's availability to ensure it's saved with the project.

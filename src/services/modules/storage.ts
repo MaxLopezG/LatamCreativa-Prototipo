@@ -1,4 +1,4 @@
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import imageCompression from 'browser-image-compression';
 
 const storage = getStorage();
@@ -10,6 +10,37 @@ interface UploadOptions {
 }
 
 export const storageService = {
+    /**
+     * Deletes an image from Firebase Storage using its download URL.
+     * @param url The download URL of the file to delete.
+     * @returns true if deletion was successful, false otherwise.
+     */
+    deleteFromUrl: async (url: string): Promise<boolean> => {
+        if (!url || !url.includes('firebase')) {
+            return false; // Not a Firebase Storage URL or empty
+        }
+        
+        try {
+            // Extract the path from the Firebase Storage URL
+            const decodedUrl = decodeURIComponent(url);
+            const pathMatch = decodedUrl.match(/\/o\/(.+?)\?/);
+            
+            if (!pathMatch || !pathMatch[1]) {
+                console.warn('Could not extract path from URL:', url);
+                return false;
+            }
+            
+            const filePath = pathMatch[1];
+            const fileRef = ref(storage, filePath);
+            await deleteObject(fileRef);
+            return true;
+        } catch (error) {
+            // File might not exist or already deleted - not a critical error
+            console.warn('Could not delete old image:', error);
+            return false;
+        }
+    },
+
     /**
      * Uploads an image to Firebase Storage with validation and optional compression.
      * @param file The file to upload.

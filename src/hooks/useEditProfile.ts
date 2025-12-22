@@ -160,11 +160,19 @@ export const useEditProfile = (isOpen: boolean, onClose: () => void) => {
             let avatarUrl = user.avatar;
             let coverUrl = user.coverImage;
 
-            // 1. Upload Images if changed
+            // 1. Upload Images if changed (delete old ones first to save storage)
             if (images.avatarFile) {
+                // Delete old avatar if it exists
+                if (user.avatar) {
+                    await storageService.deleteFromUrl(user.avatar);
+                }
                 avatarUrl = await storageService.uploadImage(images.avatarFile, `users/${user.id}/avatar_${Date.now()}`);
             }
             if (images.coverFile) {
+                // Delete old cover if it exists
+                if (user.coverImage) {
+                    await storageService.deleteFromUrl(user.coverImage);
+                }
                 coverUrl = await storageService.uploadImage(images.coverFile, `users/${user.id}/cover_${Date.now()}`);
             }
 

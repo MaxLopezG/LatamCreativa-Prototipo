@@ -127,14 +127,17 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-8 mb-16">
-            {blogPosts.map((article) => (
-              <BlogCard
-                key={article.id}
-                article={article}
-                onClick={() => onArticleSelect?.(article.id)}
-                onSave={onSave}
-              />
-            ))}
+            {/* Filter out drafts and scheduled from public feed */}
+            {blogPosts
+              .filter(article => !article.status || article.status === 'published')
+              .map((article) => (
+                <BlogCard
+                  key={article.id}
+                  article={article}
+                  onClick={() => onArticleSelect?.(article.id)}
+                  onSave={onSave}
+                />
+              ))}
 
             {loading && blogPosts.length === 0 && Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="animate-pulse flex flex-col gap-4">

@@ -63,11 +63,14 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, on
     fetchProjects(currentPage);
   }, [currentPage, fetchProjects]);
 
-  // Filter items by mode
+  // Filter items by mode and status (only show published projects in public feed)
   const filteredItems = projects.filter(item => {
     // Default to 'creative' if domain is not set for backward compatibility
     const itemDomain = item.domain || 'creative';
-    return itemDomain === mode;
+    // Default to 'published' for backward compatibility with existing projects
+    const itemStatus = item.status || 'published';
+    // Only show published projects in the public feed
+    return itemDomain === mode && itemStatus === 'published';
   });
 
   const handleNextPage = () => {

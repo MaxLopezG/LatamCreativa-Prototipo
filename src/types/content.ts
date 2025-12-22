@@ -29,6 +29,10 @@ export interface PortfolioItem {
     software?: string[];
     domain?: 'creative' | 'dev';
     createdAt?: string;
+    /** Project publication status */
+    status?: 'draft' | 'published' | 'scheduled';
+    /** ISO date string for scheduled publication */
+    scheduledAt?: string;
 }
 
 export interface ArticleItem {
@@ -49,6 +53,12 @@ export interface ArticleItem {
     domain?: 'creative' | 'dev';
     role?: string;
     tags?: string[];
+    /** Article publication status */
+    status?: 'draft' | 'published' | 'scheduled';
+    /** ISO date string for scheduled publication */
+    scheduledAt?: string;
+    /** View count */
+    views?: number;
 }
 
 export interface BlogComment {

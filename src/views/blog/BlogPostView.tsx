@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, MessageSquare, Heart, Share2, Bookmark, CheckCircle2, ThumbsUp, Edit, Trash2, UserPlus, UserCheck } from 'lucide-react';
 
@@ -7,6 +7,8 @@ import { useArticle, useDeleteArticle, useRecommendedArticles, useSubscription, 
 import { useAppStore } from '../../hooks/useAppStore';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
 import { CommentsSection } from './components/CommentsSection';
+import { shouldCountView } from '../../utils/viewTracking';
+import { articlesService } from '../../services/modules/articles';
 
 interface BlogPostViewProps {
     articleId?: string;
@@ -32,6 +34,14 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
     const { isSubscribed, loading: subLoading, toggleSubscription, subscriberCount } = useSubscription(article?.authorId || '', state.user?.id);
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isLikeLoading, setIsLikeLoading] = useState(false);
+
+    // View Tracking - 24h unique visitor protection
+    useEffect(() => {
+        if (article?.id && shouldCountView('article', article.id)) {
+            articlesService.incrementArticleViews(article.id);
+        }
+    }, [article?.id]);
 
     const handleDeleteClick = () => {
         setIsDeleteModalOpen(true);
@@ -83,11 +93,20 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                 <aside className="hidden lg:flex lg:col-span-1 flex-col items-center gap-6 sticky top-24 h-fit">
                     <div className="flex flex-col gap-4 bg-white dark:bg-white/5 p-2 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm w-full items-center">
                         <button
-                            onClick={toggleLike}
+                            onClick={async () => {
+                                if (isLikeLoading) return;
+                                setIsLikeLoading(true);
+                                try {
+                                    await toggleLike();
+                                } finally {
+                                    setIsLikeLoading(false);
+                                }
+                            }}
+                            disabled={isLikeLoading}
                             className={`p-3 rounded-xl transition-all flex flex-col items-center gap-1 ${isLiked
                                 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-500'
                                 : 'hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400'
-                                }`}
+                                } ${isLikeLoading ? 'opacity-50 cursor-wait' : ''}`}
                             title="Me gusta"
                         >
                             <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
@@ -228,7 +247,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                         </div>
                     </div>
 
-                    <div className="mb-12 rounded-3xl overflow-hidden aspect-[21/9] shadow-2xl">
+                    <div className="mb-12 rounded-3xl overflow-hidden aspect-video shadow-2xl">
                         <img src={article.image} alt={article.title} className="w-full h-full object-cover" />
                     </div>
 
@@ -239,6 +258,30 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                                     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
                                     const match = url.match(regExp);
                                     return (match && match[2].length === 11) ? match[2] : null;
+                                };
+
+                                // Convert URLs to clickable links (skip if already in an anchor tag)
+                                const linkifyText = (html: string): string => {
+                                    // First, protect existing anchor tags by replacing them temporarily
+                                    const anchorPlaceholders: string[] = [];
+                                    let protectedHtml = html.replace(/<a\s[^>]*>.*?<\/a>/gi, (match) => {
+                                        anchorPlaceholders.push(match);
+                                        return `__ANCHOR_PLACEHOLDER_${anchorPlaceholders.length - 1}__`;
+                                    });
+
+                                    // Now linkify URLs that aren't already in anchors
+                                    const urlPattern = /(\bhttps?:\/\/[^\s<>"']+)/gi;
+                                    protectedHtml = protectedHtml.replace(urlPattern, (url) => {
+                                        const safeUrl = url.replace(/"/g, '&quot;');
+                                        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="text-amber-500 hover:text-amber-400 underline underline-offset-2 transition-colors break-all">${url}</a>`;
+                                    });
+
+                                    // Restore original anchor tags
+                                    anchorPlaceholders.forEach((anchor, i) => {
+                                        protectedHtml = protectedHtml.replace(`__ANCHOR_PLACEHOLDER_${i}__`, anchor);
+                                    });
+
+                                    return protectedHtml;
                                 };
 
                                 return article.content.split('\n\n').map((block, index) => {
@@ -270,7 +313,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                                         <div
                                             key={index}
                                             className="mb-6 whitespace-pre-wrap font-serif"
-                                            dangerouslySetInnerHTML={{ __html: block }}
+                                            dangerouslySetInnerHTML={{ __html: linkifyText(block) }}
                                         />
                                     );
                                 });

@@ -121,7 +121,7 @@ export const UserProfileTabs: React.FC<UserProfileTabsProps> = ({
                             <h3 className="text-lg font-bold text-white mb-2">Sin proyectos publicados</h3>
                             <p className="text-slate-400 max-w-md mb-6">Comparte tus creaciones con la comunidad.</p>
                             {isOwnProfile && (
-                                <button onClick={() => onCreateAction('portfolio')} className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2">
+                                <button onClick={() => navigate('/create/portfolio')} className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2">
                                     <Plus className="h-4 w-4" /> Crear Proyecto
                                 </button>
                             )}

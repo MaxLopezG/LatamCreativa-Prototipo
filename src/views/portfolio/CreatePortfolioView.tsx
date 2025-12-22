@@ -81,7 +81,8 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
   const [youtubeLink, setYoutubeLink] = useState('');
 
   // Publishing State
-  const [publishStatus, setPublishStatus] = useState<'draft' | 'published'>('draft');
+  const [publishStatus, setPublishStatus] = useState<'draft' | 'published' | 'scheduled'>('published');
+  const [scheduledDate, setScheduledDate] = useState<string>('');
   const [isStatusOpen, setIsStatusOpen] = useState(false);
 
   // UX State
@@ -407,7 +408,9 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
         artistUsername: state.user.username,
         location: state.user.location,
         domain: state.contentMode, // Pass the current content mode as the domain
-        collaborators // Added collaborators field
+        collaborators, // Added collaborators field
+        status: publishStatus, // Publication status
+        scheduledAt: publishStatus === 'scheduled' && scheduledDate ? scheduledDate : null
       };
 
       // Si estamos editando y no se sube una nueva portada, nos aseguramos de conservar la URL de la imagen existente.
@@ -479,6 +482,23 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
       const errorMessage = error instanceof Error ? error.message : 'Error al publicar el proyecto';
       actions.showToast(errorMessage, 'error');
     }
+  };
+
+  // Handler for saving as draft
+  const handleSaveDraft = () => {
+    setPublishStatus('draft');
+    // Use setTimeout to ensure state is updated before submit
+    setTimeout(() => handleSubmit(), 0);
+  };
+
+  // Handler for scheduling publication
+  const handleSchedule = () => {
+    if (!scheduledDate) {
+      actions.showToast('Selecciona una fecha para programar', 'error');
+      return;
+    }
+    setPublishStatus('scheduled');
+    setTimeout(() => handleSubmit(), 0);
   };
 
   const handleThumbnailClick = () => {
@@ -769,25 +789,48 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
 
                 {/* Save Draft Button (Secondary) */}
                 <button
-                  onClick={() => actions.showToast('Guardado como borrador (Simulado)', 'success')}
+                  onClick={handleSaveDraft}
                   disabled={isSubmitting}
-                  className="w-full py-3 bg-[#3B82F6]/10 hover:bg-[#3B82F6]/20 border border-[#3B82F6]/30 text-[#60A5FA] rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-[#3B82F6]/10 hover:bg-[#3B82F6]/20 border border-[#3B82F6]/30 text-[#60A5FA] rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <Save className="h-4 w-4" />
                   Guardar Borrador
                 </button>
 
-                <div className="relative group">
-                  <button
-                    disabled
-                    className="w-full py-3 bg-transparent border border-white/[0.06] text-slate-500 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed opacity-60"
-                  >
-                    <Calendar className="h-4 w-4" />
-                    Programar
-                  </button>
-                  <span className="absolute top-1/2 -translate-y-1/2 right-4 bg-[#3B82F6] text-white text-[10px] font-bold px-2 py-0.5 rounded">
-                    PRO
-                  </span>
+                {/* Schedule Section */}
+                <div className="space-y-2">
+                  {isProUser ? (
+                    <>
+                      <input
+                        type="datetime-local"
+                        value={scheduledDate}
+                        onChange={(e) => setScheduledDate(e.target.value)}
+                        min={new Date().toISOString().slice(0, 16)}
+                        className="w-full px-4 py-2 bg-[#030304] border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500 transition-colors"
+                      />
+                      <button
+                        onClick={handleSchedule}
+                        disabled={isSubmitting || !scheduledDate}
+                        className="w-full py-3 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Calendar className="h-4 w-4" />
+                        Programar Publicación
+                      </button>
+                    </>
+                  ) : (
+                    <div className="relative group">
+                      <button
+                        disabled
+                        className="w-full py-3 bg-transparent border border-white/[0.06] text-slate-500 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed opacity-60"
+                      >
+                        <Calendar className="h-4 w-4" />
+                        Programar
+                      </button>
+                      <span className="absolute top-1/2 -translate-y-1/2 right-4 bg-[#3B82F6] text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                        PRO
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

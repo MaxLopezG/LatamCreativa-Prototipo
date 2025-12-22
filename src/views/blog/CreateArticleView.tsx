@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Image as ImageIcon, Type, Youtube, X, ChevronUp, ChevronDown, Plus, Trash2, GripVertical, Eye, Edit3, Tag as TagIcon, Hash, Layers, Check, Bold, Italic, Underline } from 'lucide-react';
+import { Image as ImageIcon, Type, Youtube, X, ChevronUp, ChevronDown, Plus, Trash2, GripVertical, Eye, Edit3, Tag as TagIcon, Hash, Layers, Check, Bold, Italic, Underline, Save, Calendar, Heart, MessageCircle, Share2, Bookmark, CheckCircle2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useSearchParams } from 'react-router-dom';
 import { CreatePageLayout } from '../../components/layout/CreatePageLayout';
 import { useAppStore } from '../../hooks/useAppStore';
@@ -43,10 +44,70 @@ const RichTextEditor = ({
     onChange(e.currentTarget.innerHTML);
   };
 
+  // Handle paste to strip unwanted styles (background-color, color, font-family, etc.)
+  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
+    e.preventDefault();
+
+    // Get HTML content from clipboard
+    const html = e.clipboardData.getData('text/html');
+    const text = e.clipboardData.getData('text/plain');
+
+    if (html) {
+      // Create a temporary div to parse HTML
+      const temp = document.createElement('div');
+      temp.innerHTML = html;
+
+      // Remove all style attributes and clean up
+      const cleanHTML = (element: Element) => {
+        // Remove style attribute
+        element.removeAttribute('style');
+        // Remove class attribute
+        element.removeAttribute('class');
+        // Remove background/color inline styles from all elements
+        Array.from(element.children).forEach(child => {
+          cleanHTML(child);
+        });
+      };
+
+      Array.from(temp.children).forEach(child => cleanHTML(child));
+
+      // Also clean inline styles in text (spans with style)
+      temp.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
+      temp.querySelectorAll('[class]').forEach(el => el.removeAttribute('class'));
+
+      // Insert cleaned HTML
+      document.execCommand('insertHTML', false, temp.innerHTML);
+    } else if (text) {
+      // Fallback to plain text
+      document.execCommand('insertText', false, text);
+    }
+
+    // Trigger onChange
+    if (contentEditableRef.current) {
+      onChange(contentEditableRef.current.innerHTML);
+    }
+  };
+
   return (
     <div className="relative group/text">
-      {/* Toolbar */}
-      <div className="absolute -top-12 left-0 bg-slate-800 rounded-lg flex items-center gap-1 p-1 border border-white/10 opacity-0 group-hover/text:opacity-100 transition-opacity z-10 shadow-xl">
+      {/* Editable text area */}
+      <div
+        ref={contentEditableRef}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={handleInput}
+        onBlur={handleInput}
+        onPaste={handlePaste}
+        className="w-full bg-transparent border-none text-lg leading-relaxed text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-0 min-h-[1.5em] font-serif pb-10"
+      />
+      {!initialContent && placeholder && (
+        <div className="absolute top-0 left-0 text-slate-500 text-lg font-serif pointer-events-none">
+          {placeholder}
+        </div>
+      )}
+
+      {/* Toolbar - positioned at bottom, shown on hover */}
+      <div className="absolute bottom-0 left-0 bg-slate-800 rounded-lg flex items-center gap-1 p-1 border border-white/10 opacity-0 group-hover/text:opacity-100 focus-within:opacity-100 transition-opacity z-10 shadow-xl">
         <button
           onMouseDown={(e) => { e.preventDefault(); document.execCommand('bold'); }}
           className="p-1.5 hover:bg-white/10 rounded text-slate-300 hover:text-white transition-colors"
@@ -82,20 +143,6 @@ const RichTextEditor = ({
           </button>
         ))}
       </div>
-
-      <div
-        ref={contentEditableRef}
-        contentEditable
-        suppressContentEditableWarning
-        onInput={handleInput}
-        onBlur={handleInput}
-        className="w-full bg-transparent border-none text-lg leading-relaxed text-slate-700 dark:text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-0 min-h-[1.5em] font-serif"
-      />
-      {!initialContent && placeholder && (
-        <div className="absolute top-0 left-0 text-slate-400 text-lg font-serif pointer-events-none">
-          {placeholder}
-        </div>
-      )}
     </div>
   );
 };
@@ -114,6 +161,8 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
   const { update } = useUpdateArticle();
 
   const [isPublishing, setIsPublishing] = useState(false);
+  const [publishStatus, setPublishStatus] = useState<'draft' | 'published' | 'scheduled'>('published');
+  const [scheduledDate, setScheduledDate] = useState('');
   const [blocks, setBlocks] = useState<ContentBlock[]>([
     { id: '1', type: 'text', content: '' }
   ]);
@@ -231,6 +280,19 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
     return (match && match[2].length === 11) ? match[2] : null;
   };
 
+  // Convert URLs in text to clickable links
+  const linkifyText = (html: string): string => {
+    // URL regex pattern
+    const urlPattern = /(\bhttps?:\/\/[^\s<>"']+)/gi;
+
+    // Check if the URL is already inside an anchor tag
+    return html.replace(urlPattern, (url) => {
+      // Create a safe URL
+      const safeUrl = url.replace(/"/g, '&quot;');
+      return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="text-rose-400 hover:text-rose-300 underline underline-offset-2 transition-colors">${url}</a>`;
+    });
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, onSuccess: (url: string) => void) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -290,7 +352,10 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
       comments: isEditMode && existingArticle ? existingArticle.comments : 0,
       content: blocks.map(b => b.content).join('\n\n'),
       tags: tags,
-      domain: state.contentMode
+      domain: state.contentMode,
+      // Publication status
+      status: publishStatus,
+      scheduledAt: publishStatus === 'scheduled' ? scheduledDate : null
     };
 
     try {
@@ -343,64 +408,277 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
+  /**
+   * Save as draft without publishing
+   */
+  const handleSaveDraft = async () => {
+    if (!title.trim()) {
+      actions.showToast('Por favor escribe un título', 'error');
+      return;
+    }
+
+    setPublishStatus('draft');
+    setIsPublishing(true);
+
+    const stripHtml = (html: string) => {
+      const tmp = document.createElement("DIV");
+      tmp.innerHTML = html;
+      return tmp.textContent || tmp.innerText || "";
+    };
+
+    const firstTextBlock = blocks.find(b => b.type === 'text')?.content || '';
+    const plainTextExcerpt = stripHtml(firstTextBlock);
+
+    const articleData = {
+      title,
+      excerpt: plainTextExcerpt.substring(0, 150) + (plainTextExcerpt.length > 150 ? '...' : '') || '',
+      image: coverImage || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?q=80&w=1000&auto=format&fit=crop',
+      author: state.user?.name || 'Usuario Anónimo',
+      authorId: state.user?.id || 'anonymous',
+      authorAvatar: state.user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop',
+      date: isEditMode && existingArticle ? existingArticle.date : new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }),
+      readTime: Math.ceil((blocks.filter(b => b.type === 'text').reduce((acc, curr) => acc + curr.content.length, 0) / 500)) + ' min',
+      category: category || 'Sin categoría',
+      likes: isEditMode && existingArticle ? existingArticle.likes : 0,
+      comments: isEditMode && existingArticle ? existingArticle.comments : 0,
+      content: blocks.map(b => b.content).join('\n\n'),
+      tags: tags,
+      domain: state.contentMode,
+      status: 'draft' as const,
+      scheduledAt: null
+    };
+
+    try {
+      if (isEditMode && editId) {
+        await update(editId, articleData, coverImageFile || undefined);
+        actions.showToast('Borrador actualizado', 'success');
+      } else {
+        await create(articleData, coverImageFile || undefined);
+        actions.showToast('Borrador guardado', 'success');
+      }
+      onBack();
+    } catch (error: any) {
+      console.error("Error saving draft:", error);
+      actions.showToast(error.message || 'Error al guardar borrador', 'error');
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   return (
-    <CreatePageLayout
-      title={isPreview ? "Vista Previa" : (isEditMode ? "Editar Artículo" : "Escribir Artículo")}
-      onBack={onBack}
-      onAction={handlePublish}
-      actionLabel={isEditMode ? "Guardar Cambios" : "Publicar"}
-      actionColorClass="bg-blue-500 hover:bg-blue-600 text-white"
-      isLoading={isPublishing}
-    >
-      <div className="space-y-8 max-w-4xl mx-auto pb-20">
+    <div className="min-h-screen bg-[#030304] text-slate-300 flex flex-col font-sans selection:bg-rose-500/30">
 
-        {/* Loading Overlay if fetching existing data */}
-        {isLoadingExisting && (
-          <div className="absolute inset-0 bg-slate-900/50 z-50 flex items-center justify-center rounded-2xl">
-            <div className="text-white font-bold animate-pulse">Cargando artículo...</div>
-          </div>
-        )}
-
-        {/* Toggle Preview Button */}
-        <div className="flex justify-between items-center sticky top-20 z-20">
-          <h2 className="text-2xl font-bold dark:text-white">
-            {isEditMode ? 'Editar Artículo' : 'Nuevo Artículo'}
-          </h2>
-          <button
-            onClick={() => setIsPreview(!isPreview)}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 rounded-full shadow-lg border border-slate-200 dark:border-white/10 text-sm font-medium hover:scale-105 transition-transform"
-          >
-            {isPreview ? (
-              <> <Edit3 className="h-4 w-4" /> Volver a Editar </>
-            ) : (
-              <> <Eye className="h-4 w-4" /> Vista Previa </>
-            )}
+      {/* Header - Fixed & Minimal via Glassmorphism */}
+      <header className="sticky top-0 z-50 bg-[#030304]/80 backdrop-blur-xl border-b border-white/[0.06] h-16 flex items-center justify-between px-6">
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors flex items-center gap-2 group">
+            <X className="h-5 w-5" />
+            <span className="font-medium text-sm hidden md:inline">Cancelar</span>
           </button>
+          <div className="h-6 w-px bg-white/[0.06] hidden md:block"></div>
+          <span className="font-bold text-white tracking-wide">{isEditMode ? 'Editar Artículo' : 'Escribir Artículo'}</span>
         </div>
 
-        {/* Cover Image */}
-        <div className="relative">
-          {coverImage ? (
-            <div className={`relative w-full ${isPreview ? 'h-[400px]' : 'h-64'} rounded-2xl overflow-hidden group transition-all duration-500`}>
-              <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
-              {!isPreview && (
+        {/* Preview Toggle */}
+        <button
+          onClick={() => setIsPreview(!isPreview)}
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm font-medium hover:bg-white/10 transition-all"
+        >
+          {isPreview ? (
+            <><Edit3 className="h-4 w-4" /> Editar</>
+          ) : (
+            <><Eye className="h-4 w-4" /> Vista Previa</>
+          )}
+        </button>
+      </header>
+
+      {/* PREVIEW MODE - Render like BlogPostView */}
+      {isPreview ? (
+        <div className="max-w-[1800px] mx-auto transition-colors animate-fade-in pb-20">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-6 md:px-10 py-10 relative">
+
+            {/* Left Sidebar - Actions Preview */}
+            <aside className="hidden lg:flex lg:col-span-1 flex-col items-center gap-6 sticky top-24 h-fit">
+              <div className="flex flex-col gap-4 bg-white/5 p-2 rounded-2xl border border-white/10 shadow-sm w-full items-center">
+                <div className="p-3 rounded-xl hover:bg-white/10 text-slate-400 flex flex-col items-center gap-1 cursor-not-allowed opacity-50">
+                  <Heart className="h-5 w-5" />
+                  <span className="text-xs font-bold mt-1 block">0</span>
+                </div>
+                <div className="p-3 rounded-xl hover:bg-white/10 text-slate-400 flex flex-col items-center gap-1 cursor-not-allowed opacity-50">
+                  <MessageCircle className="h-5 w-5" />
+                  <span className="text-xs font-bold mt-1 block">0</span>
+                </div>
+                <div className="p-3 rounded-xl hover:bg-white/10 text-slate-400 flex flex-col items-center gap-1 cursor-not-allowed opacity-50">
+                  <Share2 className="h-5 w-5" />
+                </div>
+                <div className="p-3 rounded-xl hover:bg-white/10 text-slate-400 flex flex-col items-center gap-1 cursor-not-allowed opacity-50">
+                  <Bookmark className="h-5 w-5" />
+                </div>
+              </div>
+            </aside>
+
+            {/* Center Column - Article Content */}
+            <article className="lg:col-span-8 lg:px-8">
+              <div className="mb-10 text-center lg:text-left">
+                <span className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-400 text-xs font-bold uppercase tracking-wider border border-rose-500/20">
+                  {category || 'Sin categoría'}
+                </span>
+                <span className="text-slate-500 text-sm mx-2">•</span>
+                <span className="text-slate-400 text-sm font-medium inline-flex items-center gap-1">
+                  {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
+              </div>
+
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-8 font-display">
+                {title || 'Sin Título'}
+              </h1>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-between gap-6 border-y border-white/10 py-6 mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full overflow-hidden ring-2 ring-white/10">
+                    <img src={state.user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100'} alt="Author" className="h-full w-full object-cover" />
+                  </div>
+                  <div className="flex flex-col">
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="font-bold text-lg text-white leading-none">{state.user?.name || 'Usuario'}</h3>
+                      <CheckCircle2 className="h-4 w-4 text-rose-500 fill-rose-500/20" />
+                    </div>
+                    <span className="text-xs text-slate-400 font-medium">Vista previa</span>
+                  </div>
+                </div>
+
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map(tag => (
+                      <span key={tag} className="text-sm text-slate-400 italic">#{tag}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Cover Image */}
+              {coverImage && (
+                <div className="mb-12 rounded-3xl overflow-hidden aspect-video shadow-2xl">
+                  <img src={coverImage} alt={title} className="w-full h-full object-cover" />
+                </div>
+              )}
+
+              {/* Content */}
+              <div className="prose prose-lg prose-invert max-w-none text-slate-300 leading-loose">
+                {blocks.map((block) => (
+                  <div key={block.id} className="my-6">
+                    {block.type === 'text' && (
+                      <div
+                        className="text-lg leading-relaxed font-serif whitespace-pre-wrap"
+                        dangerouslySetInnerHTML={{ __html: linkifyText(block.content) }}
+                      />
+                    )}
+                    {block.type === 'image' && block.content && (
+                      <div className="rounded-xl overflow-hidden my-8 shadow-lg">
+                        <img src={block.content} alt="Content" className="w-full" />
+                      </div>
+                    )}
+                    {block.type === 'video' && getYoutubeId(block.content) && (
+                      <div className="aspect-video rounded-xl overflow-hidden bg-black shadow-lg my-8">
+                        <iframe
+                          width="100%"
+                          height="100%"
+                          src={`https://www.youtube.com/embed/${getYoutubeId(block.content)}`}
+                          title="YouTube video player"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="border-none"
+                        ></iframe>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </article>
+
+            {/* Right Sidebar - Related Preview */}
+            <aside className="hidden lg:block lg:col-span-3 sticky top-24 h-fit">
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+                <Eye className="h-8 w-8 text-rose-500 mx-auto mb-3" />
+                <h4 className="font-bold text-white mb-2">Vista Previa</h4>
+                <p className="text-sm text-slate-400">Este es cómo se verá tu artículo cuando se publique.</p>
+              </div>
+            </aside>
+
+          </div>
+        </div>
+      ) : (
+        /* EDIT MODE */
+        <main className="flex-1 max-w-[1600px] w-full mx-auto p-6 md:p-8 pb-28 lg:pb-8 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10">
+
+          {/* LEFT COLUMN: Main Content */}
+          <div className="flex flex-col gap-8 min-w-0 animate-fade-in">
+
+            {/* Loading Overlay */}
+            {isLoadingExisting && (
+              <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center">
+                <div className="text-white font-bold animate-pulse">Cargando artículo...</div>
+              </div>
+            )}
+
+            {/* Title Section - First */}
+            <div className="bg-[#0A0A0C] border border-white/[0.06] rounded-2xl p-6 shadow-xl shadow-black/20">
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-4">
+                <Type className="h-4 w-4" /> Título del Artículo
+              </h3>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Escribe el título de tu artículo..."
+                className="w-full text-2xl md:text-3xl font-bold bg-transparent border-none placeholder-slate-700 text-white focus:outline-none focus:ring-0 px-0 leading-tight"
+              />
+            </div>
+
+            {/* Cover Image Section - Second */}
+            <div className="bg-[#0A0A0C] border border-white/[0.06] rounded-2xl p-6 shadow-xl shadow-black/20">
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-4">
+                <ImageIcon className="h-4 w-4" /> Portada del Artículo
+              </h3>
+              {coverImage ? (
+                <div className="relative w-full aspect-video rounded-xl overflow-hidden group transition-all duration-500">
+                  <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
+                  <>
+                    <button
+                      onClick={() => setCoverImage(null)}
+                      className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                    <label
+                      htmlFor="cover-upload-change"
+                      className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 bg-black/30 transition-opacity cursor-pointer"
+                    >
+                      <span className="font-bold text-white shadow-sm">Cambiar Portada</span>
+                      <span className="text-xs text-white/90 mt-1 font-medium shadow-sm">Recomendado: 1920x1080px</span>
+                    </label>
+                    <input
+                      type="file"
+                      id="cover-upload-change"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={(e) => handleImageChange(e, setCoverImage)}
+                    />
+                  </>
+                </div>
+              ) : (
                 <>
-                  <button
-                    onClick={() => setCoverImage(null)}
-                    className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
                   <label
-                    htmlFor="cover-upload-change"
-                    className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 bg-black/30 transition-opacity cursor-pointer"
+                    htmlFor="cover-upload"
+                    className="w-full aspect-video rounded-xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-all group"
                   >
-                    <span className="font-bold text-white shadow-sm">Cambiar Portada</span>
-                    <span className="text-xs text-white/90 mt-1 font-medium shadow-sm">Recomendado: 1920x1080px</span>
+                    <ImageIcon className="h-10 w-10 text-slate-500 mb-2 group-hover:text-rose-500" />
+                    <span className="text-slate-400 font-medium group-hover:text-rose-400">Añadir portada</span>
+                    <span className="text-xs text-slate-500 mt-2 group-hover:text-rose-400 transition-colors">Recomendado: 1920x1080px</span>
                   </label>
                   <input
                     type="file"
-                    id="cover-upload-change"
+                    id="cover-upload"
                     className="hidden"
                     accept="image/*"
                     onChange={(e) => handleImageChange(e, setCoverImage)}
@@ -408,92 +686,265 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
                 </>
               )}
             </div>
-          ) : (
-            !isPreview && (
-              <>
-                <label
-                  htmlFor="cover-upload"
-                  className="w-full h-64 rounded-2xl border-2 border-dashed border-slate-300 dark:border-white/10 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 transition-all group"
-                >
-                  <ImageIcon className="h-10 w-10 text-slate-400 mb-2 group-hover:text-blue-500" />
-                  <span className="text-slate-500 font-medium group-hover:text-blue-500">Añadir portada</span>
-                  <span className="text-xs text-slate-400 mt-2 group-hover:text-blue-400 transition-colors">Recomendado: 1920x1080px</span>
-                </label>
-                <input
-                  type="file"
-                  id="cover-upload"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={(e) => handleImageChange(e, setCoverImage)}
-                />
-              </>
-            )
-          )}
-        </div>
 
-        {/* Title */}
-        {isPreview ? (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              {category && (
-                <span className="px-3 py-1 bg-blue-500 text-white text-xs font-bold uppercase rounded-full tracking-wider">
-                  {category}
-                </span>
-              )}
-              <span className="text-sm text-slate-400">
-                {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-              </span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white leading-tight">
-              {title || 'Sin Título'}
-            </h1>
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {tags.map(tag => (
-                  <span key={tag} className="text-sm text-slate-500 dark:text-slate-400 italic">#{tag}</span>
+            {/* Content Blocks Section - Third */}
+            <div className="bg-[#0A0A0C] border border-white/[0.06] rounded-2xl p-8 shadow-xl shadow-black/20 space-y-6">
+              <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Layers className="h-4 w-4" /> Contenido del Artículo
+              </h3>
+
+              {/* Content Blocks */}
+              <div className="space-y-6 pt-4 border-t border-white/[0.06]">
+                {blocks.map((block, index) => (
+                  <div key={block.id} className="group relative pl-0 md:pl-12 transition-all">
+
+                    {/* Controls (Only in Edit Mode) - Inline horizontal layout */}
+                    {!isPreview && (
+                      <div className="hidden md:flex absolute -left-2 top-1/2 -translate-y-1/2 -translate-x-full flex-row items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <button
+                          onClick={() => removeBlock(block.id)}
+                          className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-colors"
+                          title="Eliminar bloque"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                        <div className="flex flex-row bg-white/5 rounded-lg overflow-hidden border border-white/10">
+                          <button
+                            onClick={() => moveBlock(index, 'up')}
+                            disabled={index === 0}
+                            className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Mover arriba"
+                          >
+                            <ChevronUp className="h-3.5 w-3.5" />
+                          </button>
+                          <div className="w-px h-full bg-white/10" />
+                          <button
+                            onClick={() => moveBlock(index, 'down')}
+                            disabled={index === blocks.length - 1}
+                            className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Mover abajo"
+                          >
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Block Content */}
+                    <div className="w-full">
+                      {block.type === 'text' && (
+                        isPreview ? (
+                          <div
+                            className="text-lg leading-relaxed text-slate-300 font-serif whitespace-pre-wrap"
+                            dangerouslySetInnerHTML={{ __html: block.content }}
+                          />
+                        ) : (
+                          <RichTextEditor
+                            initialContent={block.content}
+                            onChange={(newContent) => updateBlock(block.id, newContent)}
+                            placeholder="Escribe aquí..."
+                          />
+                        )
+                      )}
+
+                      {block.type === 'image' && (
+                        <div className="w-full my-6">
+                          {block.content ? (
+                            <div className={`relative rounded-xl overflow-hidden ${!isPreview && 'group/img'}`}>
+                              <img src={block.content} alt="Content" className="w-full rounded-xl shadow-md" />
+                              {!isPreview && (
+                                <button
+                                  onClick={() => updateBlock(block.id, '')}
+                                  className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-red-500"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            !isPreview && (
+                              <>
+                                <label
+                                  htmlFor={`upload-${block.id}`}
+                                  className="h-48 rounded-xl bg-white/5 border-2 border-dashed border-white/10 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-rose-400 hover:bg-rose-500/10 transition-all group/upload"
+                                >
+                                  <ImageIcon className="h-8 w-8 text-slate-400 group-hover/upload:text-rose-500" />
+                                  <span className="text-sm font-medium text-slate-500 group-hover/upload:text-rose-400">Haz click para subir una imagen</span>
+                                </label>
+                                <input
+                                  type="file"
+                                  id={`upload-${block.id}`}
+                                  className="hidden"
+                                  accept="image/*"
+                                  onChange={(e) => handleImageChange(e, (url) => updateBlock(block.id, url))}
+                                />
+                              </>
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      {block.type === 'video' && (
+                        <div className="w-full my-6">
+                          {getYoutubeId(block.content) ? (
+                            <div className="space-y-3">
+                              <div className="aspect-video rounded-xl overflow-hidden bg-black shadow-lg">
+                                <iframe
+                                  width="100%"
+                                  height="100%"
+                                  src={`https://www.youtube.com/embed/${getYoutubeId(block.content)}`}
+                                  title="YouTube video player"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                  className="border-none"
+                                ></iframe>
+                              </div>
+                              {!isPreview && (
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={block.content}
+                                    onChange={(e) => updateBlock(block.id, e.target.value)}
+                                    className="flex-1 bg-white/5 border-none rounded-lg py-2 px-3 text-sm text-slate-400"
+                                  />
+                                  <button onClick={() => updateBlock(block.id, '')} className="p-2 text-slate-400 hover:text-red-500">
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            !isPreview && (
+                              <div className="h-32 rounded-xl bg-white/5 border border-white/10 flex items-center px-6 gap-4">
+                                <Youtube className="h-8 w-8 text-red-500 shrink-0" />
+                                <input
+                                  type="text"
+                                  placeholder="Pega el enlace de YouTube aquí..."
+                                  value={block.content}
+                                  onChange={(e) => updateBlock(block.id, e.target.value)}
+                                  className="flex-1 bg-transparent border-none text-lg text-white placeholder-slate-500 focus:outline-none focus:ring-0"
+                                  autoFocus
+                                />
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 ))}
               </div>
-            )}
+
+              {/* Add Blocks Bar - Hide in Preview */}
+              {!isPreview && (
+                <div className="flex justify-center py-4 border-t border-white/[0.06]">
+                  <div className="flex items-center gap-2 p-1.5 bg-white/5 rounded-xl border border-white/5">
+                    <span className="text-xs font-bold text-slate-500 px-2 uppercase tracking-wider">Añadir</span>
+                    <div className="h-4 w-px bg-white/10 mx-1" />
+
+                    <button
+                      onClick={() => addBlock('text')}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 text-slate-400 transition-colors text-sm font-medium"
+                    >
+                      <Type className="h-4 w-4" /> Texto
+                    </button>
+                    <button
+                      onClick={() => addBlock('image')}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 text-slate-400 transition-colors text-sm font-medium"
+                    >
+                      <ImageIcon className="h-4 w-4" /> Imagen
+                    </button>
+                    <button
+                      onClick={() => addBlock('video')}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/10 text-slate-400 transition-colors text-sm font-medium"
+                    >
+                      <Youtube className="h-4 w-4 text-red-500" /> Video
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
           </div>
-        ) : (
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Título del Artículo..."
-            className="w-full text-4xl md:text-5xl font-bold bg-transparent border-none placeholder-slate-300 dark:placeholder-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-0 px-0 leading-tight"
-          />
-        )}
 
-        {/* Metadata Section (Category & Tags) - Edit Mode Only */}
-        {!isPreview && (
-          <div className="p-5 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 space-y-4">
-            <div className="flex flex-col md:flex-row gap-6">
-              {/* CUSTOM Category Select */}
-              <div className="w-full md:w-1/3 space-y-2 relative" ref={categoryRef}>
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Layers className="h-3 w-3" /> Categoría
-                </label>
+          {/* RIGHT COLUMN: Sidebar */}
+          <aside className="hidden lg:flex flex-col gap-6 sticky top-24 h-fit">
 
+            {/* Publish Actions Panel */}
+            <div className="bg-[#0A0A0C] p-6 rounded-xl border border-white/[0.06] shadow-xl shadow-black/20 space-y-4">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Publicación</h3>
+
+              {/* Publish Button (Primary) */}
+              <button
+                onClick={handlePublish}
+                disabled={isPublishing}
+                className="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isPublishing ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Publicando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    <span>{isEditMode ? 'Guardar Cambios' : 'Publicar'}</span>
+                  </>
+                )}
+              </button>
+
+              {/* Save Draft Button */}
+              <button
+                onClick={handleSaveDraft}
+                disabled={isPublishing}
+                className="w-full py-3 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <Save className="h-4 w-4" />
+                Guardar Borrador
+              </button>
+
+              {/* Schedule (PRO) */}
+              <div className="relative group">
+                <button
+                  disabled
+                  className="w-full py-3 bg-transparent border border-white/[0.06] text-slate-500 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-not-allowed opacity-60"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Programar
+                </button>
+                <span className="absolute top-1/2 -translate-y-1/2 right-4 bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                  PRO
+                </span>
+              </div>
+            </div>
+
+            {/* Category & Tags Panel */}
+            <div className="bg-[#0A0A0C] p-6 rounded-xl border border-white/[0.06] shadow-xl shadow-black/20 space-y-4">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Layers className="h-3 w-3" /> Categoría
+              </h3>
+
+              {/* Category Select */}
+              <div className="relative" ref={categoryRef}>
                 <div
                   onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                  className={`w-full bg-white dark:bg-white/5 border rounded-xl px-4 py-3 flex items-center justify-between cursor-pointer transition-all ${isCategoryOpen
-                    ? 'border-blue-500 ring-2 ring-blue-500/20'
-                    : 'border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
+                  className={`w-full bg-white/5 border rounded-xl px-4 py-3 flex items-center justify-between cursor-pointer transition-all ${isCategoryOpen
+                    ? 'border-rose-500 ring-2 ring-rose-500/20'
+                    : 'border-white/10 hover:border-white/20'
                     }`}
                 >
-                  <span className={category ? 'text-slate-900 dark:text-white' : 'text-slate-500'}>
+                  <span className={category ? 'text-white' : 'text-slate-500'}>
                     {category || 'Seleccionar tema...'}
                   </span>
                   <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} />
                 </div>
 
-                {/* Custom Dropdown Options */}
+                {/* Dropdown */}
                 {isCategoryOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 max-h-80 overflow-y-auto bg-white dark:bg-[#1A1A1C] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl z-50 animate-fade-in custom-scrollbar">
+                  <div className="absolute top-full left-0 right-0 mt-2 max-h-64 overflow-y-auto bg-[#1A1A1C] border border-white/10 rounded-xl shadow-2xl z-50 animate-fade-in custom-scrollbar">
                     {sections.map(section => (
                       <div key={section.title} className="py-2">
-                        <div className="px-4 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 bg-white/95 dark:bg-[#1A1A1C]/95 backdrop-blur-sm z-10">
+                        <div className="px-4 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 bg-[#1A1A1C]/95 backdrop-blur-sm z-10">
                           {section.title}
                         </div>
                         {section.items.map(item => (
@@ -503,17 +954,17 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
                               setCategory(item.label);
                               setIsCategoryOpen(false);
                             }}
-                            className="w-full text-left px-4 py-2.5 text-sm hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-between group transition-colors"
+                            className="w-full text-left px-4 py-2.5 text-sm hover:bg-white/5 flex items-center justify-between group transition-colors"
                           >
                             <div className="flex items-center gap-3">
-                              <div className="p-1.5 rounded-md bg-slate-100 dark:bg-white/5 text-slate-500 group-hover:text-blue-500 group-hover:bg-blue-50 dark:group-hover:bg-blue-500/10 transition-colors">
+                              <div className="p-1.5 rounded-md bg-white/5 text-slate-500 group-hover:text-rose-500 group-hover:bg-rose-500/10 transition-colors">
                                 <item.icon className="h-4 w-4" />
                               </div>
-                              <span className="text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white">
+                              <span className="text-slate-200 group-hover:text-white">
                                 {item.label}
                               </span>
                             </div>
-                            {category === item.label && <Check className="h-4 w-4 text-blue-500" />}
+                            {category === item.label && <Check className="h-4 w-4 text-rose-500" />}
                           </button>
                         ))}
                       </div>
@@ -522,223 +973,73 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
                 )}
               </div>
 
-              {/* Tags Input */}
-              <div className="flex-1 space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+              {/* Tags */}
+              <div className="space-y-2 pt-4 border-t border-white/[0.06]">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                   <Hash className="h-3 w-3" /> Etiquetas
                 </label>
-                <div className="flex items-center gap-2 p-3 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl focus-within:ring-2 focus-within:ring-blue-500 transition-all flex-wrap min-h-[50px]">
+                <div className="flex flex-wrap gap-2 min-h-[40px]">
                   {tags.map(tag => (
-                    <span key={tag} className="flex items-center gap-1 px-2 py-1 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300 rounded-lg text-sm font-medium animate-fade-in">
+                    <span key={tag} className="flex items-center gap-1 px-2 py-1 bg-rose-500/20 text-rose-300 rounded-lg text-sm font-medium animate-fade-in">
                       {tag}
                       <button onClick={() => removeTag(tag)} className="hover:text-red-500 ml-1"><X className="h-3 w-3" /></button>
                     </span>
                   ))}
-                  <input
-                    type="text"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={handleAddTag}
-                    placeholder={tags.length === 0 ? "Escribe y presiona Enter..." : "..."}
-                    className="flex-1 bg-transparent border-none text-sm min-w-[120px] focus:ring-0 p-0 text-slate-700 dark:text-slate-200 placeholder-slate-400"
-                  />
                 </div>
-              </div>
-            </div>
-
-            {/* Suggested Tags (SubItems) */}
-            {suggestedTags.length > 0 && (
-              <div className="animate-fade-in">
-                <span className="text-xs text-slate-400 mr-2">Sugerencias:</span>
-                <div className="inline-flex flex-wrap gap-2 mt-2">
-                  {suggestedTags.map(tag => (
-                    <button
-                      key={tag}
-                      onClick={() => addTag(tag)}
-                      disabled={tags.includes(tag)}
-                      className={`text-xs px-2 py-1 rounded-md border transition-colors ${tags.includes(tag)
-                        ? 'bg-slate-100 dark:bg-white/5 text-slate-400 border-transparent cursor-default'
-                        : 'border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:border-blue-400 hover:text-blue-500'
-                        }`}
-                    >
-                      + {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Content Blocks */}
-        <div className="space-y-6">
-          {blocks.map((block, index) => (
-            <div key={block.id} className="group relative pl-0 md:pl-12 transition-all">
-
-              {/* Controls (Only in Edit Mode) */}
-              {!isPreview && (
-                <div className="hidden md:flex absolute left-0 top-2 flex-col gap-1 opacity-10 group-hover:opacity-100 transition-all duration-300 items-center">
-                  <div className="flex flex-col bg-slate-100 dark:bg-white/5 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10">
-                    <button
-                      onClick={() => moveBlock(index, 'up')}
-                      disabled={index === 0}
-                      className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-white/10 disabled:opacity-30"
-                    >
-                      <ChevronUp className="h-4 w-4" />
-                    </button>
-                    <div className="h-px w-full bg-slate-200 dark:bg-white/10" />
-                    <button
-                      onClick={() => moveBlock(index, 'down')}
-                      disabled={index === blocks.length - 1}
-                      className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-white/10 disabled:opacity-30"
-                    >
-                      <ChevronDown className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <button
-                    onClick={() => removeBlock(block.id)}
-                    className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-
-              {/* Block Content */}
-              <div className="w-full">
-                {block.type === 'text' && (
-                  isPreview ? (
-                    <div
-                      className="text-lg leading-relaxed text-slate-700 dark:text-slate-300 font-serif whitespace-pre-wrap"
-                      dangerouslySetInnerHTML={{ __html: block.content }}
-                    />
-                  ) : (
-                    <RichTextEditor
-                      initialContent={block.content}
-                      onChange={(newContent) => updateBlock(block.id, newContent)}
-                      placeholder="Escribe aquí..."
-                    />
-                  )
-                )}
-
-                {block.type === 'image' && (
-                  <div className="w-full my-6">
-                    {block.content ? (
-                      <div className={`relative rounded-xl overflow-hidden ${!isPreview && 'group/img'}`}>
-                        <img src={block.content} alt="Content" className="w-full rounded-xl shadow-md" />
-                        {!isPreview && (
-                          <button
-                            onClick={() => updateBlock(block.id, '')}
-                            className="absolute top-2 right-2 p-1.5 bg-black/60 text-white rounded-full opacity-0 group-hover/img:opacity-100 transition-opacity hover:bg-red-500"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      !isPreview && (
-                        <>
-                          <label
-                            htmlFor={`upload-${block.id}`}
-                            className="h-48 rounded-xl bg-slate-50 dark:bg-white/5 border-2 border-dashed border-slate-200 dark:border-white/10 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all group/upload"
-                          >
-                            <ImageIcon className="h-8 w-8 text-slate-400 group-hover/upload:text-blue-500" />
-                            <span className="text-sm font-medium text-slate-500 group-hover/upload:text-blue-500">Haz click para subir una imagen</span>
-                          </label>
-                          <input
-                            type="file"
-                            id={`upload-${block.id}`}
-                            className="hidden"
-                            accept="image/*"
-                            onChange={(e) => handleImageChange(e, (url) => updateBlock(block.id, url))}
-                          />
-                        </>
-                      )
-                    )}
-                  </div>
-                )}
-
-                {block.type === 'video' && (
-                  <div className="w-full my-6">
-                    {getYoutubeId(block.content) ? (
-                      <div className="space-y-3">
-                        <div className="aspect-video rounded-xl overflow-hidden bg-black shadow-lg">
-                          <iframe
-                            width="100%"
-                            height="100%"
-                            src={`https://www.youtube.com/embed/${getYoutubeId(block.content)}`}
-                            title="YouTube video player"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            className="border-none"
-                          ></iframe>
-                        </div>
-                        {!isPreview && (
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={block.content}
-                              onChange={(e) => updateBlock(block.id, e.target.value)}
-                              className="flex-1 bg-slate-100 dark:bg-white/5 border-none rounded-lg py-2 px-3 text-sm text-slate-600 dark:text-slate-400"
-                            />
-                            <button onClick={() => updateBlock(block.id, '')} className="p-2 text-slate-400 hover:text-red-500">
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      !isPreview && (
-                        <div className="h-32 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center px-6 gap-4">
-                          <Youtube className="h-8 w-8 text-red-500 shrink-0" />
-                          <input
-                            type="text"
-                            placeholder="Pega el enlace de YouTube aquí..."
-                            value={block.content}
-                            onChange={(e) => updateBlock(block.id, e.target.value)}
-                            className="flex-1 bg-transparent border-none text-lg text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-0"
-                            autoFocus
-                          />
-                        </div>
-                      )
-                    )}
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleAddTag}
+                  placeholder="Escribe y presiona Enter..."
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-rose-500"
+                />
+                {/* Suggested Tags */}
+                {suggestedTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {suggestedTags.slice(0, 5).map(tag => (
+                      <button
+                        key={tag}
+                        onClick={() => addTag(tag)}
+                        disabled={tags.includes(tag)}
+                        className={`text-xs px-2 py-1 rounded-md border transition-colors ${tags.includes(tag)
+                          ? 'bg-white/5 text-slate-500 border-transparent cursor-default'
+                          : 'border-white/10 text-slate-400 hover:border-rose-400 hover:text-rose-400'
+                          }`}
+                      >
+                        + {tag}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
             </div>
-          ))}
-        </div>
 
-        {/* Add Blocks Bar - Hide in Preview */}
-        {!isPreview && (
-          <div className="flex justify-center py-8">
-            <div className="flex items-center gap-2 p-1.5 bg-white dark:bg-white/10 rounded-xl shadow-lg border border-slate-100 dark:border-white/5 backdrop-blur-md">
-              <span className="text-xs font-bold text-slate-400 px-2 uppercase tracking-wider">Añadir</span>
-              <div className="h-4 w-px bg-slate-200 dark:bg-white/10 mx-1" />
+          </aside>
 
+          {/* Mobile Action Bar (Fixed Bottom) - Only on smaller screens */}
+          <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#030304]/90 backdrop-blur-xl border-t border-white/[0.06] py-4 px-6 z-30">
+            <div className="flex items-center justify-center gap-4">
               <button
-                onClick={() => addBlock('text')}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 transition-colors text-sm font-medium"
+                onClick={handlePublish}
+                disabled={isPublishing}
+                className="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <Type className="h-4 w-4" /> Texto
+                {isPublishing ? 'Publicando...' : (isEditMode ? 'Guardar' : 'Publicar')}
               </button>
               <button
-                onClick={() => addBlock('image')}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 transition-colors text-sm font-medium"
+                onClick={handleSaveDraft}
+                disabled={isPublishing}
+                className="py-3 px-4 bg-blue-500/10 border border-blue-500/30 text-blue-400 rounded-xl font-bold text-sm"
               >
-                <ImageIcon className="h-4 w-4" /> Imagen
-              </button>
-              <button
-                onClick={() => addBlock('video')}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 transition-colors text-sm font-medium"
-              >
-                <Youtube className="h-4 w-4 text-red-500" /> Video
+                <Save className="h-4 w-4" />
               </button>
             </div>
           </div>
-        )}
 
-      </div>
-    </CreatePageLayout>
+        </main>
+      )}
+    </div>
   );
 };
+

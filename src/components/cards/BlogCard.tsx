@@ -36,6 +36,18 @@ export const BlogCard: React.FC<BlogCardProps> = ({ article, onClick, onSave }) 
         <div className="absolute top-3 left-3 bg-rose-600/90 backdrop-blur-md px-2.5 py-1 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider shadow-lg">
           {article.category}
         </div>
+
+        {/* Status Badges */}
+        {article.status === 'draft' && (
+          <div className="absolute bottom-3 left-3 bg-amber-500 px-2.5 py-1 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider shadow-lg">
+            Borrador
+          </div>
+        )}
+        {article.status === 'scheduled' && (
+          <div className="absolute bottom-3 left-3 bg-blue-500 px-2.5 py-1 rounded-lg text-[10px] font-bold text-white uppercase tracking-wider shadow-lg">
+            Programado
+          </div>
+        )}
       </div>
 
       {/* Content */}
