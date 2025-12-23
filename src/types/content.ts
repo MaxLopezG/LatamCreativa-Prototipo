@@ -24,7 +24,7 @@ export interface PortfolioItem {
     gallery?: {
         url: string;
         caption: string;
-        type?: 'image' | 'video' | 'youtube';
+        type?: 'image' | 'video' | 'youtube' | 'sketchfab';
     }[];
     software?: string[];
     domain?: 'creative' | 'dev';
@@ -64,6 +64,7 @@ export interface ArticleItem {
 export interface BlogComment {
     id: string;
     author: string;
+    authorId?: string;
     avatar: string;
     content: string;
     date: string;

@@ -4,18 +4,44 @@ import { PortfolioItem } from '../../types';
 import { useAppStore } from '../../hooks/useAppStore';
 import { usersService } from '../../services/modules/users';
 
-// Simple in-memory cache for author profiles to avoid redundant fetches
+/** 
+ * Caché simple en memoria para perfiles de autor para evitar fetches redundantes.
+ * Las entradas expiran después de CACHE_TTL milisegundos.
+ */
 const authorProfileCache: Map<string, { name: string; avatar: string; timestamp: number }> = new Map();
-const CACHE_TTL = 60000; // 1 minute cache TTL
+/** Tiempo de vida del caché en milisegundos (1 minuto) */
+const CACHE_TTL = 60000;
 
+/**
+ * Props para el componente PortfolioCard
+ */
 interface PortfolioCardProps {
+  /** El item de portafolio a mostrar */
   item: PortfolioItem;
+  /** Se llama cuando se hace clic en la tarjeta */
   onClick?: () => void;
+  /** Se llama cuando se hace clic en el botón guardar/bookmark */
   onSave?: (id: string, image: string, type: 'project' | 'article') => void;
+  /** Tipo de item para el callback de guardar */
   itemType?: 'project' | 'article';
+  /** Elemento de acción adicional (ej. botón eliminar) renderizado en la esquina */
   extraAction?: React.ReactNode;
 }
 
+/**
+ * Componente de tarjeta para mostrar proyectos de portafolio en grids y feeds.
+ * Muestra imagen de portada, título, info del autor y acciones interactivas (guardar, ver).
+ * Obtiene datos del perfil del autor con caché para minimizar llamadas API.
+ * 
+ * @example
+ * ```tsx
+ * <PortfolioCard
+ *   item={portfolioItem}
+ *   onClick={() => navigate(`/portfolio/${item.id}`)}
+ *   onSave={(id, img, type) => handleSave(id, img, type)}
+ * />
+ * ```
+ */
 export const PortfolioCard: React.FC<PortfolioCardProps> = ({
   item,
   onClick,
@@ -28,7 +54,7 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
 
   // Fetch author profile with caching
   useEffect(() => {
-    const authorId = item.authorId || item.artistId;
+    const authorId = item.authorId;
     if (!authorId) return;
 
     // Check cache first
@@ -49,7 +75,7 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
     }).catch(err => {
       console.warn('Could not fetch author profile:', err);
     });
-  }, [item.authorId, item.artistId]);
+  }, [item.authorId]);
 
   // Use live author profile data if available, fallback to item's snapshot data
   const displayName = authorProfile?.name || item.artist || 'Unknown';
@@ -101,8 +127,8 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
         {/* Status Badge - Draft or Scheduled */}
         {item.status && item.status !== 'published' && (
           <div className={`absolute top-3 ${item.isPrivate ? 'left-12' : 'left-3'} backdrop-blur-md px-2 py-1 rounded-md border z-20 text-[10px] font-bold uppercase tracking-wide ${item.status === 'draft'
-              ? 'bg-blue-500/20 border-blue-500/30 text-blue-400'
-              : 'bg-amber-500/20 border-amber-500/30 text-amber-400'
+            ? 'bg-blue-500/20 border-blue-500/30 text-blue-400'
+            : 'bg-amber-500/20 border-amber-500/30 text-amber-400'
             }`}>
             {item.status === 'draft' ? 'Borrador' : 'Programado'}
           </div>

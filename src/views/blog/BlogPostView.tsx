@@ -1,14 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, MessageSquare, Heart, Share2, Bookmark, CheckCircle2, ThumbsUp, Edit, Trash2, UserPlus, UserCheck } from 'lucide-react';
+import { ArrowLeft, Clock, Heart, Share2, Bookmark, CheckCircle2, ThumbsUp, Edit, Trash2, UserPlus, UserCheck, MessageSquare, Reply, Send } from 'lucide-react';
 
-import { useArticle, useDeleteArticle, useRecommendedArticles, useSubscription, useArticleLike } from '../../hooks/useFirebase';
+import { useArticle, useDeleteArticle, useRecommendedArticles, useSubscription, useArticleLike, useComments, useAddComment } from '../../hooks/useFirebase';
 import { useAppStore } from '../../hooks/useAppStore';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
-import { CommentsSection } from './components/CommentsSection';
+
 import { shouldCountView } from '../../utils/viewTracking';
+import { timeAgo } from '../../utils/helpers';
 import { articlesService } from '../../services/modules/articles';
+import { CommentsSection } from '../../components/CommentsSection';
 
 interface BlogPostViewProps {
     articleId?: string;
@@ -30,11 +32,35 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
     const { deletePost, loading: isDeleting } = useDeleteArticle();
     const { articles: recArticles } = useRecommendedArticles(id || '');
 
-    const { isLiked, initialIsLiked, toggleLike } = useArticleLike(article?.id, state.user?.id);
+    const { isLiked, initialIsLiked, toggleLike } = useArticleLike(
+        article?.id,
+        state.user?.id,
+        state.user ? { name: state.user.name, avatar: state.user.avatar || '' } : undefined
+    );
     const { isSubscribed, loading: subLoading, toggleSubscription, subscriberCount } = useSubscription(article?.authorId || '', state.user?.id);
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isLikeLoading, setIsLikeLoading] = useState(false);
+
+    // --- Comments State ---
+    const { comments, loading: isLoadingComments, refresh: refreshComments } = useComments(article?.id);
+    const { add: addCommentToArticle, loading: isAddingComment } = useAddComment();
+    const [newComment, setNewComment] = useState('');
+    const [commentLikes, setCommentLikes] = useState<Record<string, boolean>>({});
+    const [replyingTo, setReplyingTo] = useState<string | null>(null);
+    const [replyText, setReplyText] = useState('');
+    const [isAddingReply, setIsAddingReply] = useState(false);
+
+    // Memoize root comments and replies
+    const rootComments = useMemo(() =>
+        comments.filter(c => !c.parentId).sort((a, b) =>
+            new Date(b.date || b.createdAt || 0).getTime() - new Date(a.date || a.createdAt || 0).getTime()
+        ), [comments]);
+
+    const getReplies = (parentId: string) =>
+        comments.filter(c => c.parentId === parentId).sort((a, b) =>
+            new Date(a.date || a.createdAt || 0).getTime() - new Date(b.date || b.createdAt || 0).getTime()
+        );
 
     // View Tracking - 24h unique visitor protection
     useEffect(() => {
@@ -58,6 +84,96 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
             console.error("Error caught in handleDelete:", error);
             actions.showToast('Error al eliminar el artículo', 'error');
             setIsDeleteModalOpen(false);
+        }
+    };
+
+    // --- Comment Handlers ---
+    const handleAddComment = async () => {
+        if (!newComment.trim() || !article?.id || !state.user) {
+            if (!state.user) actions.showToast('Inicia sesión para comentar', 'info');
+            return;
+        }
+        try {
+            await addCommentToArticle(article.id, {
+                authorId: state.user.id,
+                authorName: state.user.name || 'Usuario',
+                authorUsername: state.user.username || '',
+                authorAvatar: state.user.avatar || '',
+                text: newComment.trim()
+            });
+            setNewComment('');
+            refreshComments();
+        } catch (error: any) {
+            actions.showToast(error.message || 'Error al comentar', 'error');
+        }
+    };
+
+    const handleDeleteComment = async (commentId: string) => {
+        if (!article?.id) return;
+        try {
+            await articlesService.deleteComment(article.id, commentId);
+            refreshComments();
+            actions.showToast('Comentario eliminado', 'success');
+        } catch (error: any) {
+            actions.showToast(error.message || 'Error al eliminar', 'error');
+        }
+    };
+
+    const handleCommentLike = async (commentId: string) => {
+        if (!state.user) {
+            actions.showToast('Inicia sesión para dar like', 'info');
+            return;
+        }
+        if (!article?.id) return;
+
+        // Optimistic UI update
+        const wasLiked = commentLikes[commentId] || false;
+        setCommentLikes(prev => ({ ...prev, [commentId]: !wasLiked }));
+
+        try {
+            await articlesService.toggleCommentLike(article.id, commentId, state.user.id);
+        } catch (error) {
+            // Rollback on error
+            setCommentLikes(prev => ({ ...prev, [commentId]: wasLiked }));
+            actions.showToast('Error al dar like', 'error');
+        }
+    };
+
+    const handleStartReply = (commentId: string) => {
+        if (!state.user) {
+            actions.showToast('Inicia sesión para responder', 'info');
+            return;
+        }
+        setReplyingTo(commentId);
+        setReplyText('');
+    };
+
+    const handleCancelReply = () => {
+        setReplyingTo(null);
+        setReplyText('');
+    };
+
+    const handleSubmitReply = async (parentCommentId: string) => {
+        if (!replyText.trim() || !article?.id || !state.user) return;
+
+        setIsAddingReply(true);
+        try {
+            await addCommentToArticle(article.id, {
+                authorId: state.user.id,
+                authorName: state.user.name || 'Usuario',
+                authorUsername: state.user.username || '',
+                authorAvatar: state.user.avatar || '',
+                text: replyText.trim(),
+                parentId: parentCommentId
+            });
+            setReplyingTo(null);
+            setReplyText('');
+            refreshComments();
+            actions.showToast('Respuesta publicada', 'success');
+        } catch (error: any) {
+            actions.showToast(error.message || 'Error al responder', 'error');
+        } finally {
+            setIsAddingReply(false);
         }
     };
 
@@ -111,17 +227,6 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                         >
                             <Heart className={`h-5 w-5 ${isLiked ? 'fill-current' : ''}`} />
                             <span className="text-xs font-bold mt-1 block">{(article.likes || 0) + (isLiked ? 1 : 0) - (initialIsLiked ? 1 : 0)}</span>
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                document.getElementById('comments-section')?.scrollIntoView({ behavior: 'smooth' });
-                            }}
-                            className="p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 transition-colors flex flex-col items-center gap-1"
-                            title="Ver Comentarios"
-                        >
-                            <MessageSquare className="h-5 w-5" />
-                            <span className="text-xs font-bold mt-1 block">{article.comments || 0}</span>
                         </button>
 
                         <button
@@ -338,7 +443,43 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                         ))}
                     </div>
 
-                    <CommentsSection articleId={article.id} />
+                    {/* Comments Section */}
+                    <CommentsSection
+                        comments={comments}
+                        isLoading={isLoadingComments}
+                        contentAuthorId={article.authorId}
+                        onAddComment={async (text) => {
+                            if (!article?.id || !state.user) return;
+                            await addCommentToArticle(article.id, {
+                                authorId: state.user.id,
+                                authorName: state.user.name || 'Usuario',
+                                authorUsername: state.user.username || '',
+                                authorAvatar: state.user.avatar || '',
+                                text
+                            });
+                            refreshComments();
+                        }}
+                        onDeleteComment={async (commentId) => {
+                            if (!article?.id) return;
+                            await articlesService.deleteComment(article.id, commentId);
+                            refreshComments();
+                        }}
+                        onLikeComment={handleCommentLike}
+                        onAddReply={async (parentId, text) => {
+                            if (!article?.id || !state.user) return;
+                            await addCommentToArticle(article.id, {
+                                authorId: state.user.id,
+                                authorName: state.user.name || 'Usuario',
+                                authorUsername: state.user.username || '',
+                                authorAvatar: state.user.avatar || '',
+                                text,
+                                parentId
+                            });
+                            refreshComments();
+                        }}
+                        commentLikes={commentLikes}
+                    />
+
                 </article>
 
                 {/* Right Sidebar - Recommended */}
@@ -378,7 +519,6 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                         </div>
                     </div>
                 </aside>
-
             </div>
 
             <ConfirmationModal
@@ -392,6 +532,6 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                 type="danger"
                 loading={isDeleting}
             />
-        </div>
+        </div >
     );
 };

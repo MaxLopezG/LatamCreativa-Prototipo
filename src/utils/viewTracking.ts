@@ -1,21 +1,24 @@
 /**
- * View Tracking Utility
+ * Utilidad de Tracking de Vistas
  * 
- * Prevents view count inflation by tracking viewed items in localStorage.
- * Views are only counted once per 24-hour period per item.
+ * Previene la inflación del conteo de vistas rastreando items vistos en localStorage.
+ * Las vistas solo se cuentan una vez cada 24 horas por item.
+ * 
+ * @module utils/viewTracking
  */
 
-const VIEW_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+const VIEW_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 horas
 
 interface ViewRecord {
     timestamp: number;
 }
 
 /**
- * Check if an item should count as a new view
- * @param type - Type of item ('project' | 'profile' | 'article')
- * @param id - Unique identifier of the item
- * @returns true if this is a new view that should be counted
+ * Verifica si un item debe contar como vista nueva.
+ * 
+ * @param type - Tipo de item ('project' | 'profile' | 'article')
+ * @param id - Identificador único del item
+ * @returns true si es una vista nueva que debe contarse
  */
 export const shouldCountView = (type: 'project' | 'profile' | 'article', id: string): boolean => {
     if (!id) return false;
@@ -30,27 +33,27 @@ export const shouldCountView = (type: 'project' | 'profile' | 'article', id: str
             const record: ViewRecord = JSON.parse(stored);
             const timeSinceLastView = now - record.timestamp;
 
-            // If viewed within the expiry period, don't count again
+            // Si se vio dentro del período de expiración, no contar de nuevo
             if (timeSinceLastView < VIEW_EXPIRY_MS) {
                 return false;
             }
         }
 
-        // Record this view
+        // Registrar esta vista
         const newRecord: ViewRecord = { timestamp: now };
         localStorage.setItem(key, JSON.stringify(newRecord));
         return true;
 
     } catch (error) {
-        // If localStorage fails, still count the view (fail open)
-        console.warn('View tracking localStorage error:', error);
+        // Si localStorage falla, aún contar la vista (fail open)
+        console.warn('Error de localStorage en view tracking:', error);
         return true;
     }
 };
 
 /**
- * Clean up old view records from localStorage
- * Call this periodically to prevent localStorage bloat
+ * Limpia registros de vistas antiguos del localStorage.
+ * Llamar periódicamente para prevenir que localStorage crezca demasiado.
  */
 export const cleanupOldViewRecords = (): void => {
     try {

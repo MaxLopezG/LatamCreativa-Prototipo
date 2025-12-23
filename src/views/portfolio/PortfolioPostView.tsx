@@ -8,13 +8,15 @@ import { useUserProfileData } from '../../hooks/useUserProfileData';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
 import { projectsService } from '../../services/modules/projects';
 import { usersService } from '../../services/modules/users';
-import { timeAgo, getYoutubeVideoId, renderDescriptionWithLinks } from '../../utils/helpers';
+import { timeAgo, getYoutubeVideoId, getSketchfabModelId, renderDescriptionWithLinks } from '../../utils/helpers';
 import { shouldCountView } from '../../utils/viewTracking';
 import { PortfolioItem } from '../../types';
+import { PortfolioSidebar } from './components';
+import { CommentsSection } from '../../components/CommentsSection';
 
-/** Helper to get author ID with backward compatibility for artistId */
+/** Helper para obtener el ID del autor */
 const getAuthorId = (item: PortfolioItem | null | undefined): string | undefined =>
-  item?.authorId || item?.artistId;
+  item?.authorId;
 
 
 interface PortfolioPostViewProps {
@@ -468,6 +470,17 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
                       allowFullScreen
                     ></iframe>
                   </div>
+                ) : heroContent.type === 'sketchfab' ? (
+                  <div className="relative pt-[56.25%] w-full">
+                    <iframe
+                      className="absolute inset-0 w-full h-full"
+                      src={`https://sketchfab.com/models/${getSketchfabModelId(heroContent.url || '')}/embed?autostart=1&ui_theme=dark`}
+                      title={heroContent.caption || "Sketchfab 3D Model"}
+                      frameBorder="0"
+                      allow="autoplay; fullscreen; xr-spatial-tracking"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
                 ) : (
                   <>
                     <img
@@ -513,6 +526,18 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
                           allowFullScreen
                         ></iframe>
                       </div>
+                    ) : imgItem.type === 'sketchfab' ? (
+                      /* Sketchfab 3D Model Render */
+                      <div className="relative pt-[56.25%] w-full">
+                        <iframe
+                          className="absolute inset-0 w-full h-full"
+                          src={`https://sketchfab.com/models/${getSketchfabModelId(imgItem.url || '')}/embed?autostart=1&ui_theme=dark`}
+                          title={imgItem.caption || "Sketchfab 3D Model"}
+                          frameBorder="0"
+                          allow="autoplay; fullscreen; xr-spatial-tracking"
+                          allowFullScreen
+                        ></iframe>
+                      </div>
                     ) : (
                       /* Image Render */
                       <>
@@ -537,318 +562,52 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
           )}
 
           {/* Comments Section */}
-          <div className="pt-8 max-w-4xl mx-auto">
-            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-amber-500" /> Comentarios <span className="text-slate-500 text-sm font-normal">({comments.length})</span>
-            </h3>
-
-            {/* Input */}
-            {state.user ? (
-              <div className="flex gap-4 mb-8 bg-[#0A0A0C] p-4 rounded-xl border border-white/5">
-                <img src={state.user.avatar} className="h-10 w-10 rounded-full object-cover" alt="Tu avatar" />
-                <div className="flex-1">
-                  <textarea
-                    className="w-full bg-transparent text-white text-sm placeholder-slate-500 focus:outline-none resize-none min-h-[40px]"
-                    placeholder="Escribe un comentario constructivo..."
-                    rows={2}
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    disabled={isAddingComment}
-                  ></textarea>
-                  <div className="flex justify-end mt-2">
-                    <button
-                      onClick={handleAddComment}
-                      disabled={isAddingComment || !newComment.trim()}
-                      className="px-5 py-1.5 bg-amber-500 text-black font-bold rounded-lg hover:bg-amber-400 text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isAddingComment ? 'Publicando...' : 'Publicar'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center text-slate-500 text-sm mb-8 p-4 bg-[#0A0A0C] rounded-xl border border-white/5">
-                <a href="/auth" className="text-amber-500 font-bold hover:underline">Inicia sesión</a> para dejar un comentario.
-              </div>
-            )}
-
-            {/* Comments List */}
-            <div className="space-y-6">
-              {isLoadingComments ? (
-                <div className="text-slate-500 text-center py-4">Cargando comentarios...</div>
-              ) : (
-                rootComments.map(comment => (
-                  <div key={comment.id} className="animate-fade-in">
-                    {/* Main Comment */}
-                    <div className="flex gap-4">
-                      <img
-                        src={comment.authorAvatar}
-                        className="h-10 w-10 rounded-full object-cover flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-amber-500/50 transition-all"
-                        alt={comment.authorName}
-                        onClick={() => navigate(`/user/${comment.authorUsername || comment.authorId}`)}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span
-                              className="text-white font-bold text-sm cursor-pointer hover:text-amber-500 transition-colors"
-                              onClick={() => navigate(`/user/${comment.authorUsername || comment.authorId}`)}
-                            >
-                              {comment.authorName}
-                            </span>
-                            <span className="text-[10px] text-slate-500">{timeAgo(comment.createdAt)}</span>
-                          </div>
-                          {(state.user?.id === comment.authorId || state.user?.id === item.authorId) && (
-                            <button onClick={() => handleDeleteComment(comment.id)} className="text-slate-500 hover:text-red-500" title="Eliminar comentario">
-                              <Trash2 className="h-3 w-3" />
-                            </button>
-                          )}
-                        </div>
-                        <p className="text-slate-300 text-sm whitespace-pre-wrap">{comment.text}</p>
-                        <div className="flex items-center gap-4 mt-2">
-                          <button
-                            onClick={() => handleCommentLike(comment.id)}
-                            className={`text-xs flex items-center gap-1 transition-colors ${commentLikes[comment.id]
-                              ? 'text-red-500'
-                              : 'text-slate-500 hover:text-white'
-                              }`}
-                          >
-                            <Heart className={`h-3 w-3 ${commentLikes[comment.id] ? 'fill-current' : ''}`} />
-                            {comment.likes || 0}
-                          </button>
-                          <button
-                            onClick={() => handleStartReply(comment.id)}
-                            className="text-xs text-slate-500 hover:text-white transition-colors"
-                          >
-                            Responder
-                          </button>
-                        </div>
-
-                        {/* Reply Input */}
-                        {replyingTo === comment.id && (
-                          <div className="mt-3 flex gap-3">
-                            <img src={state.user?.avatar} className="h-8 w-8 rounded-full object-cover flex-shrink-0" alt="Tu avatar" />
-                            <div className="flex-1">
-                              <textarea
-                                className="w-full bg-[#0A0A0C] border border-white/10 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-amber-500/50 resize-none p-2"
-                                placeholder="Escribe una respuesta..."
-                                rows={2}
-                                value={replyText}
-                                onChange={(e) => setReplyText(e.target.value)}
-                                disabled={isAddingReply}
-                                autoFocus
-                              />
-                              <div className="flex justify-end gap-2 mt-2">
-                                <button
-                                  onClick={handleCancelReply}
-                                  className="px-3 py-1 text-slate-400 hover:text-white text-xs transition-colors"
-                                >
-                                  Cancelar
-                                </button>
-                                <button
-                                  onClick={() => handleSubmitReply(comment.id)}
-                                  disabled={isAddingReply || !replyText.trim()}
-                                  className="px-4 py-1 bg-amber-500 text-black font-bold rounded-lg hover:bg-amber-400 text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  {isAddingReply ? 'Enviando...' : 'Responder'}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Replies */}
-                        {getReplies(comment.id).length > 0 && (
-                          <div className="mt-4 pl-4 border-l-2 border-white/10 space-y-4">
-                            {getReplies(comment.id).map(reply => (
-                              <div key={reply.id} className="flex gap-3">
-                                <img
-                                  src={reply.authorAvatar}
-                                  className="h-8 w-8 rounded-full object-cover flex-shrink-0 cursor-pointer hover:ring-2 hover:ring-amber-500/50 transition-all"
-                                  alt={reply.authorName}
-                                  onClick={() => navigate(`/user/${reply.authorUsername || reply.authorId}`)}
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span
-                                        className="text-white font-bold text-xs cursor-pointer hover:text-amber-500 transition-colors"
-                                        onClick={() => navigate(`/user/${reply.authorUsername || reply.authorId}`)}
-                                      >
-                                        {reply.authorName}
-                                      </span>
-                                      <span className="text-[10px] text-slate-500">{timeAgo(reply.createdAt)}</span>
-                                    </div>
-                                    {(state.user?.id === reply.authorId || state.user?.id === item.authorId) && (
-                                      <button onClick={() => handleDeleteComment(reply.id)} className="text-slate-500 hover:text-red-500" title="Eliminar respuesta">
-                                        <Trash2 className="h-3 w-3" />
-                                      </button>
-                                    )}
-                                  </div>
-                                  <p className="text-slate-300 text-xs whitespace-pre-wrap">{reply.text}</p>
-                                  <button
-                                    onClick={() => handleCommentLike(reply.id)}
-                                    className={`text-[10px] flex items-center gap-1 mt-1 transition-colors ${commentLikes[reply.id]
-                                      ? 'text-red-500'
-                                      : 'text-slate-500 hover:text-white'
-                                      }`}
-                                  >
-                                    <Heart className={`h-2.5 w-2.5 ${commentLikes[reply.id] ? 'fill-current' : ''}`} />
-                                    {reply.likes || 0}
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-              {rootComments.length === 0 && !isLoadingComments && (
-                <div className="text-center text-slate-600 py-8">Sé el primero en comentar.</div>
-              )}
-            </div>
+          <div className="max-w-4xl mx-auto">
+            <CommentsSection
+              comments={comments}
+              isLoading={isLoadingComments}
+              contentAuthorId={item.authorId}
+              onAddComment={async (text) => {
+                if (!item?.id) return;
+                await addComment(item.id, text);
+              }}
+              onDeleteComment={async (commentId) => {
+                if (!item?.id) return;
+                await deleteComment(item.id, commentId);
+                actions.showToast('Comentario eliminado', 'success');
+              }}
+              onLikeComment={handleCommentLike}
+              onAddReply={async (parentId, text) => {
+                if (!item?.id || !state.user) return;
+                await projectsService.addCommentReply(item.id, parentId, {
+                  authorId: state.user.id,
+                  authorName: state.user.name || 'Usuario',
+                  authorUsername: state.user.username || '',
+                  authorAvatar: state.user.avatar || '',
+                  text
+                });
+                actions.showToast('Respuesta publicada', 'success');
+              }}
+              commentLikes={commentLikes}
+            />
           </div>
+
 
         </div>
 
         {/* --- RIGHT: SIDEBAR --- */}
-        <aside className="lg:col-span-3 space-y-6">
-          <div className="sticky top-24 space-y-6">
-
-            {/* Author Card */}
-            <div className="bg-[#0A0A0C] p-6 rounded-2xl border border-white/5 shadow-xl relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 to-purple-500"></div>
-
-              <div className="flex items-center gap-4 mb-6 cursor-pointer" onClick={() => onAuthorClick?.(authorProfile?.username || item.artistUsername || item.artist)}>
-                <div className="relative">
-                  <div className="h-16 w-16 rounded-full overflow-hidden p-[2px] bg-gradient-to-tr from-amber-500 to-transparent">
-                    <div className="h-full w-full rounded-full bg-black p-[2px]">
-                      <img src={authorProfile?.avatar || item.artistAvatar} alt={authorProfile?.name || item.artist} className="h-full w-full object-cover rounded-full" />
-                    </div>
-                  </div>
-                  <div className="absolute -bottom-1 -right-1 bg-black rounded-full p-1">
-                    <CheckCircle2 className="h-4 w-4 text-white fill-blue-500" />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-bold text-white text-lg hover:underline decoration-amber-500 underline-offset-4 decoration-2">{authorProfile?.name || item.artist}</h3>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-xs text-slate-400">{authorProfile?.role}</p>
-                    {(authorProfile?.availableForWork || item.availableForWork) === true && (
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-500/10 text-green-500 text-[10px] font-bold border border-green-500/20">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                        Disponible
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-slate-500 mt-1">
-                    {authorProfile?.location}
-                  </p>
-                </div>
-              </div>
-
-              {state.user?.id !== itemAuthorId ? (
-                /* Visitor View: Seguir + Contratar */
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={handleFollowToggle}
-                    disabled={isFollowLoading}
-                    className={`flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isFollowing
-                      ? 'bg-white/5 text-white border border-white/5'
-                      : 'bg-amber-500 text-black hover:bg-amber-400 shadow-lg shadow-amber-500/20'
-                      }`}
-                  >
-                    {isFollowing ? <CheckCircle2 className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-                    {isFollowing ? 'Siguiendo' : 'Seguir'}
-                  </button>
-                  <button className="flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-bold text-sm hover:bg-slate-200 transition-colors">
-                    <Briefcase className="h-4 w-4" /> Contratar
-                  </button>
-                </div>
-              ) : (
-                /* Owner View: Solo Editar (full width) */
-                <button
-                  onClick={() => navigate(`/create/portfolio?edit=${item.id}`)}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-amber-500 text-black font-bold text-sm transition-all hover:bg-amber-400 shadow-lg shadow-amber-500/20"
-                >
-                  <Edit className="h-4 w-4" /> Editar Proyecto
-                </button>
-              )}
-            </div>
-
-            {/* Stats Card */}
-            <div className="bg-[#0A0A0C] p-5 rounded-2xl border border-white/5">
-              <div className="grid grid-cols-3 gap-2 text-center divide-x divide-white/5">
-                <div>
-                  <div className="text-white font-bold">{(item.views || 0).toLocaleString()}</div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-1">Vistas</div>
-                </div>
-                <div>
-                  <div className="text-white font-bold">{likeCount.toLocaleString()}</div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-1">Likes</div>
-                </div>
-                <div>
-                  <div className="text-white font-bold">{comments.length}</div>
-                  <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mt-1">Coment.</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div className="bg-[#0A0A0C] p-5 rounded-2xl border border-white/5">
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Etiquetas</h4>
-              <div className="flex flex-wrap gap-2">
-                {(item.tags && item.tags.length > 0 ? item.tags : [item.category]).map(tag => (
-                  <span key={tag} className="px-3 py-1.5 rounded-lg bg-white/5 text-xs text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer transition-colors border border-transparent hover:border-white/10">
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Collaborators */}
-            <div className="bg-[#0A0A0C] p-5 rounded-2xl border border-white/5">
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Colaboradores</h4>
-              <div className="flex flex-wrap gap-2">
-                {item.collaborators && item.collaborators.length > 0 ? (
-                  item.collaborators.map(person => (
-                    <span key={person} className="px-3 py-1.5 rounded-lg bg-white/5 text-xs text-slate-400 hover:text-white hover:bg-white/10 cursor-pointer transition-colors border border-transparent hover:border-white/10">
-                      @{person}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-xs text-slate-600 italic">Sin colaboradores</span>
-                )}
-              </div>
-            </div>
-
-            {/* More from Author/Category */}
-            <div>
-              <div className="flex items-center justify-between mb-4 px-2">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Más de {item.artist}</h4>
-                <button className="text-xs text-amber-500 hover:underline font-bold">Ver todo</button>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {displayRelated.map(rel => (
-                  <div
-                    key={rel.id}
-                    className="group aspect-square rounded-xl bg-white/5 overflow-hidden cursor-pointer relative"
-                    onClick={() => navigate(`/portfolio/${rel.id}`)}
-                  >
-                    <img src={rel.image || rel.coverImage} alt={rel.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                      <span className="text-xs font-bold text-white line-clamp-1">{rel.title}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-        </aside>
+        <PortfolioSidebar
+          item={item}
+          authorProfile={authorProfile}
+          isOwner={state.user?.id === itemAuthorId}
+          isFollowing={isFollowing}
+          isFollowLoading={isFollowLoading}
+          likeCount={likeCount}
+          commentsCount={comments.length}
+          relatedProjects={displayRelated}
+          onAuthorClick={onAuthorClick}
+          onFollowToggle={handleFollowToggle}
+        />
 
       </div>
 

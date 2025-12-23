@@ -3,50 +3,65 @@ import imageCompression from 'browser-image-compression';
 
 const storage = getStorage();
 
+/**
+ * Opciones para subida de imágenes
+ */
 interface UploadOptions {
+    /** Tamaño máximo en MB */
     maxSizeMB?: number;
+    /** Si se debe comprimir la imagen */
     compress?: boolean;
+    /** Calidad de compresión (0-1) */
     quality?: number;
 }
 
+/**
+ * Servicio de Storage
+ * 
+ * Maneja subida, eliminación y compresión de archivos en Firebase Storage.
+ * 
+ * @module services/storage
+ */
 export const storageService = {
     /**
-     * Deletes an image from Firebase Storage using its download URL.
-     * @param url The download URL of the file to delete.
-     * @returns true if deletion was successful, false otherwise.
+     * Elimina una imagen de Firebase Storage usando su URL de descarga.
+     * 
+     * @param url - URL de descarga del archivo a eliminar
+     * @returns true si la eliminación fue exitosa, false si no
      */
     deleteFromUrl: async (url: string): Promise<boolean> => {
         if (!url || !url.includes('firebase')) {
-            return false; // Not a Firebase Storage URL or empty
+            return false; // No es URL de Firebase Storage o está vacía
         }
-        
+
         try {
-            // Extract the path from the Firebase Storage URL
+            // Extraer el path de la URL de Firebase Storage
             const decodedUrl = decodeURIComponent(url);
             const pathMatch = decodedUrl.match(/\/o\/(.+?)\?/);
-            
+
             if (!pathMatch || !pathMatch[1]) {
-                console.warn('Could not extract path from URL:', url);
+                console.warn('No se pudo extraer path de la URL:', url);
                 return false;
             }
-            
+
             const filePath = pathMatch[1];
             const fileRef = ref(storage, filePath);
             await deleteObject(fileRef);
             return true;
         } catch (error) {
-            // File might not exist or already deleted - not a critical error
-            console.warn('Could not delete old image:', error);
+            // El archivo puede no existir o ya estar eliminado - no es error crítico
+            console.warn('No se pudo eliminar imagen antigua:', error);
             return false;
         }
     },
 
     /**
-     * Uploads an image to Firebase Storage with validation and optional compression.
-     * @param file The file to upload.
-     * @param path The path in storage.
-     * @param options Configuration for the upload.
-     * @returns The public download URL of the uploaded file.
+     * Sube una imagen a Firebase Storage con validación y compresión opcional.
+     * 
+     * @param file - Archivo a subir
+     * @param path - Ruta en storage
+     * @param options - Configuración para la subida
+     * @returns URL pública de descarga del archivo subido
      */
     uploadImage: async (file: File, path: string, options: UploadOptions = {}): Promise<string> => {
         const { maxSizeMB = 5, compress = true, quality = 0.8 } = options;

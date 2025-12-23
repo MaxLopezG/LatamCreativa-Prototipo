@@ -1,151 +1,16 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Image as ImageIcon, Type, Youtube, X, ChevronUp, ChevronDown, Plus, Trash2, GripVertical, Eye, Edit3, Tag as TagIcon, Hash, Layers, Check, Bold, Italic, Underline, Save, Calendar, Heart, MessageCircle, Share2, Bookmark, CheckCircle2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Image as ImageIcon, Type, Youtube, X, ChevronUp, ChevronDown, Trash2, Eye, Edit3, Layers, Save, Calendar, Heart, MessageCircle, Share2, Bookmark, CheckCircle2, Check, Hash } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
-import { CreatePageLayout } from '../../components/layout/CreatePageLayout';
 import { useAppStore } from '../../hooks/useAppStore';
 import { NAV_SECTIONS, NAV_SECTIONS_DEV } from '../../data/navigation';
 import { useCreateArticle, useArticle, useUpdateArticle } from '../../hooks/useFirebase';
+import { RichTextEditor, ArticlePreview, ArticleSidebar, MobileActionBar, ContentBlock } from './components';
 
 interface CreateArticleViewProps {
   onBack: () => void;
 }
 
 type BlockType = 'text' | 'image' | 'video';
-
-interface ContentBlock {
-  id: string;
-  type: BlockType;
-  content: string;
-}
-
-// Helper Component to fix cursor jumping issues
-const RichTextEditor = ({
-  initialContent,
-  onChange,
-  placeholder
-}: {
-  initialContent: string,
-  onChange: (content: string) => void,
-  placeholder?: string
-}) => {
-  const contentEditableRef = useRef<HTMLDivElement>(null);
-
-  // Initialize content on mount or if external change occurs (while not focused)
-  useEffect(() => {
-    if (contentEditableRef.current && contentEditableRef.current.innerHTML !== initialContent) {
-      if (document.activeElement !== contentEditableRef.current) {
-        contentEditableRef.current.innerHTML = initialContent;
-      }
-    }
-  }, [initialContent]);
-
-  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
-    onChange(e.currentTarget.innerHTML);
-  };
-
-  // Handle paste to strip unwanted styles (background-color, color, font-family, etc.)
-  const handlePaste = (e: React.ClipboardEvent<HTMLDivElement>) => {
-    e.preventDefault();
-
-    // Get HTML content from clipboard
-    const html = e.clipboardData.getData('text/html');
-    const text = e.clipboardData.getData('text/plain');
-
-    if (html) {
-      // Create a temporary div to parse HTML
-      const temp = document.createElement('div');
-      temp.innerHTML = html;
-
-      // Remove all style attributes and clean up
-      const cleanHTML = (element: Element) => {
-        // Remove style attribute
-        element.removeAttribute('style');
-        // Remove class attribute
-        element.removeAttribute('class');
-        // Remove background/color inline styles from all elements
-        Array.from(element.children).forEach(child => {
-          cleanHTML(child);
-        });
-      };
-
-      Array.from(temp.children).forEach(child => cleanHTML(child));
-
-      // Also clean inline styles in text (spans with style)
-      temp.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
-      temp.querySelectorAll('[class]').forEach(el => el.removeAttribute('class'));
-
-      // Insert cleaned HTML
-      document.execCommand('insertHTML', false, temp.innerHTML);
-    } else if (text) {
-      // Fallback to plain text
-      document.execCommand('insertText', false, text);
-    }
-
-    // Trigger onChange
-    if (contentEditableRef.current) {
-      onChange(contentEditableRef.current.innerHTML);
-    }
-  };
-
-  return (
-    <div className="relative group/text">
-      {/* Editable text area */}
-      <div
-        ref={contentEditableRef}
-        contentEditable
-        suppressContentEditableWarning
-        onInput={handleInput}
-        onBlur={handleInput}
-        onPaste={handlePaste}
-        className="w-full bg-transparent border-none text-lg leading-relaxed text-slate-300 placeholder-slate-400 focus:outline-none focus:ring-0 min-h-[1.5em] font-serif pb-10"
-      />
-      {!initialContent && placeholder && (
-        <div className="absolute top-0 left-0 text-slate-500 text-lg font-serif pointer-events-none">
-          {placeholder}
-        </div>
-      )}
-
-      {/* Toolbar - positioned at bottom, shown on hover */}
-      <div className="absolute bottom-0 left-0 bg-slate-800 rounded-lg flex items-center gap-1 p-1 border border-white/10 opacity-0 group-hover/text:opacity-100 focus-within:opacity-100 transition-opacity z-10 shadow-xl">
-        <button
-          onMouseDown={(e) => { e.preventDefault(); document.execCommand('bold'); }}
-          className="p-1.5 hover:bg-white/10 rounded text-slate-300 hover:text-white transition-colors"
-          title="Negrita"
-        >
-          <Bold className="h-4 w-4" />
-        </button>
-        <button
-          onMouseDown={(e) => { e.preventDefault(); document.execCommand('italic'); }}
-          className="p-1.5 hover:bg-white/10 rounded text-slate-300 hover:text-white transition-colors"
-          title="Cursiva"
-        >
-          <Italic className="h-4 w-4" />
-        </button>
-        <button
-          onMouseDown={(e) => { e.preventDefault(); document.execCommand('underline'); }}
-          className="p-1.5 hover:bg-white/10 rounded text-slate-300 hover:text-white transition-colors"
-          title="Subrayado"
-        >
-          <Underline className="h-4 w-4" />
-        </button>
-        <div className="w-px h-4 bg-white/10 mx-1"></div>
-        {['😊', '😂', '❤️', '🔥', '👍', '🎉', '🚀'].map(emoji => (
-          <button
-            key={emoji}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              document.execCommand('insertText', false, emoji);
-            }}
-            className="p-1.5 hover:bg-white/10 rounded text-lg leading-none transition-colors"
-          >
-            {emoji}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-};
 
 export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) => {
   const { actions, state } = useAppStore();
@@ -494,119 +359,16 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
 
       {/* PREVIEW MODE - Render like BlogPostView */}
       {isPreview ? (
-        <div className="max-w-[1800px] mx-auto transition-colors animate-fade-in pb-20">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 px-6 md:px-10 py-10 relative">
-
-            {/* Left Sidebar - Actions Preview */}
-            <aside className="hidden lg:flex lg:col-span-1 flex-col items-center gap-6 sticky top-24 h-fit">
-              <div className="flex flex-col gap-4 bg-white/5 p-2 rounded-2xl border border-white/10 shadow-sm w-full items-center">
-                <div className="p-3 rounded-xl hover:bg-white/10 text-slate-400 flex flex-col items-center gap-1 cursor-not-allowed opacity-50">
-                  <Heart className="h-5 w-5" />
-                  <span className="text-xs font-bold mt-1 block">0</span>
-                </div>
-                <div className="p-3 rounded-xl hover:bg-white/10 text-slate-400 flex flex-col items-center gap-1 cursor-not-allowed opacity-50">
-                  <MessageCircle className="h-5 w-5" />
-                  <span className="text-xs font-bold mt-1 block">0</span>
-                </div>
-                <div className="p-3 rounded-xl hover:bg-white/10 text-slate-400 flex flex-col items-center gap-1 cursor-not-allowed opacity-50">
-                  <Share2 className="h-5 w-5" />
-                </div>
-                <div className="p-3 rounded-xl hover:bg-white/10 text-slate-400 flex flex-col items-center gap-1 cursor-not-allowed opacity-50">
-                  <Bookmark className="h-5 w-5" />
-                </div>
-              </div>
-            </aside>
-
-            {/* Center Column - Article Content */}
-            <article className="lg:col-span-8 lg:px-8">
-              <div className="mb-10 text-center lg:text-left">
-                <span className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-400 text-xs font-bold uppercase tracking-wider border border-rose-500/20">
-                  {category || 'Sin categoría'}
-                </span>
-                <span className="text-slate-500 text-sm mx-2">•</span>
-                <span className="text-slate-400 text-sm font-medium inline-flex items-center gap-1">
-                  {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-                </span>
-              </div>
-
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-8 font-display">
-                {title || 'Sin Título'}
-              </h1>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-between gap-6 border-y border-white/10 py-6 mb-8">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full overflow-hidden ring-2 ring-white/10">
-                    <img src={state.user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100'} alt="Author" className="h-full w-full object-cover" />
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-1.5">
-                      <h3 className="font-bold text-lg text-white leading-none">{state.user?.name || 'Usuario'}</h3>
-                      <CheckCircle2 className="h-4 w-4 text-rose-500 fill-rose-500/20" />
-                    </div>
-                    <span className="text-xs text-slate-400 font-medium">Vista previa</span>
-                  </div>
-                </div>
-
-                {tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {tags.map(tag => (
-                      <span key={tag} className="text-sm text-slate-400 italic">#{tag}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Cover Image */}
-              {coverImage && (
-                <div className="mb-12 rounded-3xl overflow-hidden aspect-video shadow-2xl">
-                  <img src={coverImage} alt={title} className="w-full h-full object-cover" />
-                </div>
-              )}
-
-              {/* Content */}
-              <div className="prose prose-lg prose-invert max-w-none text-slate-300 leading-loose">
-                {blocks.map((block) => (
-                  <div key={block.id} className="my-6">
-                    {block.type === 'text' && (
-                      <div
-                        className="text-lg leading-relaxed font-serif whitespace-pre-wrap"
-                        dangerouslySetInnerHTML={{ __html: linkifyText(block.content) }}
-                      />
-                    )}
-                    {block.type === 'image' && block.content && (
-                      <div className="rounded-xl overflow-hidden my-8 shadow-lg">
-                        <img src={block.content} alt="Content" className="w-full" />
-                      </div>
-                    )}
-                    {block.type === 'video' && getYoutubeId(block.content) && (
-                      <div className="aspect-video rounded-xl overflow-hidden bg-black shadow-lg my-8">
-                        <iframe
-                          width="100%"
-                          height="100%"
-                          src={`https://www.youtube.com/embed/${getYoutubeId(block.content)}`}
-                          title="YouTube video player"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          className="border-none"
-                        ></iframe>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </article>
-
-            {/* Right Sidebar - Related Preview */}
-            <aside className="hidden lg:block lg:col-span-3 sticky top-24 h-fit">
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
-                <Eye className="h-8 w-8 text-rose-500 mx-auto mb-3" />
-                <h4 className="font-bold text-white mb-2">Vista Previa</h4>
-                <p className="text-sm text-slate-400">Este es cómo se verá tu artículo cuando se publique.</p>
-              </div>
-            </aside>
-
-          </div>
-        </div>
+        <ArticlePreview
+          title={title}
+          category={category}
+          tags={tags}
+          coverImage={coverImage}
+          blocks={blocks}
+          user={state.user}
+          linkifyText={linkifyText}
+          getYoutubeId={getYoutubeId}
+        />
       ) : (
         /* EDIT MODE */
         <main className="flex-1 max-w-[1600px] w-full mx-auto p-6 md:p-8 pb-28 lg:pb-8 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-10">

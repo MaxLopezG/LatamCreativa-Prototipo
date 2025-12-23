@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
 import { useCreateProject, useProject, useUpdateProject } from '../../hooks/useFirebase';
+import { GalleryItemCard, GalleryItem, MediaUploader } from './components';
 
 interface CreatePortfolioViewProps {
   onBack: () => void;
@@ -66,19 +67,16 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
   const imgRef = useRef<HTMLImageElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
-  interface GalleryItem {
-    id: string;
-    file?: File; // Optional now, as YouTube items don't have files
-    url?: string; // For YouTube items
-    preview: string;
-    caption: string;
-    type: 'image' | 'video' | 'youtube';
-  }
+  // GalleryItem type is now imported from './components'
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
 
   // YouTube Input State
   const [isAddingYoutube, setIsAddingYoutube] = useState(false);
   const [youtubeLink, setYoutubeLink] = useState('');
+
+  // Sketchfab Input State
+  const [isAddingSketchfab, setIsAddingSketchfab] = useState(false);
+  const [sketchfabLink, setSketchfabLink] = useState('');
 
   // Publishing State
   const [publishStatus, setPublishStatus] = useState<'draft' | 'published' | 'scheduled'>('published');
@@ -340,6 +338,43 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
     setIsAddingYoutube(false);
   };
 
+  // --- Helpers: Sketchfab ---
+  const getSketchfabModelId = (url: string): string | null => {
+    if (!url) return null;
+
+    // Pattern: Extract the ID from common Sketchfab URL formats
+    // Supports:
+    // - https://sketchfab.com/3d-models/model-name-{ID}
+    // - https://sketchfab.com/models/{ID}
+    // - https://sketchfab.com/models/{ID}/embed
+    // Note: .*- is greedy, so it captures everything up to the LAST hyphen before the ID
+    const pattern = /sketchfab\.com\/(?:3d-models\/.*-|models\/)([a-zA-Z0-9]+)/i;
+    const match = url.match(pattern);
+    if (match && match[1]) return match[1];
+
+    return null;
+  };
+
+  const handleAddSketchfab = () => {
+    const modelId = getSketchfabModelId(sketchfabLink);
+    if (!modelId) {
+      actions.showToast('Enlace de Sketchfab inválido. Usa el formato: sketchfab.com/3d-models/nombre-{id}', 'error');
+      return;
+    }
+
+    const newItem: GalleryItem = {
+      id: Math.random().toString(36).substr(2, 9),
+      url: sketchfabLink,
+      preview: `https://media.sketchfab.com/models/${modelId}/thumbnails/7c9a634f7a1c41dbae28c7e1a591d42e/a2a63d3104434ad9b68f7abac59f9ba9.jpeg`, // Generic placeholder - actual thumbnail requires API
+      caption: '',
+      type: 'sketchfab'
+    };
+
+    setGalleryItems(prev => [...prev, newItem]);
+    setSketchfabLink('');
+    setIsAddingSketchfab(false);
+  };
+
   const removeGalleryItem = (id: string) => {
     setGalleryItems(prev => prev.filter(item => item.id !== id));
   };
@@ -581,131 +616,31 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
             <div className="space-y-8">
               {/* Existing Items - Vertical Stack */}
               {galleryItems.map((item, index) => (
-                <div key={item.id} className="bg-[#0A0A0C] border border-white/[0.06] rounded-2xl overflow-hidden animate-fade-in group hover:border-white/10 transition-colors">
-                  <div className="relative bg-black/50 min-h-[400px] flex items-center justify-center p-4">
-                    <img src={item.preview} alt={`Gallery ${index}`} className="max-w-full max-h-[600px] object-contain shadow-2xl" />
-
-                    {item.type === 'youtube' && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-xl">
-                          <svg className="w-8 h-8 text-white fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Item Actions (Delete) */}
-                    <button
-                      onClick={() => removeGalleryItem(item.id)}
-                      className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-red-500 text-white rounded-lg backdrop-blur-md transition-all opacity-0 group-hover:opacity-100"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-
-                    {/* Item Actions (Reorder) */}
-                    <div className="absolute top-4 right-16 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                      <button
-                        onClick={() => moveGalleryItem(index, 'up')}
-                        disabled={index === 0}
-                        className="p-1.5 bg-black/50 hover:bg-amber-500 text-white rounded-lg backdrop-blur-md disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6" /></svg>
-                      </button>
-                      <button
-                        onClick={() => moveGalleryItem(index, 'down')}
-                        disabled={index === galleryItems.length - 1}
-                        className="p-1.5 bg-black/50 hover:bg-amber-500 text-white rounded-lg backdrop-blur-md disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-                      </button>
-                    </div>
-
-                    <span className="absolute top-4 left-4 bg-black/50 text-white text-xs font-bold px-3 py-1 rounded backdrop-blur-sm border border-white/10 flex items-center gap-2">
-                      {item.type === 'youtube' ? <span className="text-red-500">YouTube</span> : 'Imagen'} {index + 1}
-                    </span>
-                  </div>
-
-                  {/* Caption Input */}
-                  <div className="p-6 bg-[#0E0E10] border-t border-white/[0.06]">
-                    <div className="flex items-start gap-4">
-                      <div className="mt-1">
-                        <div className="w-8 h-8 rounded-full bg-white/[0.05] flex items-center justify-center text-slate-500 font-bold text-xs">
-                          Aa
-                        </div>
-                      </div>
-                      <div className="flex-1 space-y-2">
-                        <textarea
-                          value={item.caption}
-                          onChange={(e) => updateGalleryCaption(item.id, e.target.value)}
-                          placeholder="Escribe una descripción, historia o contexto para esta imagen..."
-                          className="w-full bg-transparent text-slate-300 placeholder-slate-600 text-sm focus:outline-none resize-none leading-relaxed border-none focus:ring-0 p-0"
-                          rows={2}
-                        />
-                        <div className="h-px bg-white/[0.06] w-full" />
-                        <div className="flex justify-end">
-                          <span className="text-[10px] text-slate-600 uppercase font-bold tracking-widest">{item.caption.length}/500</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <GalleryItemCard
+                  key={item.id}
+                  item={item}
+                  index={index}
+                  totalItems={galleryItems.length}
+                  onRemove={removeGalleryItem}
+                  onMove={moveGalleryItem}
+                  onUpdateCaption={updateGalleryCaption}
+                />
               ))}
 
-              {/* Add Button Area - Support for Images and YouTube */}
-              {!isAddingYoutube ? (
-                <div className="border-2 border-dashed border-white/[0.06] rounded-2xl p-8 flex flex-col items-center justify-center gap-6 hover:bg-white/[0.01] transition-colors">
-                  <div className="flex flex-col items-center justify-center gap-2 text-center pointer-events-none">
-                    <div className="p-4 bg-white/[0.03] rounded-full text-slate-500">
-                      <Upload className="h-6 w-6" />
-                    </div>
-                    <h4 className="text-sm font-bold text-slate-400">Añadir recursos multimedia</h4>
-                    <p className="text-xs text-slate-600">Imágenes (JPG, PNG) o Video ID (YouTube)</p>
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => galleryInputRef.current?.click()}
-                      className="px-5 py-2.5 bg-white text-black rounded-lg font-bold text-sm hover:bg-slate-200 transition-colors"
-                    >
-                      Subir Imágenes
-                    </button>
-                    <span className="text-sm text-slate-600 font-bold">O</span>
-                    <button
-                      onClick={() => setIsAddingYoutube(true)}
-                      className="px-5 py-2.5 bg-[#FF0000]/10 text-[#FF0000] border border-[#FF0000]/20 rounded-lg font-bold text-sm hover:bg-[#FF0000]/20 transition-colors flex items-center gap-2"
-                    >
-                      <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M21.582 5.184c-.596-2.062-2.316-3.832-4.482-4.148-3.085-.45-11.115-.45-14.2 0-2.166.316-3.886 2.086-4.482 4.148C-1.808 10.375-1.808 19.625.582 24.816c.596 2.062 2.316 3.832 4.482 4.148 3.085.45 11.115.45 14.2 0 2.166-.316 3.886-2.086 4.482-4.148 2.39-5.191 2.39-14.441 0-19.632zM10 20v-10l8.333 5L10 20z" transform="scale(0.8) translate(5,2)" /></svg>
-                      Video de YouTube
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="border border-white/[0.06] bg-[#0A0A0C] rounded-2xl p-8 flex flex-col items-center justify-center gap-4 animate-fade-in">
-                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                    <svg className="w-5 h-5 text-red-500 fill-current" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 4-8 4z" /></svg>
-                    Añadir video de YouTube
-                  </h4>
-                  <div className="flex gap-2 w-full max-w-lg">
-                    <input
-                      type="text"
-                      value={youtubeLink}
-                      onChange={(e) => setYoutubeLink(e.target.value)}
-                      placeholder="Pega el enlace aquí (ej: https://www.youtube.com/watch?v=...)"
-                      className="flex-1 bg-[#030304] border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-red-500 transition-colors placeholder-slate-600"
-                      autoFocus
-                      onKeyDown={(e) => e.key === 'Enter' && handleAddYoutube()}
-                    />
-                    <button
-                      onClick={handleAddYoutube}
-                      className="px-6 py-2 bg-white text-black rounded-lg font-bold text-sm hover:bg-slate-200"
-                    >
-                      Añadir
-                    </button>
-                  </div>
-                  <button onClick={() => setIsAddingYoutube(false)} className="text-xs text-slate-500 hover:text-white underline">
-                    Cancelar
-                  </button>
-                </div>
-              )}
+              {/* Media Uploader Component */}
+              <MediaUploader
+                mode={isAddingYoutube ? 'youtube' : isAddingSketchfab ? 'sketchfab' : 'none'}
+                youtubeLink={youtubeLink}
+                sketchfabLink={sketchfabLink}
+                onYoutubeLinkChange={setYoutubeLink}
+                onSketchfabLinkChange={setSketchfabLink}
+                onUploadClick={() => galleryInputRef.current?.click()}
+                onYoutubeClick={() => setIsAddingYoutube(true)}
+                onSketchfabClick={() => setIsAddingSketchfab(true)}
+                onAddYoutube={handleAddYoutube}
+                onAddSketchfab={handleAddSketchfab}
+                onCancel={() => { setIsAddingYoutube(false); setIsAddingSketchfab(false); }}
+              />
 
               <input ref={galleryInputRef} type="file" multiple accept="image/*" onChange={handleGallerySelect} className="hidden" />
             </div>

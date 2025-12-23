@@ -142,8 +142,18 @@ service cloud.firestore {
       // Only authenticated users can create articles
       allow create: if isAuthenticated();
       
-      // Only the author can update or delete their article
-      allow update, delete: if isAuthor();
+      // Update rules:
+      // - Author can update anything on their article
+      // - Any authenticated user can update view/like/comment counters
+      allow update: if isAuthor() || (
+        isAuthenticated() && 
+        // Only allow updates to these specific stat fields
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['views', 'likes', 'comments'])
+      );
+      
+      // Only the author can delete their article
+      allow delete: if isAuthor();
       
       // --- Likes Subcollection ---
       match /likes/{likeUserId} {
@@ -156,11 +166,22 @@ service cloud.firestore {
       match /comments/{commentId} {
         allow read: if true;
         allow create: if isAuthenticated();
-        allow update: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+        // Comment author can update their comment, OR anyone can update likes count
+        allow update: if isAuthenticated() && (
+          resource.data.authorId == request.auth.uid ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+        );
         allow delete: if isAuthenticated() && (
           resource.data.authorId == request.auth.uid ||
           get(/databases/$(database)/documents/articles/$(articleId)).data.authorId == request.auth.uid
         );
+        
+        // --- Likes on Comments Subcollection ---
+        match /likes/{likeUserId} {
+          allow read: if true;
+          allow create, delete: if isAuthenticated() && request.auth.uid == likeUserId;
+          allow update: if false;
+        }
       }
     }
     

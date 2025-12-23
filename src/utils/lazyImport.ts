@@ -1,9 +1,9 @@
 import React, { ComponentType, LazyExoticComponent } from 'react';
 
 /**
- * A wrapper for React.lazy that reloads the page once if the import fails.
- * This is useful for handling "ChunkLoadError" or "Failed to fetch dynamically imported module" errors
- * that occur when a new version of the app is deployed and the old chunks are no longer available.
+ * Wrapper para React.lazy que recarga la página una vez si el import falla.
+ * Útil para manejar errores "ChunkLoadError" o "Failed to fetch dynamically imported module"
+ * que ocurren cuando se despliega una nueva versión y los chunks antiguos ya no están disponibles.
  */
 export const lazyImport = <T extends ComponentType<any>>(
     factory: () => Promise<{ default: T }>
@@ -17,15 +17,15 @@ export const lazyImport = <T extends ComponentType<any>>(
             );
 
             if (!pageHasAlreadyBeenForceRefreshed) {
-                // Mark that we are forcing a refresh so we don't do it infinitely
+                // Marcar que estamos forzando un refresh para no hacerlo infinitamente
                 window.sessionStorage.setItem('page-has-been-force-refreshed', 'true');
                 window.location.reload();
 
-                // Return a promise that never resolves (since we are reloading) to prevent React from throwing the error immediately
+                // Retornar una promesa que nunca resuelve (ya que estamos recargando) para evitar que React lance el error inmediatamente
                 return new Promise(() => { });
             }
 
-            // If we already refreshed and it still fails, throw the error
+            // Si ya recargamos y aún falla, lanzar el error
             throw error;
         }
     });

@@ -1,3 +1,11 @@
+/**
+ * Operaciones CRUD de Artículos
+ * 
+ * Módulo que maneja las operaciones Create, Read, Update, Delete
+ * para artículos del blog almacenados en Firestore.
+ * 
+ * @module services/articles/crud
+ */
 import {
     collection,
     query,
@@ -14,32 +22,31 @@ import {
     increment,
     QueryDocumentSnapshot,
     DocumentData,
-    setDoc,
     documentId
 } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
-import { ArticleItem, BlogComment, Notification } from '../../types';
-import { PaginatedResult, withTimeout, sanitizeData } from './utils';
-import { usersService } from './users';
-import { notificationsService } from './notifications';
-import { storageService } from './storage';
+import { db } from '../../../lib/firebase';
+import { ArticleItem, Notification } from '../../../types';
+import { PaginatedResult, withTimeout, sanitizeData } from '../utils';
+import { usersService } from '../users';
+import { notificationsService } from '../notifications';
+import { storageService } from '../storage';
 
-export const articlesService = {
+export const articlesCrud = {
+    /**
+     * Obtiene artículos paginados.
+     * 
+     * @param lastDoc - Último documento de la página anterior (null para primera página)
+     * @param pageSize - Cantidad de artículos por página
+     * @param sortField - Campo para ordenar ('date' o 'likes')
+     * @param sortDirection - Dirección del ordenamiento
+     * @returns Resultado paginado con datos, cursor y flag hasMore
+     */
     getArticles: async (lastDoc: QueryDocumentSnapshot<DocumentData> | null = null, pageSize = 10, sortField: 'date' | 'likes' = 'date', sortDirection: 'desc' | 'asc' = 'desc'): Promise<PaginatedResult<ArticleItem>> => {
         try {
-            let q = query(
-                collection(db, 'articles'),
-                orderBy(sortField, sortDirection),
-                limit(pageSize)
-            );
+            let q = query(collection(db, 'articles'), orderBy(sortField, sortDirection), limit(pageSize));
 
             if (lastDoc) {
-                q = query(
-                    collection(db, 'articles'),
-                    orderBy(sortField, sortDirection),
-                    startAfter(lastDoc),
-                    limit(pageSize)
-                );
+                q = query(collection(db, 'articles'), orderBy(sortField, sortDirection), startAfter(lastDoc), limit(pageSize));
             }
 
             const snapshot = await getDocs(q);
@@ -56,11 +63,19 @@ export const articlesService = {
         }
     },
 
+    /**
+     * Crea un nuevo artículo.
+     * 
+     * Sube la imagen de portada (si existe) y notifica a los seguidores del autor.
+     * 
+     * @param articleData - Datos del artículo
+     * @param imageFile - Archivo de imagen de portada (opcional)
+     * @returns ID del artículo creado
+     */
     createArticle: async (articleData: Omit<ArticleItem, 'id'>, imageFile?: File): Promise<string> => {
         try {
             let imageUrl = articleData.image;
 
-            // 1. Upload Image if provided (with compression)
             if (imageFile) {
                 try {
                     const imagePath = `articles/${Date.now()}_${imageFile.name}`;
@@ -74,7 +89,6 @@ export const articlesService = {
                 }
             }
 
-            // 2. Save Document
             const finalData = sanitizeData({
                 ...articleData,
                 image: imageUrl,
@@ -82,7 +96,6 @@ export const articlesService = {
                 likes: 0,
                 comments: 0,
                 views: 0,
-                // Publication status - default to 'published' for backward compatibility
                 status: articleData.status || 'published',
                 scheduledAt: articleData.scheduledAt || null
             });
@@ -93,7 +106,7 @@ export const articlesService = {
                 "Saving article timed out (7s). Please check your connection."
             );
 
-            // 3. Notify Followers
+            // Notify Followers
             try {
                 if (articleData.authorId) {
                     const followers = await usersService.getFollowers(articleData.authorId);
@@ -124,11 +137,17 @@ export const articlesService = {
         }
     },
 
+    /**
+     * Actualiza un artículo existente.
+     * 
+     * @param articleId - ID del artículo
+     * @param articleData - Datos a actualizar
+     * @param imageFile - Nueva imagen de portada (opcional)
+     */
     updateArticle: async (articleId: string, articleData: Partial<ArticleItem>, imageFile?: File): Promise<void> => {
         try {
             let imageUrl = articleData.image;
 
-            // 1. Upload New Image if provided (with compression)
             if (imageFile) {
                 try {
                     const imagePath = `articles/${Date.now()}_${imageFile.name}`;
@@ -138,12 +157,8 @@ export const articlesService = {
                 }
             }
 
-            // 2. Update Document
             const docRef = doc(db, 'articles', articleId);
-            const finalData = sanitizeData({
-                ...articleData,
-                image: imageUrl
-            });
+            const finalData = sanitizeData({ ...articleData, image: imageUrl });
 
             await updateDoc(docRef, finalData);
         } catch (error) {
@@ -152,13 +167,15 @@ export const articlesService = {
         }
     },
 
+    /**
+     * Obtiene los artículos más recientes.
+     * 
+     * @param limitCount - Cantidad máxima (default: 4)
+     * @returns Array de artículos
+     */
     getRecentArticles: async (limitCount = 4): Promise<ArticleItem[]> => {
         try {
-            const q = query(
-                collection(db, 'articles'),
-                orderBy('date', 'desc'),
-                limit(limitCount)
-            );
+            const q = query(collection(db, 'articles'), orderBy('date', 'desc'), limit(limitCount));
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ArticleItem));
         } catch (error) {
@@ -167,75 +184,67 @@ export const articlesService = {
         }
     },
 
+    /**
+     * Obtiene artículos de un usuario (soporta nombre e ID).
+     * 
+     * Realiza queries duales para compatibilidad con datos legacy.
+     * 
+     * @param authorName - Nombre del autor
+     * @param authorId - ID del autor (opcional pero recomendado)
+     * @returns Array de artículos ordenados por fecha
+     */
     getUserArticles: async (authorName: string, authorId?: string): Promise<ArticleItem[]> => {
         try {
-            // Strategy: Dual Query to support old (Name-only) and new (ID-based) items
             const queries = [];
 
-            // 1. Query by author name (Legacy/Fallback)
             if (authorName) {
-                queries.push(query(
-                    collection(db, 'articles'),
-                    where('author', '==', authorName),
-                    orderBy('date', 'desc')
-                ));
+                queries.push(query(collection(db, 'articles'), where('author', '==', authorName), orderBy('date', 'desc')));
             }
 
-            // 2. Query by authorId (New Robust Method)
             if (authorId) {
-                queries.push(query(
-                    collection(db, 'articles'),
-                    where('authorId', '==', authorId),
-                    orderBy('date', 'desc')
-                ));
+                queries.push(query(collection(db, 'articles'), where('authorId', '==', authorId), orderBy('date', 'desc')));
             }
 
             if (queries.length === 0) return [];
 
             const snapshots = await Promise.all(queries.map(q => getDocs(q)));
 
-            // Merge and Deduplicate
             const articlesMap = new Map<string, ArticleItem>();
-
             snapshots.forEach(snap => {
                 snap.forEach(doc => {
                     articlesMap.set(doc.id, { id: doc.id, ...doc.data() as object } as ArticleItem);
                 });
             });
 
-            // Convert back to array and sort
-            return Array.from(articlesMap.values()).sort((a, b) => {
-                return new Date(b.date).getTime() - new Date(a.date).getTime();
-            });
-
+            return Array.from(articlesMap.values()).sort((a, b) =>
+                new Date(b.date).getTime() - new Date(a.date).getTime()
+            );
         } catch (error) {
             console.error("Error fetching user articles:", error);
             throw error;
         }
     },
 
+    /**
+     * Obtiene artículos por categorías.
+     * 
+     * Soporta hasta 10 categorías (límite de Firestore 'in').
+     * 
+     * @param categories - Array de categorías
+     * @param lastDoc - Cursor de paginación
+     * @param limitCount - Cantidad por página
+     * @returns Resultado paginado
+     */
     getArticlesByCategories: async (categories: string[], lastDoc: QueryDocumentSnapshot<DocumentData> | null = null, limitCount = 10): Promise<PaginatedResult<ArticleItem>> => {
         try {
             if (!categories || categories.length === 0) return { data: [], lastDoc: null, hasMore: false };
 
-            // Firestore 'in' query supports max 10 values
             const limitedCategories = categories.slice(0, 10);
 
-            let q = query(
-                collection(db, 'articles'),
-                where('category', 'in', limitedCategories),
-                orderBy('date', 'desc'), // Requires composite index usually
-                limit(limitCount)
-            );
+            let q = query(collection(db, 'articles'), where('category', 'in', limitedCategories), orderBy('date', 'desc'), limit(limitCount));
 
             if (lastDoc) {
-                q = query(
-                    collection(db, 'articles'),
-                    where('category', 'in', limitedCategories),
-                    orderBy('date', 'desc'),
-                    startAfter(lastDoc),
-                    limit(limitCount)
-                );
+                q = query(collection(db, 'articles'), where('category', 'in', limitedCategories), orderBy('date', 'desc'), startAfter(lastDoc), limit(limitCount));
             }
 
             const snapshot = await getDocs(q);
@@ -248,31 +257,24 @@ export const articlesService = {
             };
         } catch (error) {
             console.error("Error fetching articles by categories:", error);
-            return {
-                data: [],
-                lastDoc: null,
-                hasMore: false
-            };
+            return { data: [], lastDoc: null, hasMore: false };
         }
     },
 
+    /**
+     * Obtiene artículos por tag.
+     * 
+     * @param tag - Tag a buscar
+     * @param lastDoc - Cursor de paginación
+     * @param limitCount - Cantidad por página
+     * @returns Resultado paginado
+     */
     getArticlesByTag: async (tag: string, lastDoc: QueryDocumentSnapshot<DocumentData> | null = null, limitCount = 10): Promise<PaginatedResult<ArticleItem>> => {
         try {
-            let q = query(
-                collection(db, 'articles'),
-                where('tags', 'array-contains', tag),
-                orderBy('date', 'desc'),
-                limit(limitCount)
-            );
+            let q = query(collection(db, 'articles'), where('tags', 'array-contains', tag), orderBy('date', 'desc'), limit(limitCount));
 
             if (lastDoc) {
-                q = query(
-                    collection(db, 'articles'),
-                    where('tags', 'array-contains', tag),
-                    orderBy('date', 'desc'),
-                    startAfter(lastDoc),
-                    limit(limitCount)
-                );
+                q = query(collection(db, 'articles'), where('tags', 'array-contains', tag), orderBy('date', 'desc'), startAfter(lastDoc), limit(limitCount));
             }
 
             const snapshot = await getDocs(q);
@@ -289,10 +291,17 @@ export const articlesService = {
         }
     },
 
+    /**
+     * Obtiene múltiples artículos por sus IDs.
+     * 
+     * Maneja el límite de 10 items de Firestore dividiendo en chunks.
+     * 
+     * @param ids - Array de IDs
+     * @returns Array de artículos encontrados
+     */
     getArticlesByIds: async (ids: string[]): Promise<ArticleItem[]> => {
         if (!ids || ids.length === 0) return [];
 
-        // Firestore 'in' query limit is 10
         const chunks = [];
         for (let i = 0; i < ids.length; i += 10) {
             chunks.push(ids.slice(i, i + 10));
@@ -300,10 +309,7 @@ export const articlesService = {
 
         try {
             const results = await Promise.all(chunks.map(async chunk => {
-                const q = query(
-                    collection(db, 'articles'),
-                    where(documentId(), 'in', chunk)
-                );
+                const q = query(collection(db, 'articles'), where(documentId(), 'in', chunk));
                 const snapshot = await getDocs(q);
                 return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ArticleItem));
             }));
@@ -311,26 +317,35 @@ export const articlesService = {
             return results.flat();
         } catch (error) {
             console.error("Error fetching articles by IDs:", error);
-            // Return empty rules out partial failures? For now:
             return [];
         }
     },
 
+    /**
+     * Obtiene un artículo por su ID.
+     * 
+     * @param articleId - ID del artículo
+     * @returns El artículo o null si no existe
+     */
     getArticle: async (articleId: string): Promise<ArticleItem | null> => {
         try {
             const docRef = doc(db, 'articles', articleId);
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 return { id: docSnap.id, ...docSnap.data() } as ArticleItem;
-            } else {
-                return null;
             }
+            return null;
         } catch (error) {
             console.error("Error fetching article:", error);
             throw error;
         }
     },
 
+    /**
+     * Elimina un artículo.
+     * 
+     * @param articleId - ID del artículo a eliminar
+     */
     deleteArticle: async (articleId: string): Promise<void> => {
         try {
             const docRef = doc(db, 'articles', articleId);
@@ -342,144 +357,16 @@ export const articlesService = {
     },
 
     /**
-     * Increment article view count
+     * Incrementa el contador de vistas de un artículo.
+     * 
+     * @param articleId - ID del artículo
      */
     incrementArticleViews: async (articleId: string): Promise<void> => {
         try {
             const articleRef = doc(db, 'articles', articleId);
-            await updateDoc(articleRef, {
-                views: increment(1)
-            });
+            await updateDoc(articleRef, { views: increment(1) });
         } catch (error) {
             console.error("Error incrementing article views:", error);
-        }
-    },
-
-    // --- Likes ---
-    getArticleLikeStatus: async (articleId: string, userId: string): Promise<boolean> => {
-        try {
-            const docRef = doc(db, 'articles', articleId, 'likes', userId);
-            const docSnap = await getDoc(docRef);
-            return docSnap.exists();
-        } catch (error) {
-            console.error("Error checking like status:", error);
-            return false;
-        }
-    },
-
-    toggleArticleLike: async (articleId: string, userId: string): Promise<boolean> => {
-        try {
-            const likeRef = doc(db, 'articles', articleId, 'likes', userId);
-            const articleRef = doc(db, 'articles', articleId);
-            const likeSnap = await getDoc(likeRef);
-
-            if (likeSnap.exists()) {
-                // Unlike
-                await deleteDoc(likeRef);
-                await updateDoc(articleRef, { likes: increment(-1) });
-                return false;
-            } else {
-                // Like
-                await setDoc(likeRef, { date: new Date().toISOString() });
-                await updateDoc(articleRef, { likes: increment(1) });
-                return true;
-            }
-        } catch (error) {
-            console.error("Error toggling like:", error);
-            throw error;
-        }
-    },
-
-    // --- Comments ---
-    getComments: async (articleId: string): Promise<BlogComment[]> => {
-        try {
-            const q = query(
-                collection(db, 'articles', articleId, 'comments'),
-                orderBy('date', 'desc')
-            );
-            const snapshot = await getDocs(q);
-            return snapshot.docs.map(doc => {
-                const data = doc.data();
-                const date = new Date(data.date);
-                const now = new Date();
-                const diffInHours = Math.abs(now.getTime() - date.getTime()) / 36e5;
-                let timeAgo = 'Hace un momento';
-                if (diffInHours >= 24) timeAgo = `Hace ${Math.floor(diffInHours / 24)} días`;
-                else if (diffInHours >= 1) timeAgo = `Hace ${Math.floor(diffInHours)} horas`;
-
-                return {
-                    id: doc.id,
-                    ...data,
-                    timeAgo
-                } as BlogComment;
-            });
-        } catch (error) {
-            console.error("Error fetching comments:", error);
-            return [];
-        }
-    },
-
-    addComment: async (articleId: string, commentData: Omit<BlogComment, 'id' | 'timeAgo' | 'likes' | 'replies' | 'date'>): Promise<void> => {
-        try {
-            // Sanitize data to remove undefined values (especially parentId)
-            const finalComment = sanitizeData({
-                ...commentData,
-                date: new Date().toISOString(),
-                likes: 0
-            });
-
-            await addDoc(collection(db, 'articles', articleId, 'comments'), finalComment);
-
-            try {
-                const articleRef = doc(db, 'articles', articleId);
-                await updateDoc(articleRef, {
-                    comments: increment(1)
-                });
-            } catch (updateError) {
-                console.warn("Could not update comment count (likely static article):", updateError);
-                // We ignore this error so the comment is still "posted" from the user's perspective
-            }
-        } catch (error) {
-            console.error("Error adding comment:", error);
-            throw error;
-        }
-    },
-
-    likeComment: async (articleId: string, commentId: string): Promise<void> => {
-        try {
-            const commentRef = doc(db, 'articles', articleId, 'comments', commentId);
-            await updateDoc(commentRef, {
-                likes: increment(1)
-            });
-        } catch (error) {
-            console.error("Error liking comment:", error);
-            throw error;
-        }
-    },
-
-    updateComment: async (articleId: string, commentId: string, content: string): Promise<void> => {
-        try {
-            const commentRef = doc(db, 'articles', articleId, 'comments', commentId);
-            await updateDoc(commentRef, {
-                content: content,
-                isEdited: true
-            });
-        } catch (error) {
-            console.error("Error updating comment:", error);
-            throw error;
-        }
-    },
-
-    deleteComment: async (articleId: string, commentId: string): Promise<void> => {
-        try {
-            await deleteDoc(doc(db, 'articles', articleId, 'comments', commentId));
-            const articleRef = doc(db, 'articles', articleId);
-            await updateDoc(articleRef, {
-                comments: increment(-1)
-            });
-        } catch (error) {
-            console.error("Error deleting comment:", error);
-            throw error;
         }
     }
 };

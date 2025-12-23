@@ -5,24 +5,50 @@ import { PortfolioCard } from '../../../components/cards/PortfolioCard';
 import { BlogCard } from '../../../components/cards/BlogCard';
 import { EducationCard } from '../../../components/cards/EducationCard';
 import { AssetCard } from '../../../components/cards/AssetCard';
+import { PortfolioItem, ArticleItem, CourseItem, AssetItem, CollectionItem } from '../../../types';
 
+/** Identificadores válidos para las tabs del perfil */
+type ProfileTab = 'portfolio' | 'courses' | 'assets' | 'blog' | 'saved' | 'collections' | 'membership';
+
+/** Tipo unión para cualquier item que puede aparecer en la tab "guardados" */
+type SavedItem = PortfolioItem | ArticleItem | CourseItem | AssetItem;
+
+/**
+ * Props para el componente UserProfileTabs
+ */
 interface UserProfileTabsProps {
-    activeTab: 'portfolio' | 'courses' | 'assets' | 'blog' | 'saved' | 'collections' | 'membership';
-    setActiveTab: (tab: any) => void;
+    /** Tab activa actualmente */
+    activeTab: ProfileTab;
+    /** Callback para cambiar la tab activa */
+    setActiveTab: (tab: ProfileTab) => void;
+    /** Si está viendo su propio perfil (habilita acciones de editar/eliminar) */
     isOwnProfile: boolean;
-    userPortfolio: any[];
-    userCourses: any[];
-    userAssets: any[];
-    userArticles: any[];
-    savedItems: any[];
-    userCollections: any[];
+    /** Proyectos del portafolio del usuario */
+    userPortfolio: PortfolioItem[];
+    /** Cursos publicados por el usuario */
+    userCourses: CourseItem[];
+    /** Assets publicados por el usuario */
+    userAssets: AssetItem[];
+    /** Artículos del blog del usuario */
+    userArticles: ArticleItem[];
+    /** Items guardados/marcados por el usuario */
+    savedItems: SavedItem[];
+    /** Colecciones del usuario */
+    userCollections: CollectionItem[];
+    /** Si los proyectos están cargando */
     projectsLoading: boolean;
+    /** Mensaje de error cuando falla la carga de artículos */
     articlesError: string | null;
+    /** Callback para eliminar un proyecto */
     onDeleteProject: (id: string) => void;
+    /** Callback para guardar/marcar un item */
     onSaveItem: (id: string, image: string, type?: string) => void;
+    /** Callback para acciones de crear (curso, asset) */
     onCreateAction: (type: string) => void;
+    /** Callback para abrir el modal de crear publicación */
     onOpenCreatePostModal: () => void;
 }
+
 
 export const UserProfileTabs: React.FC<UserProfileTabsProps> = ({
     activeTab,

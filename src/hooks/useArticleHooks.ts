@@ -311,11 +311,11 @@ export const useAddComment = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const add = async (articleId: string, data: Omit<BlogComment, 'id' | 'timeAgo' | 'likes' | 'replies' | 'date'>) => {
+    const add = async (articleId: string, commentData: { authorId: string; authorName: string; authorUsername?: string; authorAvatar: string; text: string; parentId?: string }) => {
         setLoading(true);
         setError(null);
         try {
-            await articlesService.addComment(articleId, data);
+            await articlesService.addComment(articleId, commentData);
         } catch (err: any) {
             setError(err.message);
             throw err;
@@ -327,16 +327,18 @@ export const useAddComment = () => {
     return { add, loading, error };
 };
 
+
 // --- Hook for Comment Actions ---
 export const useCommentActions = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const like = async (articleId: string, commentId: string) => {
+    const toggleLike = async (articleId: string, commentId: string, userId: string): Promise<boolean> => {
         try {
-            await articlesService.likeComment(articleId, commentId);
+            return await articlesService.toggleCommentLike(articleId, commentId, userId);
         } catch (err: any) {
             console.error(err);
+            throw err;
         }
     };
 
@@ -364,11 +366,12 @@ export const useCommentActions = () => {
         }
     };
 
-    return { like, update, remove, loading, error };
+    return { toggleLike, update, remove, loading, error };
 };
 
+
 // --- Hook for Article Like ---
-export const useArticleLike = (articleId: string | undefined, userId: string | undefined) => {
+export const useArticleLike = (articleId: string | undefined, userId: string | undefined, userInfo?: { name: string; avatar: string }) => {
     const [isLiked, setIsLiked] = useState(false);
     const [initialIsLiked, setInitialIsLiked] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -390,7 +393,7 @@ export const useArticleLike = (articleId: string | undefined, userId: string | u
         setIsLiked(!previousState);
 
         try {
-            const newState = await articlesService.toggleArticleLike(articleId, userId);
+            const newState = await articlesService.toggleArticleLike(articleId, userId, userInfo);
             setIsLiked(newState);
         } catch (error) {
             console.error("Error toggling like:", error);
