@@ -3,7 +3,6 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { PrimarySidebar, SecondarySidebar } from '../components/layout/Navigation';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
-import { ChatWidget } from '../components/chat/ChatWidget';
 import { MobileTabBar } from '../components/layout/MobileTabBar';
 import { SaveToCollectionModal } from '../components/modals/SaveToCollectionModal';
 import { ShareModal } from '../components/modals/ShareModal';
@@ -151,22 +150,12 @@ export const MainLayout: React.FC = () => {
                 </div>
             </main>
 
-            {/* {!isLearningMode && state.user && (
-                <ChatWidget
-                    isOpen={state.isChatOpen}
-                    onToggle={() => actions.setIsChatOpen(!state.isChatOpen)}
-                    activeUserId={state.chatActiveUser}
-                    onCloseChat={() => actions.setChatActiveUser(null)}
-                    contentMode={state.contentMode}
-                />
-            )} */}
 
             {/* Mobile Tab Bar */}
             {!isLearningMode && (
                 <MobileTabBar
                     activeModule={state.activeModule}
                     onNavigate={handleModuleNavigation}
-                    onOpenChat={() => actions.setIsChatOpen(!state.isChatOpen)}
                     onCreateAction={actions.handleCreateAction}
                 />
             )}

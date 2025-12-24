@@ -15,7 +15,7 @@ import { CommentsSection } from '../../components/CommentsSection';
 interface BlogPostViewProps {
     articleId?: string;
     onBack: () => void;
-    onAuthorClick?: (author: string | { name: string; avatar?: string; id?: string }) => void;
+    onAuthorClick?: (author: string | { name: string; avatar?: string; id?: string; username?: string }) => void;
     onArticleSelect: (id: string) => void;
     onSave?: (id: string, image: string, type: string) => void;
     onShare?: () => void;
@@ -292,7 +292,8 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                                 onClick={() => {
                                     const cleanName = typeof article.author === 'object' ? (article.author as any).name || 'Unknown' : String(article.author);
                                     const cleanId = typeof article.authorId === 'object' ? (article.authorId as any).id || (article.authorId as any).uid : String(article.authorId || 'unknown');
-                                    onAuthorClick?.({ name: cleanName, avatar: article.authorAvatar, id: cleanId });
+                                    const username = (article as any).authorUsername || undefined;
+                                    onAuthorClick?.({ name: cleanName, avatar: article.authorAvatar, id: cleanId, username });
                                 }}
                             >
                                 <img src={article.authorAvatar} alt={String(article.author)} className="h-full w-full object-cover" />
@@ -304,7 +305,8 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                                     onClick={() => {
                                         const cleanName = typeof article.author === 'object' ? (article.author as any).name || 'Unknown' : String(article.author);
                                         const cleanId = typeof article.authorId === 'object' ? (article.authorId as any).id || (article.authorId as any).uid : String(article.authorId || 'unknown');
-                                        onAuthorClick?.({ name: cleanName, avatar: article.authorAvatar, id: cleanId });
+                                        const username = (article as any).authorUsername || undefined;
+                                        onAuthorClick?.({ name: cleanName, avatar: article.authorAvatar, id: cleanId, username });
                                     }}
                                 >
                                     <h3 className="font-bold text-lg text-slate-900 dark:text-white leading-none group-hover:text-amber-500 transition-colors">

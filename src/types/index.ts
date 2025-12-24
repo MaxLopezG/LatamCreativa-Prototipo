@@ -2,7 +2,7 @@
 // This allows existing imports from '../types' to continue working
 
 // Core type aliases
-export type ItemType = 'project' | 'article' | 'portfolio' | 'course' | 'asset' | 'service' | 'job' | 'event' | 'forum' | 'collection';
+export type ItemType = 'project' | 'article' | 'portfolio' | 'collection';
 export type CreateMode = 'none' | ItemType;
 
 // Navigation Types

@@ -1,22 +1,19 @@
 
 import React, { useState, useRef } from 'react';
 import {
-  ArrowRight, Layers, GraduationCap, Store, Newspaper, Move3d, MonitorPlay, Palette, Gamepad2, Globe, Users,
+  ArrowRight, Layers, Newspaper, Move3d, MonitorPlay, Palette, Gamepad2, Globe, Users,
   Code, Server, Database, Cloud, ChevronLeft, ChevronRight, PenTool, Box, Smartphone, Shield, TestTube, Cpu,
   Building2, Terminal, Camera, Layout, Music, Video, Shirt, BookOpen, Aperture, Bitcoin, Wifi, Activity,
   Glasses, ServerCog, Bot, PenLine
 } from 'lucide-react';
-import { EDUCATION_ITEMS, ASSET_ITEMS } from '../../data/content';
 import { SUBSCRIPTIONS } from '../../data/navigation';
 import { PortfolioCard } from '../../components/cards/PortfolioCard';
-import { EducationCard } from '../../components/cards/EducationCard';
-import { AssetCard } from '../../components/cards/AssetCard';
 import { ContentMode, useAppStore } from '../../hooks/useAppStore';
 import { StoryViewer, StoryUser } from '../../components/modals/StoryViewer';
 
 interface FeedViewProps {
   onNavigateToModule: (moduleId: string) => void;
-  onItemSelect: (id: string, type: 'portfolio' | 'course' | 'asset' | 'blog') => void;
+  onItemSelect: (id: string, type: 'portfolio' | 'blog') => void;
   contentMode: ContentMode;
 }
 
@@ -35,11 +32,8 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
   // Increased slice to fill new grid
   const displayPortfolio = allPortfolioItems.filter(i => (i.domain || 'creative') === mode).slice(0, 6);
   const displayBlog = allBlogItems.filter(i => (i.domain || 'creative') === mode).slice(0, 5);
-  const displayEducation = EDUCATION_ITEMS.filter(i => (i.domain || 'creative') === mode).slice(0, 4);
-  const displayAssets = ASSET_ITEMS.filter(i => (i.domain || 'creative') === mode).slice(0, 5);
 
   // Consolidate all users for the Stories Rail
-  // Merge real subscriptions with generated users for a consistent list
   const storyUsers: StoryUser[] = [
     ...SUBSCRIPTIONS.map(s => ({
       id: s.id,
@@ -99,7 +93,7 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
   const scrollCategories = (direction: 'left' | 'right') => {
     if (categoriesScrollRef.current) {
       const { current } = categoriesScrollRef;
-      const scrollAmount = 300; // Adjust scroll distance
+      const scrollAmount = 300;
       if (direction === 'left') {
         current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
       } else {
@@ -306,60 +300,16 @@ export const FeedView: React.FC<FeedViewProps> = ({ onNavigateToModule, onItemSe
             {/* Banner */}
             <div className="rounded-2xl bg-gradient-to-r from-purple-900 to-indigo-900 p-6 md:p-8 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="relative z-10 max-w-lg">
-                <h2 className="text-xl md:text-2xl font-bold text-white mb-2">¿Buscas equipo?</h2>
-                <p className="text-purple-200 text-sm mb-4">Únete a miles de {mode === 'dev' ? 'desarrolladores' : 'creativos'} en nuestra sección de Comunidad.</p>
-                <button onClick={() => onNavigateToModule('community')} className="px-6 py-2 bg-white text-purple-900 font-bold rounded-lg hover:scale-105 transition-transform text-sm w-full md:w-auto">
-                  Encontrar Equipo
+                <h2 className="text-xl md:text-2xl font-bold text-white mb-2">¿Listo para compartir tu trabajo?</h2>
+                <p className="text-purple-200 text-sm mb-4">Únete a miles de {mode === 'dev' ? 'desarrolladores' : 'creativos'} en nuestra plataforma.</p>
+                <button onClick={() => onNavigateToModule('portfolio')} className="px-6 py-2 bg-white text-purple-900 font-bold rounded-lg hover:scale-105 transition-transform text-sm w-full md:w-auto">
+                  Explorar Portafolios
                 </button>
               </div>
               <div className="hidden md:block relative z-10">
                 <Users className="h-24 w-24 text-white/20" />
               </div>
             </div>
-
-            {/* Education */}
-            <section>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                  <GraduationCap className="h-5 w-5 md:h-6 md:w-6 text-emerald-500" />
-                  Aprende
-                </h2>
-                <button onClick={() => onNavigateToModule('education')} className="text-xs md:text-sm font-bold text-slate-500 hover:text-emerald-500 transition-colors">Ver cursos</button>
-              </div>
-              {displayEducation.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {displayEducation.map(item => (
-                    <EducationCard key={item.id} course={item} onClick={() => onItemSelect(item.id, 'course')} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-10 text-slate-500 bg-white/5 rounded-2xl border border-white/5">
-                  No hay cursos disponibles en este momento.
-                </div>
-              )}
-            </section>
-
-            {/* Market */}
-            <section>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-                  <Store className="h-5 w-5 md:h-6 md:w-6 text-purple-500" />
-                  {mode === 'dev' ? 'Templates & Code' : 'Assets'}
-                </h2>
-                <button onClick={() => onNavigateToModule('market')} className="text-xs md:text-sm font-bold text-slate-500 hover:text-purple-500 transition-colors">Ir a la tienda</button>
-              </div>
-              {displayAssets.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
-                  {displayAssets.map(item => (
-                    <AssetCard key={item.id} asset={item} onClick={() => onItemSelect(item.id, 'asset')} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-10 text-slate-500 bg-white/5 rounded-2xl border border-white/5">
-                  No hay assets disponibles en este momento.
-                </div>
-              )}
-            </section>
 
           </div>
 

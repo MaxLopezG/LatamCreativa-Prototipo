@@ -69,6 +69,15 @@ service cloud.firestore {
         // Only the owner can update (mark as read) or delete their notifications
         allow update, delete: if isOwner(userId);
       }
+      
+      // --- Collections Subcollection ---
+      match /collections/{collectionId} {
+        // Owner can always read their collections
+        // Anyone can read if the collection is public (isPrivate == false)
+        allow read: if isOwner(userId) || resource.data.isPrivate == false;
+        // Only the owner can create, update, and delete their collections
+        allow create, update, delete: if isOwner(userId);
+      }
     }
     
     // ============================================

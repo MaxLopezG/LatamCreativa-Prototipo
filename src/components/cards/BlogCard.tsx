@@ -20,6 +20,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({ article, onClick, onSave }) 
         <img
           src={article.image}
           alt={article.title}
+          loading="lazy"
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1e] to-transparent opacity-80"></div>
@@ -53,7 +54,7 @@ export const BlogCard: React.FC<BlogCardProps> = ({ article, onClick, onSave }) 
       {/* Content */}
       <div className="flex flex-col flex-1 p-5 -mt-6 relative z-10">
         <div className="flex items-center gap-2 mb-3 text-xs font-medium text-slate-400">
-          <img src={article.authorAvatar} alt={article.author} className="w-5 h-5 rounded-full ring-1 ring-white/20" />
+          <img src={article.authorAvatar} alt={article.author} loading="lazy" className="w-5 h-5 rounded-full ring-1 ring-white/20" />
           <span className="text-slate-300">{article.author}</span>
         </div>
 

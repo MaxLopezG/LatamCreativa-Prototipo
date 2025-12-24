@@ -173,7 +173,10 @@ export const createAuthSlice: StateCreator<AppStore, [], [], AuthSlice> = (set, 
 
     createCollection: async (title, isPrivate) => {
         const { itemToSave, showToast, closeSaveModal, user, saveToCollection } = get();
-        if (!user) return;
+        if (!user) {
+            showToast('Debes iniciar sesión para crear colecciones', 'error');
+            throw new Error('No user');
+        }
 
         try {
             const newCol = await api.createCollection(user.id, title, isPrivate);
@@ -198,10 +201,13 @@ export const createAuthSlice: StateCreator<AppStore, [], [], AuthSlice> = (set, 
                     showToast('Colección creada correctamente', 'success');
                     closeSaveModal();
                 }
+            } else {
+                throw new Error('API returned null');
             }
         } catch (error) {
-            console.error("Action Error [createCollection]:", error);
+            console.error("Error creating collection:", error);
             showToast("Error al crear colección", 'error');
+            throw error;
         }
     },
 

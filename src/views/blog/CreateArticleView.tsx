@@ -207,6 +207,7 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
       image: coverImage || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?q=80&w=1000&auto=format&fit=crop',
       author: state.user?.name || 'Usuario Anónimo',
       authorId: state.user?.id || 'anonymous',
+      authorUsername: state.user?.username || '',
       authorAvatar: state.user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop',
       // keep original date if editing
       date: isEditMode && existingArticle ? existingArticle.date : new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }),
@@ -300,6 +301,7 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
       image: coverImage || 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?q=80&w=1000&auto=format&fit=crop',
       author: state.user?.name || 'Usuario Anónimo',
       authorId: state.user?.id || 'anonymous',
+      authorUsername: state.user?.username || '',
       authorAvatar: state.user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop',
       date: isEditMode && existingArticle ? existingArticle.date : new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }),
       readTime: Math.ceil((blocks.filter(b => b.type === 'text').reduce((acc, curr) => acc + curr.content.length, 0) / 500)) + ' min',

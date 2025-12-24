@@ -1,10 +1,10 @@
 
 import { db } from '../../lib/firebase';
 import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, query, where, orderBy } from 'firebase/firestore';
-import { CollectionItem, PortfolioItem } from '../../types';
+import { CollectionItem, SavedItemReference } from '../../types';
 
 export const collectionsService = {
-    // Get all collections for a specific user
+    // Get all collections for a specific user (owner only - used for own profile)
     getUserCollections: async (userId: string): Promise<CollectionItem[]> => {
         try {
             const q = query(collection(db, `users/${userId}/collections`), orderBy('createdAt', 'desc'));
@@ -17,6 +17,45 @@ export const collectionsService = {
         } catch (error) {
             console.error("Error fetching collections:", error);
             return [];
+        }
+    },
+
+    // Get only public collections for a user (used for viewing other users' profiles)
+    getPublicUserCollections: async (userId: string): Promise<CollectionItem[]> => {
+        try {
+            const q = query(
+                collection(db, `users/${userId}/collections`),
+                where('isPrivate', '==', false),
+                orderBy('createdAt', 'desc')
+            );
+            const querySnapshot = await getDocs(q);
+
+            return querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as CollectionItem[];
+        } catch (error) {
+            console.error("Error fetching public collections:", error);
+            return [];
+        }
+    },
+
+    // Get a single collection by owner ID and collection ID
+    getCollectionById: async (userId: string, collectionId: string): Promise<CollectionItem | null> => {
+        try {
+            const colRef = doc(db, `users/${userId}/collections`, collectionId);
+            const snapshot = await getDoc(colRef);
+
+            if (snapshot.exists()) {
+                return {
+                    id: snapshot.id,
+                    ...snapshot.data()
+                } as CollectionItem;
+            }
+            return null;
+        } catch (error) {
+            console.error("Error fetching collection:", error);
+            return null;
         }
     },
 
@@ -44,6 +83,17 @@ export const collectionsService = {
         }
     },
 
+    // Update collection metadata (title, privacy)
+    updateCollection: async (userId: string, collectionId: string, updates: { title?: string; isPrivate?: boolean }): Promise<void> => {
+        try {
+            const colRef = doc(db, `users/${userId}/collections`, collectionId);
+            await updateDoc(colRef, updates);
+        } catch (error) {
+            console.error("Error updating collection:", error);
+            throw error;
+        }
+    },
+
     // Add an item to a collection
     addToCollection: async (userId: string, collectionId: string, item: { id: string, image: string, type: 'project' | 'article' }): Promise<void> => {
         try {
@@ -52,7 +102,7 @@ export const collectionsService = {
 
             if (snapshot.exists()) {
                 const data = snapshot.data();
-                const currentItems = (data.items || []) as any[]; // TODO: Type correctly
+                const currentItems = (data.items || []) as SavedItemReference[];
 
                 // Check for duplicates based on ID
                 if (!currentItems.some(i => i.id === item.id)) {

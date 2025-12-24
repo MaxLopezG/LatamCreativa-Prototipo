@@ -3,16 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
 import { EditProfileModal } from '../../components/modals/EditProfileModal';
-import { CreatePostModal } from '../../components/modals/CreatePostModal';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
 import { useUserArticles, useDeleteProject, useUserProjects } from '../../hooks/useFirebase';
 import { usersService } from '../../services/modules/users';
+import { collectionsService } from '../../services/modules/collections';
 import { useUserProfileData } from '../../hooks/useUserProfileData';
 import { shouldCountView } from '../../utils/viewTracking';
 import { UserProfileHeader } from './components/UserProfileHeader';
 import { UserProfileStats } from './components/UserProfileStats';
 import { UserProfileInfo } from './components/UserProfileInfo';
 import { UserProfileTabs } from './components/UserProfileTabs';
+import { CollectionItem } from '../../types';
 
 interface UserProfileViewProps {
     author?: { name: string; avatar?: string; id?: string } | null;
@@ -38,7 +39,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
 
     const name = sanitizeName(displayUser.name);
 
-    const [activeTab, setActiveTab] = useState<'portfolio' | 'courses' | 'assets' | 'blog' | 'saved' | 'collections' | 'membership'>('portfolio');
+    const [activeTab, setActiveTab] = useState<'portfolio' | 'blog' | 'collections'>('portfolio');
     const [isFollowing, setIsFollowing] = useState(false);
     const [isFollowLoading, setIsFollowLoading] = useState(false);
 
@@ -96,7 +97,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
     };
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
 
     const userIdForQuery = isOwnProfile ? state.user?.id : fetchedUser?.id;
     const { projects: userPortfolio, loading: projectsLoading, removeProject: removeProjectFromList } = useUserProjects(userIdForQuery, undefined);
@@ -165,17 +165,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
         followers: storedStats.followers || 0
     };
 
-    // 2. Courses
-    const userCourses = useMemo(() => {
-        // FUTURE: Fetch real courses
-        return [];
-    }, [name]);
 
-    // 3. Assets
-    const userAssets = useMemo(() => {
-        // FUTURE: Fetch real assets
-        return [];
-    }, [name]);
 
     // 4. Blog
     const { articles: userArticles, loading: articlesLoading, error: articlesError } = useUserArticles(name, userIdForQuery);
@@ -183,15 +173,42 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
 
     // 5. Saved Items (Likes)
     const savedItems = useMemo(() => {
-        // FUTURE: Implement real fetching of liked items by ID from Firebase
+        // NOTE: Not implemented - saved items feature pending product decision
         return [];
     }, []);
 
     // 6. Collections
+    const [otherUserCollections, setOtherUserCollections] = useState<CollectionItem[]>([]);
+
+    // Fetch own collections when tab is selected (from store)
+    useEffect(() => {
+        if (activeTab === 'collections' && isOwnProfile && state.user) {
+            actions.fetchCollections();
+        }
+    }, [activeTab, isOwnProfile, state.user, actions]);
+
+    // Fetch other user's PUBLIC collections when viewing their profile (on load, not just tab click)
+    useEffect(() => {
+        const fetchPublicCollections = async () => {
+            if (!isOwnProfile && fetchedUser?.id) {
+                try {
+                    const publicCols = await collectionsService.getPublicUserCollections(fetchedUser.id);
+                    setOtherUserCollections(publicCols);
+                } catch (error) {
+                    console.error('Error fetching public collections:', error);
+                }
+            }
+        };
+        // Fetch immediately when viewing another user's profile
+        if (!isOwnProfile && fetchedUser?.id) {
+            fetchPublicCollections();
+        }
+    }, [isOwnProfile, fetchedUser?.id]);
+
     const userCollections = useMemo(() => {
         if (isOwnProfile) return state.collections;
-        return [];
-    }, [isOwnProfile, state.collections]);
+        return otherUserCollections;
+    }, [isOwnProfile, state.collections, otherUserCollections]);
 
     return (
         <div className="w-full max-w-[2560px] mx-auto animate-fade-in pb-20">
@@ -210,7 +227,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
             />
 
             <EditProfileModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} />
-            <CreatePostModal isOpen={isCreatePostModalOpen} onClose={() => setIsCreatePostModalOpen(false)} />
 
             {/* Navigation */}
             <div className="fixed top-0 left-0 right-0 z-40 px-6 py-4 pointer-events-none">
@@ -248,9 +264,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
                         activeTab={activeTab}
                         setActiveTab={setActiveTab}
                         isOwnProfile={isOwnProfile}
+                        profileUserId={displayUser.id}
                         userPortfolio={userPortfolio}
-                        userCourses={userCourses}
-                        userAssets={userAssets}
                         userArticles={userArticles}
                         savedItems={savedItems}
                         userCollections={userCollections}
@@ -258,8 +273,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
                         articlesError={articlesError}
                         onDeleteProject={handleDeleteProject}
                         onSaveItem={actions.openSaveModal}
-                        onCreateAction={actions.handleCreateAction}
-                        onOpenCreatePostModal={() => setIsCreatePostModalOpen(true)}
                     />
                 </div>
             </div>

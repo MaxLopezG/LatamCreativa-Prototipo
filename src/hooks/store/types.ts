@@ -27,15 +27,12 @@ export interface UISlice {
     createMode: CreateMode;
     searchQuery: string;
     toast: ToastState | null;
-    isChatOpen: boolean;
     subscriptionsTimestamp: number;
-    chatActiveUser: string | null;
     isSaveModalOpen: boolean;
     isShareModalOpen: boolean;
     itemToSave: { id: string; image: string; type: ItemType } | null;
     viewingAuthor: { name: string; avatar?: string; id?: string } | null;
 
-    // Actions
     setIsSidebarOpen: (isOpen: boolean) => void;
     setActiveCategory: (category: string) => void;
     setActiveModule: (module: string) => void;
@@ -43,8 +40,6 @@ export interface UISlice {
     setCreateMode: (mode: CreateMode) => void;
     setSearchQuery: (query: string) => void;
     showToast: (message: string, type?: ToastType) => void;
-    setIsChatOpen: (isOpen: boolean) => void;
-    setChatActiveUser: (userId: string | null) => void;
     triggerSubscriptionUpdate: () => void;
     openSaveModal: (id: string, image: string, type: ItemType) => void;
     closeSaveModal: () => void;
@@ -115,7 +110,7 @@ export type AppStore = UISlice & AuthSlice & BlogSlice;
 // --- Initial State Constants ---
 export const INITIAL_UI_STATE: Pick<UISlice,
     'isSidebarOpen' | 'activeCategory' | 'activeModule' | 'contentMode' |
-    'createMode' | 'searchQuery' | 'toast' | 'isChatOpen' | 'chatActiveUser' |
+    'createMode' | 'searchQuery' | 'toast' |
     'isSaveModalOpen' | 'isShareModalOpen' | 'itemToSave' | 'viewingAuthor' | 'subscriptionsTimestamp'
 > = {
     isSidebarOpen: false,
@@ -125,8 +120,6 @@ export const INITIAL_UI_STATE: Pick<UISlice,
     createMode: null,
     searchQuery: '',
     toast: null,
-    isChatOpen: false,
-    chatActiveUser: null,
     isSaveModalOpen: false,
     isShareModalOpen: false,
     itemToSave: null,

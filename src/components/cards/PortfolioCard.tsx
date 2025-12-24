@@ -24,6 +24,10 @@ interface PortfolioCardProps {
   onSave?: (id: string, image: string, type: 'project' | 'article') => void;
   /** Tipo de item para el callback de guardar */
   itemType?: 'project' | 'article';
+  /** Mostrar badge de tipo (Portafolio/Blog) - útil en colecciones */
+  showTypeBadge?: boolean;
+  /** Ocultar botón de guardar - útil cuando ya está en una colección */
+  hideSaveButton?: boolean;
   /** Elemento de acción adicional (ej. botón eliminar) renderizado en la esquina */
   extraAction?: React.ReactNode;
 }
@@ -47,6 +51,8 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
   onClick,
   onSave,
   itemType = 'project',
+  showTypeBadge = false,
+  hideSaveButton = false,
   extraAction
 }) => {
   const { state } = useAppStore();
@@ -105,14 +111,16 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
 
         {/* Top Badges & Actions */}
         <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-[-10px] group-hover:translate-y-0 z-20 pointer-events-none">
-          <button
-            type="button"
-            onClick={handleSave}
-            className="pointer-events-auto p-2 rounded-full bg-black/50 backdrop-blur-md text-white hover:bg-white hover:text-black transition-colors border border-white/10 hover:border-white"
-            title="Guardar en colección"
-          >
-            <Bookmark className="h-4 w-4" />
-          </button>
+          {!hideSaveButton && (
+            <button
+              type="button"
+              onClick={handleSave}
+              className="pointer-events-auto p-2 rounded-full bg-black/50 backdrop-blur-md text-white hover:bg-white hover:text-black transition-colors border border-white/10 hover:border-white"
+              title="Guardar en colección"
+            >
+              <Bookmark className="h-4 w-4" />
+            </button>
+          )}
 
           {/* Render extra actions (like Delete) here */}
           {extraAction}
@@ -146,6 +154,15 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
               className="h-5 w-5 rounded-full object-cover ring-1 ring-white/30"
             />
             <span className="text-xs text-slate-300 font-medium truncate">{displayName}</span>
+            {/* Type Badge - only show when showTypeBadge is true */}
+            {showTypeBadge && (
+              <span className={`ml-auto px-2 py-0.5 text-[10px] font-bold uppercase rounded ${itemType === 'article'
+                ? 'bg-rose-500/80 text-white'
+                : 'bg-amber-500/80 text-white'
+                }`}>
+                {itemType === 'article' ? 'Blog' : 'Portafolio'}
+              </span>
+            )}
           </div>
         </div>
 

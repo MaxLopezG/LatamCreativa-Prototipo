@@ -210,7 +210,6 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
 
   const handleDeleteComment = async (commentId: string) => {
     if (!item?.id) return;
-    // TODO: Add a confirmation modal here
     try {
       await deleteComment(item.id, commentId);
       actions.showToast('Comentario eliminado', 'success');

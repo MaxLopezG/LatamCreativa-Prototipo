@@ -1,17 +1,15 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Layers, Video, Box, Newspaper, Plus, Trash2, Bookmark, Lock, GraduationCap } from 'lucide-react';
+import { Layers, Newspaper, Plus, Trash2, Bookmark, Lock } from 'lucide-react';
 import { PortfolioCard } from '../../../components/cards/PortfolioCard';
 import { BlogCard } from '../../../components/cards/BlogCard';
-import { EducationCard } from '../../../components/cards/EducationCard';
-import { AssetCard } from '../../../components/cards/AssetCard';
-import { PortfolioItem, ArticleItem, CourseItem, AssetItem, CollectionItem } from '../../../types';
+import { PortfolioItem, ArticleItem, CollectionItem } from '../../../types';
 
 /** Identificadores válidos para las tabs del perfil */
-type ProfileTab = 'portfolio' | 'courses' | 'assets' | 'blog' | 'saved' | 'collections' | 'membership';
+type ProfileTab = 'portfolio' | 'blog' | 'collections';
 
 /** Tipo unión para cualquier item que puede aparecer en la tab "guardados" */
-type SavedItem = PortfolioItem | ArticleItem | CourseItem | AssetItem;
+type SavedItem = PortfolioItem | ArticleItem;
 
 /**
  * Props para el componente UserProfileTabs
@@ -23,12 +21,10 @@ interface UserProfileTabsProps {
     setActiveTab: (tab: ProfileTab) => void;
     /** Si está viendo su propio perfil (habilita acciones de editar/eliminar) */
     isOwnProfile: boolean;
+    /** ID del usuario cuyo perfil se está viendo */
+    profileUserId: string;
     /** Proyectos del portafolio del usuario */
     userPortfolio: PortfolioItem[];
-    /** Cursos publicados por el usuario */
-    userCourses: CourseItem[];
-    /** Assets publicados por el usuario */
-    userAssets: AssetItem[];
     /** Artículos del blog del usuario */
     userArticles: ArticleItem[];
     /** Items guardados/marcados por el usuario */
@@ -43,10 +39,6 @@ interface UserProfileTabsProps {
     onDeleteProject: (id: string) => void;
     /** Callback para guardar/marcar un item */
     onSaveItem: (id: string, image: string, type?: string) => void;
-    /** Callback para acciones de crear (curso, asset) */
-    onCreateAction: (type: string) => void;
-    /** Callback para abrir el modal de crear publicación */
-    onOpenCreatePostModal: () => void;
 }
 
 
@@ -54,18 +46,15 @@ export const UserProfileTabs: React.FC<UserProfileTabsProps> = ({
     activeTab,
     setActiveTab,
     isOwnProfile,
+    profileUserId,
     userPortfolio,
-    userCourses,
-    userAssets,
     userArticles,
     savedItems,
     userCollections,
     projectsLoading,
     articlesError,
     onDeleteProject,
-    onSaveItem,
-    onCreateAction,
-    onOpenCreatePostModal
+    onSaveItem
 }) => {
     const navigate = useNavigate();
 
@@ -83,7 +72,18 @@ export const UserProfileTabs: React.FC<UserProfileTabsProps> = ({
                     <Layers className="h-4 w-4" /> Portafolio <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userPortfolio.length}</span>
                 </button>
 
-                {isOwnProfile && (
+                <button
+                    onClick={() => setActiveTab('blog')}
+                    className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'blog'
+                        ? 'text-amber-500 border-amber-500'
+                        : 'text-slate-500 border-transparent hover:text-white'
+                        }`}
+                >
+                    <Newspaper className="h-4 w-4" /> Blog <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userArticles.length}</span>
+                </button>
+
+                {/* Show collections tab: always for own profile, or if other user has public collections */}
+                {(isOwnProfile || userCollections.length > 0) && (
                     <button
                         onClick={() => setActiveTab('collections')}
                         className={`pb-4 text-sm font-bold uppercase tracking-widest border-b-2 transition-colors flex items-center gap-2 whitespace-nowrap ${activeTab === 'collections'
@@ -91,7 +91,7 @@ export const UserProfileTabs: React.FC<UserProfileTabsProps> = ({
                             : 'text-slate-500 border-transparent hover:text-white'
                             }`}
                     >
-                        <Layers className="h-4 w-4" /> Colecciones <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userCollections.length}</span>
+                        <Bookmark className="h-4 w-4" /> Colecciones <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full text-slate-300 ml-1">{userCollections.length}</span>
                     </button>
                 )}
             </div>
@@ -101,7 +101,7 @@ export const UserProfileTabs: React.FC<UserProfileTabsProps> = ({
                 <>
                     {/* 1. Show existing projects */}
                     {userPortfolio.length > 0 && (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5 animate-slide-up">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-slide-up">
                             {userPortfolio.map((item) => (
                                 <div key={item.id} className="relative group">
                                     <PortfolioCard
@@ -131,7 +131,7 @@ export const UserProfileTabs: React.FC<UserProfileTabsProps> = ({
 
                     {/* 2. Loading state */}
                     {projectsLoading && userPortfolio.length === 0 && (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {Array.from({ length: 5 }).map((_, i) => (
                                 <div key={i} className="aspect-[3/4] bg-white/5 rounded-2xl animate-pulse"></div>
                             ))}
@@ -149,67 +149,6 @@ export const UserProfileTabs: React.FC<UserProfileTabsProps> = ({
                             {isOwnProfile && (
                                 <button onClick={() => navigate('/create/portfolio')} className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2">
                                     <Plus className="h-4 w-4" /> Crear Proyecto
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </>
-            )}
-
-            {/* TAB: COURSES */}
-            {activeTab === 'courses' && (
-                <>
-                    {userCourses.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-slide-up">
-                            {userCourses.map((item) => (
-                                <EducationCard
-                                    key={item.id}
-                                    course={item}
-                                    onClick={() => navigate(`/course/${item.id}`)}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-2xl border border-white/5 text-center animate-fade-in">
-                            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                                <GraduationCap className="h-8 w-8 text-slate-500" />
-                            </div>
-                            <h3 className="text-lg font-bold text-white mb-2">Sin cursos publicados</h3>
-                            <p className="text-slate-400 max-w-md mb-6">Enseña lo que sabes y gana dinero.</p>
-                            {isOwnProfile && (
-                                <button onClick={() => onCreateAction('course')} className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2">
-                                    <Plus className="h-4 w-4" /> Crear Curso
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </>
-            )}
-
-            {/* TAB: ASSETS */}
-            {activeTab === 'assets' && (
-                <>
-                    {userAssets.length > 0 ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 animate-slide-up">
-                            {userAssets.map((item) => (
-                                <AssetCard
-                                    key={item.id}
-                                    asset={item}
-                                    onClick={() => navigate(`/asset/${item.id}`)}
-                                    onSave={onSaveItem}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-2xl border border-white/5 text-center animate-fade-in">
-                            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                                <Box className="h-8 w-8 text-slate-500" />
-                            </div>
-                            <h3 className="text-lg font-bold text-white mb-2">Sin assets publicados</h3>
-                            <p className="text-slate-400 max-w-md mb-6">Vende tus modelos, texturas y herramientas.</p>
-                            {isOwnProfile && (
-                                <button onClick={() => onCreateAction('asset')} className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2">
-                                    <Plus className="h-4 w-4" /> Vender Asset
                                 </button>
                             )}
                         </div>
@@ -239,17 +178,6 @@ export const UserProfileTabs: React.FC<UserProfileTabsProps> = ({
                             </div>
                         </div>
                     )}
-                    {/* Header Actions for Blog */}
-                    {isOwnProfile && (
-                        <div className="mb-8 flex justify-end">
-                            <button
-                                onClick={onOpenCreatePostModal}
-                                className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2 shadow-lg shadow-amber-500/20"
-                            >
-                                <Plus className="h-4 w-4" /> Nueva Historia
-                            </button>
-                        </div>
-                    )}
 
                     {userArticles.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-slide-up">
@@ -268,39 +196,67 @@ export const UserProfileTabs: React.FC<UserProfileTabsProps> = ({
                                 <Newspaper className="h-8 w-8 text-slate-500" />
                             </div>
                             <h3 className="text-lg font-bold text-white mb-2">Sin artículos publicados</h3>
-                            <p className="text-slate-400 max-w-md mb-6">Escribe sobre tus experiencias y tutoriales.</p>
-                            {isOwnProfile && (
-                                <button onClick={onOpenCreatePostModal} className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors flex items-center gap-2">
-                                    <Plus className="h-4 w-4" /> Escribir Artículo
-                                </button>
-                            )}
+                            <p className="text-slate-400 max-w-md">Este usuario aún no ha escrito artículos.</p>
                         </div>
                     )}
                 </>
             )}
 
-            {/* TAB: SAVED (LIKES) */}
-            {activeTab === 'saved' && (
+            {/* TAB: COLLECTIONS */}
+            {activeTab === 'collections' && (
                 <>
-                    {savedItems.length > 0 ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-5 animate-slide-up">
-                            {savedItems.map((item) => {
-                                // Simple type guard or rendering logic
-                                if ('price' in item && 'fileSize' in item) { // Asset
-                                    return <AssetCard key={item.id} asset={item} onClick={() => navigate(`/asset/${item.id}`)} onSave={onSaveItem} />;
-                                } else if ('instructor' in item) { // Course
-                                    return <EducationCard key={item.id} course={item} onClick={() => navigate(`/course/${item.id}`)} />;
-                                } else if ('readTime' in item) { // Blog
-                                    return <BlogCard key={item.id} article={item} onClick={() => navigate(`/blog/${item.id}`)} onSave={onSaveItem} />;
-                                } else { // Portfolio
-                                    return <PortfolioCard key={item.id} item={item} onClick={() => navigate(`/portfolio/${item.id}`)} onSave={onSaveItem} />;
-                                }
-                            })}
+                    {userCollections.length > 0 ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 animate-slide-up">
+                            {userCollections.map((collection) => (
+                                <button
+                                    key={collection.id}
+                                    onClick={() => navigate(`/collections/${collection.id}?owner=${profileUserId}`)}
+                                    className="group relative rounded-2xl overflow-hidden bg-[#1a1a1e] ring-1 ring-white/10 hover:ring-amber-500/50 transition-all hover:shadow-xl hover:shadow-amber-500/10 text-left"
+                                >
+                                    {/* Thumbnails Grid */}
+                                    <div className="aspect-square grid grid-cols-2 gap-0.5 bg-black/50">
+                                        {(collection.thumbnails || []).slice(0, 4).map((thumb, i) => (
+                                            <div key={i} className="bg-slate-800 overflow-hidden">
+                                                <img
+                                                    src={thumb}
+                                                    alt=""
+                                                    loading="lazy"
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                />
+                                            </div>
+                                        ))}
+                                        {/* Fill empty slots */}
+                                        {Array.from({ length: Math.max(0, 4 - (collection.thumbnails?.length || 0)) }).map((_, i) => (
+                                            <div key={`empty-${i}`} className="bg-slate-800/50 flex items-center justify-center">
+                                                <Bookmark className="h-6 w-6 text-slate-600" />
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Info */}
+                                    <div className="p-4">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <h3 className="font-bold text-white text-sm group-hover:text-amber-400 transition-colors truncate">
+                                                {collection.title}
+                                            </h3>
+                                            {collection.isPrivate && <Lock className="h-3 w-3 text-slate-500 shrink-0" />}
+                                        </div>
+                                        <p className="text-xs text-slate-500">
+                                            {collection.itemCount || 0} {(collection.itemCount || 0) === 1 ? 'item' : 'items'}
+                                        </p>
+                                    </div>
+                                </button>
+                            ))}
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-20 text-center text-slate-500">
-                            <Bookmark className="h-12 w-12 mb-4 opacity-20" />
-                            <p>No tienes elementos guardados.</p>
+                        <div className="flex flex-col items-center justify-center py-20 bg-white/5 rounded-2xl border border-white/5 text-center animate-fade-in">
+                            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mb-4">
+                                <Bookmark className="h-8 w-8 text-slate-500" />
+                            </div>
+                            <h3 className="text-lg font-bold text-white mb-2">Sin colecciones</h3>
+                            <p className="text-slate-400 max-w-md">
+                                Guarda proyectos y artículos en colecciones para organizarlos.
+                            </p>
                         </div>
                     )}
                 </>

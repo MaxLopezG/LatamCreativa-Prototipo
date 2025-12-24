@@ -80,8 +80,6 @@ export const useAppStore = () => {
       searchQuery: store.searchQuery,
       toast: store.toast,
       toastMessage: store.toast?.message,
-      isChatOpen: store.isChatOpen,
-      chatActiveUser: store.chatActiveUser,
       isSaveModalOpen: store.isSaveModalOpen,
       itemToSave: store.itemToSave,
       isShareModalOpen: store.isShareModalOpen,
@@ -109,8 +107,6 @@ export const useAppStore = () => {
       setContentMode: store.setContentMode,
       toggleContentMode: () => store.setContentMode(store.contentMode === 'creative' ? 'dev' : 'creative'),
       setCreateMode: store.setCreateMode,
-      setChatActiveUser: store.setChatActiveUser,
-      setIsChatOpen: store.setIsChatOpen,
       handleModuleSelect: store.setActiveModule,
       handleSubscriptionSelect: (name: string) => store.setViewingAuthor(name ? { name } : null),
       openSaveModal: store.openSaveModal,
@@ -192,11 +188,6 @@ export const useAppStore = () => {
           store.addToCart(item);
         }
         store.setActiveModule('cart');
-      },
-
-      openChatWithUser: (userName: string) => {
-        store.setIsChatOpen(true);
-        store.setChatActiveUser('1'); // Mock ID
       },
     }
   };

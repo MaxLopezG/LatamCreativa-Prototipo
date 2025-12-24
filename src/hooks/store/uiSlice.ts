@@ -15,8 +15,6 @@ export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set, get)
     createMode: null as CreateMode,
     searchQuery: '',
     toast: null,
-    isChatOpen: false,
-    chatActiveUser: null,
     isSaveModalOpen: false,
     isShareModalOpen: false,
     itemToSave: null,
@@ -84,9 +82,6 @@ export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set, get)
         set({ toast: { message, type } });
         setTimeout(() => set({ toast: null }), 3000);
     },
-
-    setIsChatOpen: (isOpen) => set({ isChatOpen: isOpen }),
-    setChatActiveUser: (userId) => set({ chatActiveUser: userId }),
 
     triggerSubscriptionUpdate: () => set((state) => ({
         subscriptionsTimestamp: Date.now()
