@@ -13,7 +13,7 @@ export const PRIMARY_NAV_ITEMS: NavItem[] = [
 
   // 2. Showcase (Visual Core)
   { id: 'portfolio', icon: ImageIcon, label: 'Portafolio' },
-  { id: 'collections', icon: Bookmark, label: 'Colecciones' },
+  // { id: 'collections', icon: Bookmark, label: 'Colecciones' },
 
   // 3. Professional & Growth (Career/Money)
   // { id: 'jobs', icon: Building2, label: 'Empleos' },

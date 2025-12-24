@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Disallow admin and auth pages
+Disallow: /admin
+Disallow: /auth
+
+# Sitemap location
+Sitemap: https://latamcreativa.com/sitemap.xml
+
+# Crawl delay (optional, be nice to the server)
+Crawl-delay: 1

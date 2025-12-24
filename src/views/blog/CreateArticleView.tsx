@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Image as ImageIcon, Type, Youtube, X, ChevronUp, ChevronDown, Trash2, Eye, Edit3, Layers, Save, Calendar, Heart, MessageCircle, Share2, Bookmark, CheckCircle2, Check, Hash } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../hooks/useAppStore';
 import { NAV_SECTIONS, NAV_SECTIONS_DEV } from '../../data/navigation';
 import { useCreateArticle, useArticle, useUpdateArticle } from '../../hooks/useFirebase';
@@ -14,6 +14,7 @@ type BlockType = 'text' | 'image' | 'video';
 
 export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) => {
   const { actions, state } = useAppStore();
+  const navigate = useNavigate();
 
   // Edit Mode Logic
   const [searchParams] = useSearchParams();
@@ -229,13 +230,16 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
         // UPDATE MODE
         await update(editId, articleData, coverImageFile || undefined);
         actions.showToast('Artículo actualizado correctamente', 'success');
+        onBack();
       } else {
         // CREATE MODE
         // Attempt 1: Try with image (if exists)
-        await create(articleData, coverImageFile || undefined);
+        const result = await create(articleData, coverImageFile || undefined);
         actions.showToast('Artículo publicado correctamente', 'success');
+        // Navigate to the new article using its slug
+        navigate(`/blog/${result.slug}`);
+        return;
       }
-      onBack();
     } catch (error: any) {
       console.warn("Publish/Update failed:", error);
 

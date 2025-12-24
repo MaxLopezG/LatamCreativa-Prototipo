@@ -8,19 +8,20 @@ import { useAppStore } from './useAppStore';
 import { PortfolioItem } from '../types';
 import { projectsService } from '../services/modules/projects';
 
-// --- Hook for Fetching Single Project ---
-export const useProject = (id: string | undefined) => {
+// --- Hook for Fetching Single Project (by slug or ID) ---
+export const useProject = (slugOrId: string | undefined) => {
     const [project, setProject] = useState<PortfolioItem | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!id) return;
+        if (!slugOrId) return;
 
         const fetchProject = async () => {
             setLoading(true);
             try {
-                const data = await projectsService.getProject(id);
+                // Uses getProjectBySlug which tries slug first, then falls back to ID
+                const data = await projectsService.getProjectBySlug(slugOrId);
                 setProject(data);
             } catch (err: any) {
                 setError(err.message);
@@ -30,7 +31,7 @@ export const useProject = (id: string | undefined) => {
         };
 
         fetchProject();
-    }, [id]);
+    }, [slugOrId]);
 
     return { project, loading, error };
 };
@@ -49,7 +50,7 @@ export const useCreateProject = () => {
             maxSizeMB: number;
             galleryMetadata?: { type: 'image' | 'youtube'; caption: string; fileIndex?: number; url?: string }[]
         }
-    ) => {
+    ): Promise<{ id: string; slug: string }> => {
         if (!state.user?.id) {
             throw new Error("Debes iniciar sesión para crear un proyecto.");
         }
@@ -63,7 +64,7 @@ export const useCreateProject = () => {
                 gallery: files.gallery
             };
 
-            const id = await projectsService.createProject(
+            const result = await projectsService.createProject(
                 state.user.id,
                 projectData,
                 finalFiles,
@@ -72,7 +73,7 @@ export const useCreateProject = () => {
                     onProgress: setProgress
                 }
             );
-            return id;
+            return result; // { id, slug }
         } catch (err: any) {
             setError(err.message);
             throw err;

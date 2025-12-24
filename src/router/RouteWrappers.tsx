@@ -46,6 +46,15 @@ export function SearchResultsWrapper() {
   );
 }
 
+export function HomeWrapper() {
+  const navigate = useNavigate();
+  return (
+    <Suspended>
+      <HomeView onCategorySelect={(category) => navigate(`/portfolio?category=${category}`)} />
+    </Suspended>
+  );
+}
+
 export function PortfolioWrapper() {
   const { state, actions } = useAppStore();
   const navigate = useNavigate();

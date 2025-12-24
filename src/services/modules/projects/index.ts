@@ -22,6 +22,7 @@ export const projectsService = {
     getProjects: projectsCrud.getProjects,
     getUserProjects: projectsCrud.getUserProjects,
     getProject: projectsCrud.getProject,
+    getProjectBySlug: projectsCrud.getProjectBySlug,
     getProjectsByIds: projectsCrud.getProjectsByIds,
     getRecentProjects: projectsCrud.getRecentProjects,
     listenToUserProjects: projectsCrud.listenToUserProjects,

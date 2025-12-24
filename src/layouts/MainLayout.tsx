@@ -151,7 +151,7 @@ export const MainLayout: React.FC = () => {
             </main>
 
 
-            {/* Mobile Tab Bar */}
+            {/* Mobile Tab Bar - Disabled
             {!isLearningMode && (
                 <MobileTabBar
                     activeModule={state.activeModule}
@@ -159,6 +159,7 @@ export const MainLayout: React.FC = () => {
                     onCreateAction={actions.handleCreateAction}
                 />
             )}
+            */}
 
             <SaveToCollectionModal
                 isOpen={state.isSaveModalOpen}

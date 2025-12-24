@@ -11,6 +11,7 @@ import { shouldCountView } from '../../utils/viewTracking';
 import { timeAgo } from '../../utils/helpers';
 import { articlesService } from '../../services/modules/articles';
 import { CommentsSection } from '../../components/CommentsSection';
+import { SEOHead } from '../../components/SEOHead';
 
 interface BlogPostViewProps {
     articleId?: string;
@@ -192,6 +193,16 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
 
     return (
         <div className="max-w-[1800px] mx-auto transition-colors animate-fade-in pb-20">
+            <SEOHead
+                title={article.title}
+                description={article.excerpt || article.content?.substring(0, 150)}
+                image={article.image}
+                url={`/blog/${article.id}`}
+                type="article"
+                author={article.author}
+                publishedTime={article.date}
+                keywords={article.tags || []}
+            />
             {/* Top Navigation Bar */}
             <div className="sticky top-0 z-20 bg-white/90 dark:bg-[#030304]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 py-4 flex items-center justify-between">
                 <button

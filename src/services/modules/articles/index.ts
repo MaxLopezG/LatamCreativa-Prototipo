@@ -24,6 +24,7 @@ export const articlesService = {
     getArticlesByTag: articlesCrud.getArticlesByTag,
     getArticlesByIds: articlesCrud.getArticlesByIds,
     getArticle: articlesCrud.getArticle,
+    getArticleBySlug: articlesCrud.getArticleBySlug,
     deleteArticle: articlesCrud.deleteArticle,
     incrementArticleViews: articlesCrud.incrementArticleViews,
 

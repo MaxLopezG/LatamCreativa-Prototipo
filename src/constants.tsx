@@ -1,1 +1,0 @@
-// This file is deprecated. See src/data/navigation.ts and src/data/content.ts

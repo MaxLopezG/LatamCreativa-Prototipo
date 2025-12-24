@@ -29,6 +29,7 @@ import { db, storage } from '../../../lib/firebase';
 import { storageService } from '../storage';
 import { PortfolioItem } from '../../../types';
 import { PaginatedResult } from '../utils';
+import { generateUniqueSlug } from '../../../utils/slugUtils';
 
 export const projectsCrud = {
     /**
@@ -55,7 +56,7 @@ export const projectsCrud = {
             galleryMetadata?: { type: 'image' | 'video' | 'youtube' | 'sketchfab'; caption?: string; fileIndex?: number; url?: string }[];
             onProgress?: (progress: number) => void;
         }
-    ): Promise<string> => {
+    ): Promise<{ id: string; slug: string }> => {
         try {
             const totalOps = (files.cover ? 1 : 0) + (files.gallery?.length || 0) + 1;
             let completedOps = 0;
@@ -114,6 +115,7 @@ export const projectsCrud = {
                 ...projectData,
                 domain: projectData.domain || 'creative',
                 id: projectId,
+                slug: generateUniqueSlug(projectData.title || 'proyecto'),
                 authorId: userId,
                 image: coverUrl || projectData.image || '',
                 images: legacyImages.length > 0 ? legacyImages : (projectData.images || []),
@@ -139,7 +141,7 @@ export const projectsCrud = {
             await batch.commit();
             updateProgress();
 
-            return projectId;
+            return { id: projectId, slug: finalData.slug };
         } catch (error) {
             console.error("Error creating project:", error);
             throw error;
@@ -361,6 +363,38 @@ export const projectsCrud = {
             return null;
         } catch (error) {
             console.error("Error fetching project:", error);
+            return null;
+        }
+    },
+
+    /**
+     * Obtiene un proyecto por su slug (URL amigable).
+     * Si no encuentra por slug, intenta buscar por ID (backward compatibility).
+     * 
+     * @param slugOrId - Slug del proyecto o ID de Firebase
+     * @returns El proyecto encontrado o null si no existe
+     */
+    getProjectBySlug: async (slugOrId: string): Promise<PortfolioItem | null> => {
+        try {
+            // First try to find by slug
+            const slugQuery = query(collection(db, 'projects'), where('slug', '==', slugOrId), limit(1));
+            const slugSnapshot = await getDocs(slugQuery);
+
+            if (!slugSnapshot.empty) {
+                const doc = slugSnapshot.docs[0];
+                return { id: doc.id, ...doc.data() } as PortfolioItem;
+            }
+
+            // Fallback: try to find by ID (for old projects without slug)
+            const docRef = doc(db, 'projects', slugOrId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                return { id: docSnap.id, ...docSnap.data() } as PortfolioItem;
+            }
+
+            return null;
+        } catch (error) {
+            console.error("Error fetching project by slug:", error);
             return null;
         }
     },

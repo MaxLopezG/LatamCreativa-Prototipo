@@ -13,6 +13,7 @@ import { shouldCountView } from '../../utils/viewTracking';
 import { PortfolioItem } from '../../types';
 import { PortfolioSidebar } from './components';
 import { CommentsSection } from '../../components/CommentsSection';
+import { SEOHead } from '../../components/SEOHead';
 
 /** Helper para obtener el ID del autor */
 const getAuthorId = (item: PortfolioItem | null | undefined): string | undefined =>
@@ -341,6 +342,15 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
 
   return (
     <div className="min-h-screen bg-[#030304] animate-fade-in pb-20 relative">
+      <SEOHead
+        title={item.title}
+        description={item.description?.substring(0, 150) || `Proyecto de ${item.artist}`}
+        image={item.image}
+        url={`/portfolio/${item.id}`}
+        type="website"
+        author={item.artist}
+        keywords={item.software || []}
+      />
 
       {/* LIGHTBOX */}
       {lightboxImage && (

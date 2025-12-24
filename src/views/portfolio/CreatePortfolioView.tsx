@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import {
@@ -42,6 +42,7 @@ const MAX_SIZE_PRO = 50 * 1024 * 1024;  // 50MB para usuarios Pro (Soporte para 
 
 export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack }) => {
   const { state, actions } = useAppStore();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [searchParams] = useSearchParams();
@@ -497,7 +498,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
         actions.showToast('Proyecto actualizado con éxito', 'success');
       } else {
         // CREATE MODE
-        await createProject(
+        const result = await createProject(
           projectData,
           {
             cover: coverFile,
@@ -509,6 +510,9 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
           }
         );
         actions.showToast('Proyecto publicado con éxito', 'success');
+        // Navigate to the new project using its slug
+        navigate(`/portfolio/${result.slug}`);
+        return;
       }
 
       onBack();

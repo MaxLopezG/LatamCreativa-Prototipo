@@ -14,6 +14,7 @@ import {
   PortfolioWrapper,
   PortfolioPostWrapper,
   FeedWrapper,
+  HomeWrapper,
   AboutWrapper,
   UserProfileWrapper,
   BlogPostWrapper,
@@ -54,8 +55,8 @@ export const router = createBrowserRouter([
     path: '/',
     element: <MainLayout />,
     children: [
-      // Home - Redirect to Portfolio
-      { index: true, element: <PortfolioWrapper /> },
+      // Home - Landing Page
+      { index: true, element: <HomeWrapper /> },
       { path: 'home', element: <FeedWrapper /> },
 
       // Portfolio

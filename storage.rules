@@ -1,0 +1,63 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Max file size: 50MB
+    function isValidFileSize() {
+      return request.resource.size < 50 * 1024 * 1024;
+    }
+    
+    // Only allow image types
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+    
+    // ============================================
+    // USER PROFILE IMAGES
+    // ============================================
+    match /users/{userId}/{allPaths=**} {
+      // Anyone can read user profile images
+      allow read: if true;
+      
+      // Only the owner can upload/update/delete their images
+      allow write: if isOwner(userId) && isValidFileSize() && isImage();
+    }
+    
+    // ============================================
+    // ARTICLE IMAGES
+    // ============================================
+    match /articles/{allPaths=**} {
+      // Anyone can read article images
+      allow read: if true;
+      
+      // Only authenticated users can upload
+      allow write: if isAuthenticated() && isValidFileSize() && isImage();
+    }
+    
+    // ============================================
+    // PROJECT IMAGES (stored under users path)
+    // ============================================
+    // Note: Project images are stored in /users/{userId}/projects/...
+    // This is already covered by the users rule above
+    
+    // ============================================
+    // CATCH-ALL: Deny everything else
+    // ============================================
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

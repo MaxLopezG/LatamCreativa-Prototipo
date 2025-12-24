@@ -30,6 +30,7 @@ import { PaginatedResult, withTimeout, sanitizeData } from '../utils';
 import { usersService } from '../users';
 import { notificationsService } from '../notifications';
 import { storageService } from '../storage';
+import { generateUniqueSlug } from '../../../utils/slugUtils';
 
 export const articlesCrud = {
     /**
@@ -72,7 +73,7 @@ export const articlesCrud = {
      * @param imageFile - Archivo de imagen de portada (opcional)
      * @returns ID del artículo creado
      */
-    createArticle: async (articleData: Omit<ArticleItem, 'id'>, imageFile?: File): Promise<string> => {
+    createArticle: async (articleData: Omit<ArticleItem, 'id'>, imageFile?: File): Promise<{ id: string; slug: string }> => {
         try {
             let imageUrl = articleData.image;
 
@@ -91,6 +92,7 @@ export const articlesCrud = {
 
             const finalData = sanitizeData({
                 ...articleData,
+                slug: generateUniqueSlug(articleData.title || 'articulo'),
                 image: imageUrl,
                 date: new Date().toISOString(),
                 likes: 0,
@@ -130,7 +132,7 @@ export const articlesCrud = {
                 console.error("Error sending notifications:", notifError);
             }
 
-            return docRef.id;
+            return { id: docRef.id, slug: finalData.slug as string };
         } catch (error) {
             console.error("Error creating article:", error);
             throw error;
@@ -342,13 +344,62 @@ export const articlesCrud = {
     },
 
     /**
-     * Elimina un artículo.
+     * Obtiene un artículo por su slug (URL amigable).
+     * Si no encuentra por slug, intenta buscar por ID (backward compatibility).
+     * 
+     * @param slugOrId - Slug del artículo o ID de Firebase
+     * @returns El artículo encontrado o null si no existe
+     */
+    getArticleBySlug: async (slugOrId: string): Promise<ArticleItem | null> => {
+        try {
+            // First try to find by slug
+            const slugQuery = query(collection(db, 'articles'), where('slug', '==', slugOrId), limit(1));
+            const slugSnapshot = await getDocs(slugQuery);
+
+            if (!slugSnapshot.empty) {
+                const docData = slugSnapshot.docs[0];
+                return { id: docData.id, ...docData.data() } as ArticleItem;
+            }
+
+            // Fallback: try to find by ID (for old articles without slug)
+            const docRef = doc(db, 'articles', slugOrId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                return { id: docSnap.id, ...docSnap.data() } as ArticleItem;
+            }
+
+            return null;
+        } catch (error) {
+            console.error("Error fetching article by slug:", error);
+            return null;
+        }
+    },
+
+    /**
+     * Elimina un artículo y su imagen asociada del Storage.
      * 
      * @param articleId - ID del artículo a eliminar
      */
     deleteArticle: async (articleId: string): Promise<void> => {
         try {
+            // Get article data to find the image URL
             const docRef = doc(db, 'articles', articleId);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const articleData = docSnap.data();
+
+                // Delete image from Storage if it exists and is from our storage
+                if (articleData.image && articleData.image.includes('firebasestorage.googleapis.com')) {
+                    try {
+                        await storageService.deleteFromUrl(articleData.image);
+                    } catch (storageError) {
+                        console.warn("Could not delete article image:", storageError);
+                    }
+                }
+            }
+
+            // Delete the article document
             await deleteDoc(docRef);
         } catch (error) {
             console.error("Error deleting article:", error);

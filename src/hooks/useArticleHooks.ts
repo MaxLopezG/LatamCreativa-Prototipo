@@ -132,19 +132,20 @@ export const useArticles = () => {
     };
 };
 
-// --- Hook for Single Article ---
-export const useArticle = (articleId: string | undefined) => {
+// --- Hook for Single Article (by slug or ID) ---
+export const useArticle = (slugOrId: string | undefined) => {
     const [article, setArticle] = useState<ArticleItem | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!articleId) return;
+        if (!slugOrId) return;
 
         const fetchArticle = async () => {
             setLoading(true);
             try {
-                const data = await articlesService.getArticle(articleId);
+                // Uses getArticleBySlug which tries slug first, then falls back to ID
+                const data = await articlesService.getArticleBySlug(slugOrId);
                 setArticle(data);
             } catch (err: any) {
                 setError(err.message);
@@ -154,7 +155,7 @@ export const useArticle = (articleId: string | undefined) => {
         };
 
         fetchArticle();
-    }, [articleId]);
+    }, [slugOrId]);
 
     return { article, loading, error };
 };
@@ -164,12 +165,12 @@ export const useCreateArticle = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const create = async (data: Omit<ArticleItem, 'id'>, file?: File) => {
+    const create = async (data: Omit<ArticleItem, 'id'>, file?: File): Promise<{ id: string; slug: string }> => {
         setLoading(true);
         setError(null);
         try {
-            const id = await articlesService.createArticle(data, file);
-            return id;
+            const result = await articlesService.createArticle(data, file);
+            return result; // { id, slug }
         } catch (err: any) {
             setError(err.message);
             throw err;
