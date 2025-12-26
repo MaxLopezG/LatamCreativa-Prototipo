@@ -6,6 +6,7 @@ import { articlesService } from '../../services/modules/articles';
 import { PortfolioItem, ArticleItem } from '../../types';
 import { CATEGORY_ITEMS } from '../../data/navigation';
 import { SEOHead } from '../../components/SEOHead';
+import { useAppStore } from '../../hooks/useAppStore';
 
 interface HomeViewProps {
   onCategorySelect: (category: string) => void;
@@ -13,6 +14,7 @@ interface HomeViewProps {
 
 export const HomeView: React.FC<HomeViewProps> = ({ onCategorySelect }) => {
   const navigate = useNavigate();
+  const { state } = useAppStore();
   const [featuredProjects, setFeaturedProjects] = useState<PortfolioItem[]>([]);
   const [recentArticles, setRecentArticles] = useState<ArticleItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -82,12 +84,14 @@ export const HomeView: React.FC<HomeViewProps> = ({ onCategorySelect }) => {
                 Explorar Portafolios
                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </button>
-              <button
-                onClick={() => navigate('/auth')}
-                className="flex items-center gap-2 px-8 py-4 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-bold rounded-2xl hover:bg-slate-50 dark:hover:bg-white/20 transition-all"
-              >
-                Crear Cuenta Gratis
-              </button>
+              {!state.user && (
+                <button
+                  onClick={() => navigate('/auth')}
+                  className="flex items-center gap-2 px-8 py-4 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-bold rounded-2xl hover:bg-slate-50 dark:hover:bg-white/20 transition-all"
+                >
+                  Crear Cuenta Gratis
+                </button>
+              )}
             </div>
 
             {/* Stats */}
@@ -310,13 +314,23 @@ export const HomeView: React.FC<HomeViewProps> = ({ onCategorySelect }) => {
             Únete a miles de creativos latinoamericanos que ya están compartiendo su talento y construyendo su red profesional.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <button
-              onClick={() => navigate('/auth')}
-              className="group flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-bold rounded-2xl transition-all shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 hover:scale-105"
-            >
-              Crear mi Portafolio
-              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </button>
+            {!state.user ? (
+              <button
+                onClick={() => navigate('/auth')}
+                className="group flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-bold rounded-2xl transition-all shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 hover:scale-105"
+              >
+                Crear mi Portafolio
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate('/create/portfolio')}
+                className="group flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-bold rounded-2xl transition-all shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 hover:scale-105"
+              >
+                Subir Proyecto
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+            )}
             <button
               onClick={() => navigate('/about')}
               className="flex items-center gap-2 px-8 py-4 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white font-bold rounded-2xl hover:bg-slate-200 dark:hover:bg-white/20 transition-all"

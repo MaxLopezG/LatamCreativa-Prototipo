@@ -56,6 +56,30 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, './src'),
       }
+    },
+    build: {
+      chunkSizeWarningLimit: 500,
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // Firebase in its own chunk
+            'firebase': [
+              'firebase/app',
+              'firebase/auth',
+              'firebase/firestore',
+              'firebase/storage'
+            ],
+            // Framer Motion separate
+            'framer': ['framer-motion'],
+            // React and core
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+            // Icons
+            'icons': ['lucide-react'],
+            // State management
+            'state': ['zustand', '@tanstack/react-query']
+          }
+        }
+      }
     }
   };
 });

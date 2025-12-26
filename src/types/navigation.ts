@@ -7,6 +7,7 @@ export interface NavItem {
     label?: string;
     active?: boolean;
     badge?: string;
+    comingSoon?: boolean;
 }
 
 export interface NavSection {

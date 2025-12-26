@@ -341,7 +341,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
   const softwares = item.software || [];
 
   return (
-    <div className="min-h-screen bg-[#030304] animate-fade-in pb-20 relative">
+    <div className="min-h-screen bg-[#030304] animate-fade-in relative">
       <SEOHead
         title={item.title}
         description={item.description?.substring(0, 150) || `Proyecto de ${item.artist}`}
@@ -620,22 +620,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
 
       </div>
 
-      {/* MOBILE BOTTOM ACTIONS */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#0A0A0C]/90 backdrop-blur-xl border-t border-white/10 p-4 lg:hidden flex items-center justify-between z-50">
-        <div className="flex items-center gap-6">
-          <button className={`${isLiked ? 'text-amber-500' : 'text-slate-400'} flex flex-col items-center gap-1`} onClick={handleToggleLike}>
-            <Heart className={`h-6 w-6 ${isLiked ? 'fill-current' : ''}`} />
-            <span className="text-[10px] font-bold">{likeCount}</span>
-          </button>
-          <button className="text-slate-400 flex flex-col items-center gap-1">
-            <MessageSquare className="h-6 w-6" />
-            <span className="text-[10px] font-bold">{comments.length}</span>
-          </button>
-        </div>
-        <button className="px-8 py-3 bg-white text-black rounded-xl font-bold text-sm">
-          Contactar
-        </button>
-      </div>
+
 
       <ConfirmationModal
         isOpen={isDeleteModalOpen}

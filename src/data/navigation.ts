@@ -13,23 +13,15 @@ export const PRIMARY_NAV_ITEMS: NavItem[] = [
 
   // 2. Showcase (Visual Core)
   { id: 'portfolio', icon: ImageIcon, label: 'Portafolio' },
-  // { id: 'collections', icon: Bookmark, label: 'Colecciones' },
 
-  // 3. Professional & Growth (Career/Money)
-  // { id: 'jobs', icon: Building2, label: 'Empleos' },
-  // { id: 'freelance', icon: Briefcase, label: 'Freelance' },
-  // { id: 'market', icon: Store, label: 'Mercado' },
-  // { id: 'education', icon: GraduationCap, label: 'Educación' },
-
-  // 4. Collaboration & Community (Interaction)
-  // { id: 'community', icon: Users, label: 'Proyectos' },
-  // { id: 'challenges', icon: Trophy, label: 'Retos' },
-  // { id: 'events', icon: CalendarDays, label: 'Eventos' },
-  // { id: 'people', icon: UsersRound, label: 'Comunidad' },
-  // { id: 'forum', icon: MessageCircleQuestion, label: 'Foro' },
-
-  // 5. Content & News
+  // 3. Content & News
   { id: 'blog', icon: Newspaper, label: 'Blog' },
+
+  // 4. Community & Collaboration (Coming Soon)
+  { id: 'forum', icon: MessageCircleQuestion, label: 'Foro', comingSoon: true },
+  { id: 'jobs', icon: Building2, label: 'Bolsa de Trabajo', comingSoon: true },
+  { id: 'projects', icon: Users, label: 'Proyectos Colaborativos', comingSoon: true },
+  { id: 'contests', icon: Trophy, label: 'Concursos', comingSoon: true },
 ];
 
 // --- SECONDARY SIDEBAR ITEMS (CREATIVE) ---

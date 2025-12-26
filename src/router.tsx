@@ -38,6 +38,9 @@ const CreatePortfolioView = lazyImport(() => import('./views/portfolio/CreatePor
 // 404 View
 const NotFoundView = lazyImport(() => import('./views/general/NotFoundView').then(module => ({ default: module.NotFoundView })));
 
+// Service Coming Soon Pages
+import { ForumComingSoon, JobsComingSoon, ProjectsComingSoon, ContestsComingSoon } from './views/general/ServicePages';
+
 export const router = createBrowserRouter([
   {
     path: '/auth',
@@ -90,6 +93,12 @@ export const router = createBrowserRouter([
       // Fallback
       { path: 'info/help', element: <SuspendedView Component={ComingSoonView} /> },
       { path: 'info/guides', element: <SuspendedView Component={ComingSoonView} /> },
+
+      // Coming Soon Services
+      { path: 'forum', element: <ForumComingSoon /> },
+      { path: 'jobs', element: <JobsComingSoon /> },
+      { path: 'projects', element: <ProjectsComingSoon /> },
+      { path: 'contests', element: <ContestsComingSoon /> },
 
       // 404 - Catch all unmatched routes
       { path: '*', element: <SuspendedView Component={NotFoundView} /> }

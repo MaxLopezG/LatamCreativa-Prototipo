@@ -403,6 +403,103 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
               />
             </div>
 
+            {/* Category & Tags - Mobile Only */}
+            <div className="lg:hidden bg-[#0A0A0C] border border-white/[0.06] rounded-2xl p-6 shadow-xl shadow-black/20 space-y-4">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <Layers className="h-3 w-3" /> Categoría y Etiquetas
+              </h3>
+
+              {/* Mobile Category Select */}
+              <div className="relative" ref={categoryRef}>
+                <div
+                  onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                  className={`w-full bg-white/5 border rounded-xl px-4 py-3 flex items-center justify-between cursor-pointer transition-all ${isCategoryOpen
+                    ? 'border-rose-500 ring-2 ring-rose-500/20'
+                    : 'border-white/10 hover:border-white/20'
+                    }`}
+                >
+                  <span className={category ? 'text-white' : 'text-slate-500'}>
+                    {category || 'Seleccionar tema...'}
+                  </span>
+                  <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} />
+                </div>
+
+                {/* Dropdown */}
+                {isCategoryOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 max-h-64 overflow-y-auto bg-[#1A1A1C] border border-white/10 rounded-xl shadow-2xl z-50 animate-fade-in custom-scrollbar">
+                    {sections.map(section => (
+                      <div key={section.title} className="py-2">
+                        <div className="px-4 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider sticky top-0 bg-[#1A1A1C]/95 backdrop-blur-sm z-10">
+                          {section.title}
+                        </div>
+                        {section.items.map(item => (
+                          <button
+                            key={item.label}
+                            onClick={() => {
+                              setCategory(item.label);
+                              setIsCategoryOpen(false);
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-sm hover:bg-white/5 flex items-center justify-between group transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="p-1.5 rounded-md bg-white/5 text-slate-500 group-hover:text-rose-500 group-hover:bg-rose-500/10 transition-colors">
+                                <item.icon className="h-4 w-4" />
+                              </div>
+                              <span className="text-slate-200 group-hover:text-white">
+                                {item.label}
+                              </span>
+                            </div>
+                            {category === item.label && <Check className="h-4 w-4 text-rose-500" />}
+                          </button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Mobile Tags */}
+              <div className="space-y-2 pt-4 border-t border-white/[0.06]">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                  <Hash className="h-3 w-3" /> Etiquetas
+                </label>
+                <div className="flex flex-wrap gap-2 min-h-[32px]">
+                  {tags.map(tag => (
+                    <span key={tag} className="flex items-center gap-1 px-2 py-1 bg-rose-500/20 text-rose-300 rounded-lg text-sm font-medium animate-fade-in">
+                      {tag}
+                      <button onClick={() => removeTag(tag)} className="hover:text-red-500 ml-1"><X className="h-3 w-3" /></button>
+                    </span>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleAddTag}
+                  placeholder="Escribe y presiona Enter..."
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-rose-500"
+                />
+                {/* Suggested Tags */}
+                {suggestedTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {suggestedTags.slice(0, 5).map(tag => (
+                      <button
+                        key={tag}
+                        onClick={() => addTag(tag)}
+                        disabled={tags.includes(tag)}
+                        className={`text-xs px-2 py-1 rounded-md border transition-colors ${tags.includes(tag)
+                          ? 'bg-white/5 text-slate-500 border-transparent cursor-default'
+                          : 'border-white/10 text-slate-400 hover:border-rose-400 hover:text-rose-400'
+                          }`}
+                      >
+                        + {tag}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Cover Image Section - Second */}
             <div className="bg-[#0A0A0C] border border-white/[0.06] rounded-2xl p-6 shadow-xl shadow-black/20">
               <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-4">
@@ -464,37 +561,37 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
               {/* Content Blocks */}
               <div className="space-y-6 pt-4 border-t border-white/[0.06]">
                 {blocks.map((block, index) => (
-                  <div key={block.id} className="group relative pl-0 md:pl-12 transition-all">
+                  <div key={block.id} className="group relative transition-all">
 
-                    {/* Controls (Only in Edit Mode) - Inline horizontal layout */}
+                    {/* Block Controls - Top right, always visible on all devices */}
                     {!isPreview && (
-                      <div className="hidden md:flex absolute -left-2 top-1/2 -translate-y-1/2 -translate-x-full flex-row items-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        <button
-                          onClick={() => removeBlock(block.id)}
-                          className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 rounded-lg transition-colors"
-                          title="Eliminar bloque"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                        <div className="flex flex-row bg-white/5 rounded-lg overflow-hidden border border-white/10">
+                      <div className="flex items-center justify-end gap-2 mb-3">
+                        <div className="flex items-center bg-white/5 rounded-lg overflow-hidden border border-white/10">
                           <button
                             onClick={() => moveBlock(index, 'up')}
                             disabled={index === 0}
-                            className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-white/10 active:bg-white/15 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                             title="Mover arriba"
                           >
-                            <ChevronUp className="h-3.5 w-3.5" />
+                            <ChevronUp className="h-4 w-4" />
                           </button>
-                          <div className="w-px h-full bg-white/10" />
+                          <div className="w-px h-6 bg-white/10" />
                           <button
                             onClick={() => moveBlock(index, 'down')}
                             disabled={index === blocks.length - 1}
-                            className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-white/10 active:bg-white/15 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                             title="Mover abajo"
                           >
-                            <ChevronDown className="h-3.5 w-3.5" />
+                            <ChevronDown className="h-4 w-4" />
                           </button>
                         </div>
+                        <button
+                          onClick={() => removeBlock(block.id)}
+                          className="p-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 active:bg-red-500/30 rounded-lg transition-colors"
+                          title="Eliminar bloque"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     )}
 

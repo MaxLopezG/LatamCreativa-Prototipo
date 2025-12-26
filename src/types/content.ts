@@ -4,10 +4,8 @@ export interface PortfolioItem {
     id: string;
     title: string;
     artist: string;
-    /** Primary owner identifier - use this for all new code */
+    /** Primary owner identifier */
     authorId: string;
-    /** @deprecated Use authorId instead. Kept for backward compatibility with existing data. */
-    artistId?: string;
     artistAvatar?: string;
     artistHeadline?: string;
     artistRole?: string;

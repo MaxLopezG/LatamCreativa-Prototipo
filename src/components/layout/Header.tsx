@@ -88,16 +88,8 @@ export const Header = ({
     const shadowColor = contentMode === 'dev' ? 'shadow-blue-500/20' : 'shadow-amber-500/20';
 
     const createOptions = [
-        { id: 'story', icon: Aperture, label: 'Subir Historia', desc: 'Stories', color: 'text-pink-500', bg: 'bg-pink-500/10' },
-        { id: 'article', icon: FileText, label: 'Escribir Artículo', desc: 'Blog', color: 'text-blue-500', bg: 'bg-blue-500/10' },
-        { id: 'portfolio', icon: Layers, label: 'Subir Proyecto', desc: 'Portafolio', color: 'text-amber-500', bg: 'bg-amber-500/10' },
-        { id: 'course', icon: Video, label: 'Crear Curso', desc: 'Educación', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-        { id: 'asset', icon: Box, label: 'Vender Asset', desc: 'Mercado', color: 'text-rose-500', bg: 'bg-rose-500/10' },
-        { id: 'service', icon: Briefcase, label: 'Ofrecer Servicio', desc: 'Freelance', color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
-        { id: 'service', icon: Building2, label: 'Publicar Empleo', desc: 'Jobs', color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-        { id: 'project', icon: Users, label: 'Reclutar Equipo', desc: 'Proyectos', color: 'text-purple-500', bg: 'bg-purple-500/10' },
-        { id: 'forum', icon: MessageCircleQuestion, label: 'Preguntar', desc: 'Foro', color: 'text-orange-500', bg: 'bg-orange-500/10' },
-        { id: 'event', icon: CalendarDays, label: 'Publicar Evento', desc: 'Eventos', color: 'text-red-500', bg: 'bg-red-500/10' },
+        { id: 'portfolio', icon: Layers, label: 'Subir Proyecto', desc: 'Añadir a tu portafolio', color: 'text-amber-500', bg: 'bg-amber-500/10', route: '/create/portfolio' },
+        { id: 'article', icon: FileText, label: 'Escribir Artículo', desc: 'Publicar en el blog', color: 'text-blue-500', bg: 'bg-blue-500/10', route: '/create/article' },
     ];
 
     const unreadCount = notifications.filter(n => !n.read).length;
@@ -324,7 +316,12 @@ export const Header = ({
                                             className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-left group"
                                             onClick={() => {
                                                 setIsCreateMenuOpen(false);
-                                                onCreateAction?.(item.id);
+                                                if (!state.user) {
+                                                    actions.showToast('Debes iniciar sesión para crear contenido', 'info');
+                                                    navigate('/auth');
+                                                    return;
+                                                }
+                                                navigate(item.route);
                                             }}
                                         >
                                             <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${item.bg} ${item.color} group-hover:scale-110 transition-transform shadow-sm`}>
