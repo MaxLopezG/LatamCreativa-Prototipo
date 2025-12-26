@@ -233,27 +233,13 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
         onBack();
       } else {
         // CREATE MODE
-        // Attempt 1: Try with image (if exists)
         const result = await create(articleData, coverImageFile || undefined);
         actions.showToast('Artículo publicado correctamente', 'success');
         // Navigate to the new article using its slug
         navigate(`/blog/${result.slug}`);
-        return;
       }
     } catch (error: any) {
-      console.warn("Publish/Update failed:", error);
-
-      // Retry logic logic only for CREATE (for now), generic error for update
-      if (!isEditMode && coverImageFile) {
-        try {
-          actions.showToast('Error al subir imagen. Reintentando solo texto...', 'info');
-          await create(articleData, undefined);
-          actions.showToast('Publicado sin imagen de portada', 'info');
-          onBack();
-          return;
-        } catch (retryError) { }
-      }
-
+      console.error("Publish/Update failed:", error);
       actions.showToast(error.message || 'Error al guardar el artículo', 'error');
     } finally {
       setIsPublishing(false);

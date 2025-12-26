@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Newspaper, Search, Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
+import React from 'react';
+import { Plus, Newspaper, Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
 import { useArticles } from '../../hooks/useFirebase';
 import { BlogCard } from '../../components/cards/BlogCard';
@@ -52,23 +52,6 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
           <p className="text-base md:text-xl text-slate-300 mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed font-light">
             Tutoriales en profundidad, entrevistas a expertos y las últimas novedades de la industria creativa y tecnológica.
           </p>
-
-          {/* Search Bar */}
-          <div className="relative max-w-2xl mx-auto">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-slate-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="Buscar artículos, tutoriales, noticias..."
-              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-slate-400 focus:outline-none focus:bg-white/10 focus:ring-1 focus:ring-rose-500/50 transition-all backdrop-blur-xl shadow-2xl"
-            />
-            <div className="absolute inset-y-0 right-2 flex items-center">
-              <button className="p-2 rounded-xl bg-rose-600 text-white hover:bg-rose-500 transition-all">
-                <Search className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -126,7 +109,7 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-8 mb-16">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 mb-16">
             {/* Filter out drafts and scheduled from public feed */}
             {blogPosts
               .filter(article => !article.status || article.status === 'published')

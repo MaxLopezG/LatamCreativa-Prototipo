@@ -64,25 +64,28 @@ export const storageService = {
      * @returns URL pública de descarga del archivo subido
      */
     uploadImage: async (file: File, path: string, options: UploadOptions = {}): Promise<string> => {
-        const { maxSizeMB = 5, compress = true, quality = 0.8 } = options;
-
-        if (file.size > maxSizeMB * 1024 * 1024) {
-            throw new Error(`El archivo excede el límite de ${maxSizeMB}MB.`);
-        }
+        const { maxSizeMB = 10, compress = true, quality = 0.8 } = options;
 
         let fileToUpload = file;
 
+        // First, try to compress the image if it's an image file
         if (compress && file.type.startsWith('image/')) {
             try {
                 fileToUpload = await imageCompression(file, {
-                    maxSizeMB: 2, // Always try to compress to a reasonable web size
+                    maxSizeMB: 2, // Compress to max 2MB for web
                     maxWidthOrHeight: 1920,
                     useWebWorker: true,
                     initialQuality: quality,
                 });
             } catch (compressionError) {
-                console.warn('No se pudo comprimir la imagen, se subirá el original:', compressionError);
+                console.warn('No se pudo comprimir la imagen, se intentará subir el original:', compressionError);
+                // Continue with original file
             }
+        }
+
+        // Now validate size AFTER compression
+        if (fileToUpload.size > maxSizeMB * 1024 * 1024) {
+            throw new Error(`El archivo excede el límite de ${maxSizeMB}MB incluso después de comprimir.`);
         }
 
         const storageRef = ref(storage, path);

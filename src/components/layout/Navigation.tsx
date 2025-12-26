@@ -1,12 +1,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Search, X, Sliders, Code, Palette, ChevronDown, ChevronRight, User, DollarSign, LogOut, LogIn } from 'lucide-react';
+import { Settings, X, Code, Palette, ChevronDown, ChevronRight, User, DollarSign, LogOut, Search, Loader2, Layers, Newspaper } from 'lucide-react';
 import { auth } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
 import { PRIMARY_NAV_ITEMS, NAV_SECTIONS, NAV_SECTIONS_DEV, SUBSCRIPTIONS } from '../../data/navigation';
 import { ContentMode, useAppStore } from '../../hooks/useAppStore';
 import { usersService } from '../../services/modules/users';
+import { searchService, SearchResult } from '../../services/modules/search';
 
 interface PrimarySidebarProps {
   activeModule?: string;
@@ -230,6 +231,36 @@ export const SecondarySidebar = ({
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [loadingSubs, setLoadingSubs] = useState(false);
 
+  // State for mobile search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load expanded items from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('latamcreativa_menu_expanded');
+      if (saved) {
+        setExpandedItems(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.warn('Error loading expanded items from localStorage:', error);
+    }
+  }, []);
+
+  // Save expanded items to localStorage when they change
+  useEffect(() => {
+    try {
+      if (expandedItems.length > 0) {
+        localStorage.setItem('latamcreativa_menu_expanded', JSON.stringify(expandedItems));
+      }
+    } catch (error) {
+      console.warn('Error saving expanded items to localStorage:', error);
+    }
+  }, [expandedItems]);
+
   // Fetch Subscriptions
   useEffect(() => {
     const fetchSubs = async () => {
@@ -259,6 +290,88 @@ export const SecondarySidebar = ({
 
     fetchSubs();
   }, [user, state.subscriptionsTimestamp]); // Refetch when user changes OR timestamp updates
+
+  // Debounced search effect for mobile
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    if (searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setIsSearching(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const results = await searchService.search(searchQuery.trim(), { maxResults: 6 });
+        setSearchResults(results);
+        setShowSuggestions(true);
+      } catch (error) {
+        console.error('Search error:', error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  const handleResultClick = (result: SearchResult) => {
+    setShowSuggestions(false);
+    setSearchQuery('');
+    onClose?.();
+
+    switch (result.type) {
+      case 'project':
+        navigate(`/portfolio/${result.slug || result.id}`);
+        break;
+      case 'article':
+        navigate(`/blog/${result.slug || result.id}`);
+        break;
+      case 'user':
+        navigate(`/user/${result.username || result.id}`);
+        break;
+    }
+  };
+
+  const handleSearchSubmit = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setShowSuggestions(false);
+      setSearchQuery('');
+      onClose?.();
+    }
+  };
+
+  const getResultIcon = (type: SearchResult['type']) => {
+    switch (type) {
+      case 'project':
+        return <Layers className="h-4 w-4" />;
+      case 'article':
+        return <Newspaper className="h-4 w-4" />;
+      case 'user':
+        return <User className="h-4 w-4" />;
+    }
+  };
+
+  const getResultTypeLabel = (type: SearchResult['type']) => {
+    switch (type) {
+      case 'project':
+        return 'Proyecto';
+      case 'article':
+        return 'Artículo';
+      case 'user':
+        return 'Usuario';
+    }
+  };
 
   // Switch sections based on mode
   const currentNavSections = contentMode === 'dev' ? NAV_SECTIONS_DEV : NAV_SECTIONS;
@@ -307,6 +420,94 @@ export const SecondarySidebar = ({
 
         <div className="flex-1 overflow-y-auto scrollbar-hide p-5">
 
+          {/* MOBILE SEARCH BAR */}
+          <div className="relative mb-6">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                {isSearching ? (
+                  <Loader2 className={`h-4 w-4 animate-spin ${contentMode === 'dev' ? 'text-blue-500' : 'text-amber-500'}`} />
+                ) : (
+                  <Search className="h-4 w-4 text-slate-400" />
+                )}
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchSubmit}
+                placeholder="Buscar proyectos, artículos..."
+                className={`w-full pl-10 pr-4 py-3 rounded-xl border text-sm font-medium transition-all ${showSuggestions
+                  ? `bg-white dark:bg-[#0A0A0C] ${contentMode === 'dev' ? 'border-blue-500/50 ring-2 ring-blue-500/20' : 'border-amber-500/50 ring-2 ring-amber-500/20'} text-slate-900 dark:text-white`
+                  : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-300'
+                  } placeholder-slate-400 focus:outline-none`}
+              />
+            </div>
+
+            {/* Search Results Dropdown */}
+            {showSuggestions && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1A1A1C] border border-slate-200 dark:border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-fade-in">
+                {searchResults.length > 0 ? (
+                  <div className="max-h-[280px] overflow-y-auto">
+                    <div className="px-3 py-2 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02]">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        {searchResults.length} resultados
+                      </span>
+                    </div>
+                    {searchResults.map((result) => (
+                      <button
+                        key={`${result.type}-${result.id}`}
+                        onClick={() => handleResultClick(result)}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-left group border-b border-slate-50 dark:border-white/5 last:border-b-0"
+                      >
+                        {/* Thumbnail */}
+                        <div className={`w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center ${result.image ? '' : 'bg-slate-100 dark:bg-white/10'}`}>
+                          {result.image ? (
+                            <img
+                              src={result.image}
+                              alt=""
+                              className={`w-full h-full object-cover ${result.type === 'user' ? 'rounded-full' : ''}`}
+                            />
+                          ) : (
+                            <div className={`${result.type === 'project' ? 'text-amber-500' : result.type === 'article' ? 'text-rose-500' : 'text-blue-500'}`}>
+                              {getResultIcon(result.type)}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                            {result.title}
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                            {result.subtitle}
+                          </div>
+                        </div>
+
+                        {/* Type Badge */}
+                        <span className={`px-1.5 py-0.5 text-[9px] font-bold uppercase rounded flex-shrink-0 ${result.type === 'project'
+                          ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                          : result.type === 'article'
+                            ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                            : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                          }`}>
+                          {getResultTypeLabel(result.type)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-4 py-6 text-center">
+                    <Search className="h-6 w-6 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Sin resultados para "{searchQuery}"
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* MOBILE ONLY: Primary Module Selection */}
           <div className="md:hidden mb-8">
             <h3 className="uppercase text-xs font-semibold text-slate-500 tracking-widest mb-4 px-2">Navegación Principal</h3>
@@ -331,15 +532,7 @@ export const SecondarySidebar = ({
             <div className="h-px w-full bg-slate-200 dark:bg-white/10 my-6"></div>
           </div>
 
-          {/* Search */}
-          <div className="relative mb-8">
-            <Search className="absolute left-3.5 top-3 h-5 w-5 text-slate-500" />
-            <input
-              type="text"
-              placeholder="Buscar categorías..."
-              className={`w-full rounded-xl border border-slate-200 dark:border-white/5 bg-slate-100 dark:bg-white/[0.03] py-2.5 pl-10 pr-4 text-sm placeholder-slate-400 dark:placeholder-slate-500 text-slate-900 dark:text-slate-200 outline-none transition-all focus:bg-white dark:focus:bg-white/[0.06] focus:ring-1 ${contentMode === 'dev' ? 'focus:border-blue-500/30 focus:ring-blue-500/30' : 'focus:border-amber-500/30 focus:ring-amber-500/30'}`}
-            />
-          </div>
+
 
           {/* SECTIONED NAVIGATION */}
           <div className="space-y-8">
@@ -365,10 +558,19 @@ export const SecondarySidebar = ({
                             e.preventDefault();
                             if (hasSubItems) {
                               toggleExpand(item.label);
-                              onCategorySelect(item.label);
+                            }
+                            // Navigate to SEO-friendly route if slug exists
+                            if (item.slug && item.slug !== 'home') {
+                              const basePath = activeModule === 'blog' ? '/blog' : '/portfolio';
+                              navigate(`${basePath}/categoria/${item.slug}`);
+                              onClose?.();
+                            } else if (item.slug === 'home') {
+                              const basePath = activeModule === 'blog' ? '/blog' : '/portfolio';
+                              navigate(basePath);
+                              onClose?.();
                             } else {
                               onCategorySelect(item.label);
-                              onClose?.();
+                              if (!hasSubItems) onClose?.();
                             }
                           }}
                           className={`w-full group flex items-center gap-3 rounded-xl p-2.5 px-3 transition-all cursor-pointer ${isActive

@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Layers, Plus, Image as ImageIcon, Search, Filter, ArrowUpDown, Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams, useParams } from 'react-router-dom';
+import { Layers, Plus, Image as ImageIcon, Filter, ArrowUpDown, Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
 import { PortfolioCard } from '../../components/cards/PortfolioCard';
 import { ContentMode, useAppStore } from '../../hooks/useAppStore';
 import { projectsService } from '../../services/modules/projects';
 import { PortfolioItem } from '../../types';
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { NAV_SECTIONS, NAV_SECTIONS_DEV } from '../../data/navigation';
 
 interface PortfolioViewProps {
   activeCategory: string;
@@ -18,6 +19,21 @@ interface PortfolioViewProps {
 export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, onItemSelect, onCreateClick, onSave, contentMode }) => {
   const { state } = useAppStore();
   const mode = contentMode || 'creative';
+  const { slug } = useParams<{ slug?: string }>();
+
+  // Get category label from slug
+  const categoryFromSlug = useMemo(() => {
+    if (!slug) return null;
+    const sections = mode === 'dev' ? NAV_SECTIONS_DEV : NAV_SECTIONS;
+    for (const section of sections) {
+      const item = section.items.find(i => i.slug === slug);
+      if (item) return item.label;
+    }
+    return null;
+  }, [slug, mode]);
+
+  // Active category: use slug-derived category if available, otherwise prop
+  const effectiveCategory = categoryFromSlug || activeCategory;
 
   const [searchParams, setSearchParams] = useSearchParams();
   const currentPage = Number(searchParams.get('page')) || 1;
@@ -83,10 +99,10 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, on
     setSearchParams({ page: String(currentPage - 1) });
   };
 
-  // Apply Category Filter if not Home
-  const displayItems = activeCategory === 'Home'
+  // Apply Category Filter - use effectiveCategory (from slug or prop)
+  const displayItems = effectiveCategory === 'Home' || !effectiveCategory
     ? filteredItems
-    : filteredItems.filter(item => item.category === activeCategory);
+    : filteredItems.filter(item => item.category === effectiveCategory);
 
   const accentText = mode === 'dev' ? 'text-blue-500' : 'text-pink-500';
   const accentBg = mode === 'dev' ? 'bg-blue-600' : 'bg-pink-600';
@@ -126,23 +142,6 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, on
           <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed font-light">
             Explora {mode === 'dev' ? 'repositorios y snippets' : 'modelos 3D, concept art y animaciones'} creados por la comunidad más talentosa de Latam.
           </p>
-
-          {/* Search Bar */}
-          <div className="relative max-w-2xl mx-auto">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-slate-400" />
-            </div>
-            <input
-              type="text"
-              placeholder={`Buscar en ${activeCategory === 'Home' ? 'todo' : activeCategory}...`}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-slate-400 focus:outline-none focus:bg-white/10 focus:ring-1 focus:ring-white/20 transition-all backdrop-blur-xl shadow-2xl"
-            />
-            <div className="absolute inset-y-0 right-2 flex items-center">
-              <button className={`p-2 rounded-xl ${accentBg} text-white hover:brightness-110 transition-all`}>
-                <Search className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -151,10 +150,11 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, on
         <div>
           <h2 className="text-2xl font-bold text-white flex items-center gap-3">
             <Layers className={`h-6 w-6 ${accentText}`} />
-            {activeCategory === 'Home' ? 'Feed de Proyectos' : activeCategory}
+            {effectiveCategory === 'Home' || !effectiveCategory ? 'Feed de Proyectos' : effectiveCategory}
           </h2>
           <p className="text-slate-400 mt-1 text-sm">
             {loading ? 'Cargando proyectos...' : `Mostrando ${displayItems.length} resultados`}
+            {slug && ` en "${effectiveCategory}"`}
           </p>
         </div>
 
@@ -184,7 +184,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, on
           <Loader2 className={`h-12 w-12 animate-spin ${accentText}`} />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-16">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 mb-16">
           {displayItems.length > 0 ? (
             displayItems.map((item) => (
               <PortfolioCard

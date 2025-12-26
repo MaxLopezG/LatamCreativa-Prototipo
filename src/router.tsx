@@ -13,7 +13,6 @@ import {
   SearchResultsWrapper,
   PortfolioWrapper,
   PortfolioPostWrapper,
-  FeedWrapper,
   HomeWrapper,
   AboutWrapper,
   UserProfileWrapper,
@@ -60,15 +59,16 @@ export const router = createBrowserRouter([
     children: [
       // Home - Landing Page
       { index: true, element: <HomeWrapper /> },
-      { path: 'home', element: <FeedWrapper /> },
 
       // Portfolio
       { path: 'portfolio', element: <PortfolioWrapper /> },
+      { path: 'portfolio/categoria/:slug', element: <PortfolioWrapper /> },
       { path: 'portfolio/:id', element: <PortfolioPostWrapper /> },
       { path: 'create/portfolio', element: <CreateWrapper Component={CreatePortfolioView} /> },
 
       // Blog
       { path: 'blog', element: <BlogWrapper /> },
+      { path: 'blog/categoria/:slug', element: <BlogWrapper /> },
       { path: 'blog/:id', element: <BlogPostWrapper /> },
       { path: 'create/article', element: <CreateWrapper Component={CreateArticleView} /> },
 

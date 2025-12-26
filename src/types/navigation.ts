@@ -19,6 +19,7 @@ export interface CategoryItem {
     icon: LucideIcon;
     label: string;
     subLabel?: string;
+    slug?: string;        // URL slug para SEO-friendly routes
     active?: boolean;
     hasUpdate?: boolean;
     subItems?: string[];

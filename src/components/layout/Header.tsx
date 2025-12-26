@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Menu, Bell, Plus, FileText, Layers, Video, Box, Users, Search, Command, Briefcase, MessageCircleQuestion, CalendarDays, Heart, UserPlus, Check, ShoppingCart, Building2, Aperture, Trash2, Sparkles, ArrowRight } from 'lucide-react';
+import { Menu, Bell, Plus, FileText, Layers, Video, Box, Users, Search, Command, Briefcase, MessageCircleQuestion, CalendarDays, Heart, UserPlus, Check, ShoppingCart, Building2, Aperture, Trash2, Sparkles, ArrowRight, Loader2, Image as ImageIcon, User, Newspaper } from 'lucide-react';
 import { Notification } from '../../types';
 import { ContentMode, useAppStore } from '../../hooks/useAppStore';
+import { searchService, SearchResult } from '../../services/modules/search';
 
 interface HeaderProps {
     onMenuClick?: () => void;
@@ -42,9 +43,14 @@ export const Header = ({
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const notifRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const searchContainerRef = useRef<HTMLDivElement>(null);
+    const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
     // Ctrl+K Shortcut
     useEffect(() => {
@@ -53,6 +59,12 @@ export const Header = ({
                 e.preventDefault();
                 searchInputRef.current?.focus();
                 setIsSearchFocused(true);
+            }
+            // Escape to close search
+            if (e.key === 'Escape') {
+                setShowSuggestions(false);
+                setIsSearchFocused(false);
+                searchInputRef.current?.blur();
             }
         };
         window.addEventListener('keydown', handleKeyDown);
@@ -68,15 +80,93 @@ export const Header = ({
             if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
                 setIsNotificationsOpen(false);
             }
+            if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+                setShowSuggestions(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Debounced search effect
+    useEffect(() => {
+        if (debounceRef.current) {
+            clearTimeout(debounceRef.current);
+        }
+
+        if (searchQuery.trim().length < 2) {
+            setSearchResults([]);
+            setShowSuggestions(false);
+            return;
+        }
+
+        setIsSearching(true);
+        debounceRef.current = setTimeout(async () => {
+            try {
+                const results = await searchService.search(searchQuery.trim(), { maxResults: 8 });
+                setSearchResults(results);
+                setShowSuggestions(true);
+            } catch (error) {
+                console.error('Search error:', error);
+                setSearchResults([]);
+            } finally {
+                setIsSearching(false);
+            }
+        }, 300);
+
+        return () => {
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current);
+            }
+        };
+    }, [searchQuery]);
+
     const handleSearchSubmit = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && searchQuery.trim()) {
-            onSearch?.(searchQuery);
+            navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+            setShowSuggestions(false);
+            setSearchQuery('');
             setIsSearchFocused(false);
+        }
+    };
+
+    const handleResultClick = (result: SearchResult) => {
+        setShowSuggestions(false);
+        setSearchQuery('');
+        setIsSearchFocused(false);
+
+        switch (result.type) {
+            case 'project':
+                navigate(`/portfolio/${result.slug || result.id}`);
+                break;
+            case 'article':
+                navigate(`/blog/${result.slug || result.id}`);
+                break;
+            case 'user':
+                navigate(`/user/${result.username || result.id}`);
+                break;
+        }
+    };
+
+    const getResultIcon = (type: SearchResult['type']) => {
+        switch (type) {
+            case 'project':
+                return <Layers className="h-4 w-4" />;
+            case 'article':
+                return <Newspaper className="h-4 w-4" />;
+            case 'user':
+                return <User className="h-4 w-4" />;
+        }
+    };
+
+    const getResultTypeLabel = (type: SearchResult['type']) => {
+        switch (type) {
+            case 'project':
+                return 'Proyecto';
+            case 'article':
+                return 'Artículo';
+            case 'user':
+                return 'Usuario';
         }
     };
 
@@ -111,10 +201,14 @@ export const Header = ({
             </div>
 
             {/* CENTER: Global Search Bar */}
-            <div className="hidden md:flex justify-center w-1/3">
+            <div className="hidden md:flex justify-center w-1/3" ref={searchContainerRef}>
                 <div className={`relative w-full max-w-md transition-all duration-300 ${isSearchFocused ? 'scale-105' : 'scale-100'}`}>
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className={`h-4 w-4 transition-colors ${isSearchFocused ? accentText : 'text-slate-400'}`} />
+                        {isSearching ? (
+                            <Loader2 className={`h-4 w-4 animate-spin ${accentText}`} />
+                        ) : (
+                            <Search className={`h-4 w-4 transition-colors ${isSearchFocused ? accentText : 'text-slate-400'}`} />
+                        )}
                     </div>
                     <input
                         ref={searchInputRef}
@@ -122,9 +216,11 @@ export const Header = ({
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={handleSearchSubmit}
-                        placeholder="Buscar artistas, cursos, assets..."
-                        onFocus={() => setIsSearchFocused(true)}
-                        onBlur={() => setIsSearchFocused(false)}
+                        placeholder="Buscar proyectos, artículos, usuarios..."
+                        onFocus={() => {
+                            setIsSearchFocused(true);
+                            if (searchResults.length > 0) setShowSuggestions(true);
+                        }}
                         className={`block w-full pl-10 pr-12 py-2.5 border rounded-2xl text-sm font-medium transition-all ${isSearchFocused
                             ? `bg-white dark:bg-[#0A0A0C] ${accentBorder} ring-2 ${accentRing} text-slate-900 dark:text-white`
                             : 'bg-slate-100 dark:bg-white/[0.05] border-transparent text-slate-600 dark:text-slate-300'
@@ -136,6 +232,73 @@ export const Header = ({
                             <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">K</span>
                         </div>
                     </div>
+
+                    {/* Search Suggestions Dropdown */}
+                    {showSuggestions && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1A1A1C] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50 animate-fade-in">
+                            {searchResults.length > 0 ? (
+                                <div className="max-h-[400px] overflow-y-auto">
+                                    <div className="px-3 py-2 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02]">
+                                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                            {searchResults.length} resultados
+                                        </span>
+                                    </div>
+                                    {searchResults.map((result) => (
+                                        <button
+                                            key={`${result.type}-${result.id}`}
+                                            onClick={() => handleResultClick(result)}
+                                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors text-left group border-b border-slate-50 dark:border-white/5 last:border-b-0"
+                                        >
+                                            {/* Thumbnail */}
+                                            <div className={`w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center ${result.image ? '' : 'bg-slate-100 dark:bg-white/10'}`}>
+                                                {result.image ? (
+                                                    <img
+                                                        src={result.image}
+                                                        alt=""
+                                                        className={`w-full h-full object-cover ${result.type === 'user' ? 'rounded-full' : ''}`}
+                                                    />
+                                                ) : (
+                                                    <div className={`${result.type === 'project' ? 'text-amber-500' : result.type === 'article' ? 'text-rose-500' : 'text-blue-500'}`}>
+                                                        {getResultIcon(result.type)}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Content */}
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-sm font-semibold text-slate-900 dark:text-white truncate group-hover:text-amber-500 dark:group-hover:text-amber-400 transition-colors">
+                                                    {result.title}
+                                                </div>
+                                                <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                                    {result.subtitle}
+                                                </div>
+                                            </div>
+
+                                            {/* Type Badge */}
+                                            <span className={`px-2 py-0.5 text-[10px] font-bold uppercase rounded-full flex-shrink-0 ${result.type === 'project'
+                                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                                                : result.type === 'article'
+                                                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                                                    : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                                                }`}>
+                                                {getResultTypeLabel(result.type)}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="px-4 py-8 text-center">
+                                    <Search className="h-8 w-8 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                                        No se encontraron resultados para "{searchQuery}"
+                                    </p>
+                                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                                        Intenta con otros términos de búsqueda
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 

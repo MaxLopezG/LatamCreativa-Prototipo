@@ -7,7 +7,6 @@ import { lazyImport } from '../utils/lazyImport';
 
 // Lazy Load Views - Only Portfolio, Blog, and User related
 const HomeView = lazyImport(() => import('../views/general/HomeView').then(module => ({ default: module.HomeView })));
-const FeedView = lazyImport(() => import('../views/general/FeedView').then(module => ({ default: module.FeedView })));
 const PortfolioView = lazyImport(() => import('../views/portfolio/PortfolioView').then(module => ({ default: module.PortfolioView })));
 const PortfolioPostView = lazyImport(() => import('../views/portfolio/PortfolioPostView').then(module => ({ default: module.PortfolioPostView })));
 const BlogView = lazyImport(() => import('../views/blog/BlogView').then(module => ({ default: module.BlogView })));
@@ -46,14 +45,7 @@ export function SearchResultsWrapper() {
   );
 }
 
-export function HomeWrapper() {
-  const navigate = useNavigate();
-  return (
-    <Suspended>
-      <HomeView onCategorySelect={(category) => navigate(`/portfolio?category=${category}`)} />
-    </Suspended>
-  );
-}
+
 
 export function PortfolioWrapper() {
   const { state, actions } = useAppStore();
@@ -99,7 +91,7 @@ export function PortfolioPostWrapper() {
   );
 }
 
-export function FeedWrapper() {
+export function HomeWrapper() {
   const { state } = useAppStore();
   const navigate = useNavigate();
 
@@ -110,7 +102,7 @@ export function FeedWrapper() {
 
   return (
     <Suspended>
-      <FeedView
+      <HomeView
         onNavigateToModule={(mod) => navigate(mod === 'home' ? '/' : `/${mod}`)}
         onItemSelect={handleItemSelect}
         contentMode={state.contentMode}

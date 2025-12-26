@@ -97,7 +97,7 @@ export const BlogCategorySection: React.FC<BlogCategorySectionProps> = ({
                 >
                     {loading ? (
                         Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="flex-none w-[260px] md:w-[280px] animate-pulse flex flex-col gap-4">
+                            <div key={i} className="flex-none w-[calc(50%-8px)] md:w-[calc(20%-12px)] animate-pulse flex flex-col gap-4">
                                 <div className="aspect-[4/3] w-full bg-white/5 rounded-2xl"></div>
                                 <div className="space-y-2">
                                     <div className="h-4 w-20 bg-white/5 rounded"></div>
@@ -107,7 +107,7 @@ export const BlogCategorySection: React.FC<BlogCategorySectionProps> = ({
                         ))
                     ) : articles.length > 0 ? (
                         articles.map((article) => (
-                            <div key={article.id} className="flex-none w-[240px] md:w-[300px] snap-start">
+                            <div key={article.id} className="flex-none w-[calc(50%-8px)] md:w-[calc(20%-12px)] snap-start">
                                 <BlogCard
                                     article={article}
                                     onClick={() => onArticleSelect?.(article.id)}

@@ -1,346 +1,356 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Sparkles, Users, Briefcase, BookOpen, ChevronRight, TrendingUp, Zap } from 'lucide-react';
+import {
+  ArrowRight, Layers, Newspaper, Move3d, MonitorPlay, Palette, Gamepad2, Globe, Users,
+  Code, Server, Database, Cloud, ChevronLeft, ChevronRight, PenTool, Box, Smartphone, Shield, TestTube, Cpu,
+  Building2, Terminal, Camera, Layout, Music, Video, Shirt, BookOpen, Aperture, Bitcoin, Wifi, Activity,
+  Glasses, ServerCog, Bot, PenLine, Loader2
+} from 'lucide-react';
+import { PortfolioCard } from '../../components/cards/PortfolioCard';
+import { BlogCard } from '../../components/cards/BlogCard';
+import { ContentMode, useAppStore } from '../../hooks/useAppStore';
 import { projectsService } from '../../services/modules/projects';
 import { articlesService } from '../../services/modules/articles';
 import { PortfolioItem, ArticleItem } from '../../types';
-import { CATEGORY_ITEMS } from '../../data/navigation';
-import { SEOHead } from '../../components/SEOHead';
-import { useAppStore } from '../../hooks/useAppStore';
 
 interface HomeViewProps {
-  onCategorySelect: (category: string) => void;
+  onNavigateToModule: (moduleId: string) => void;
+  onItemSelect: (id: string, type: 'portfolio' | 'blog') => void;
+  contentMode: ContentMode;
 }
 
-export const HomeView: React.FC<HomeViewProps> = ({ onCategorySelect }) => {
-  const navigate = useNavigate();
+export const HomeView: React.FC<HomeViewProps> = ({ onNavigateToModule, onItemSelect, contentMode }) => {
   const { state } = useAppStore();
-  const [featuredProjects, setFeaturedProjects] = useState<PortfolioItem[]>([]);
-  const [recentArticles, setRecentArticles] = useState<ArticleItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const categoriesScrollRef = useRef<HTMLDivElement>(null);
+  const portfolioScrollRef = useRef<HTMLDivElement>(null);
+  const blogScrollRef = useRef<HTMLDivElement>(null);
 
+  // Filter content based on mode (default 'creative')
+  const mode = contentMode || 'creative';
+
+  // State for Firebase data
+  const [projects, setProjects] = useState<PortfolioItem[]>([]);
+  const [articles, setArticles] = useState<ArticleItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch data from Firebase on mount
   useEffect(() => {
-    const fetchContent = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const [projects, articles] = await Promise.all([
-          projectsService.getRecentProjects(8),
-          articlesService.getRecentArticles(4)
+        // Fetch projects and articles in parallel
+        const [projectsResult, articlesResult] = await Promise.all([
+          projectsService.getProjects(null, 10),
+          articlesService.getRecentArticles(10)
         ]);
-        setFeaturedProjects(projects);
-        setRecentArticles(articles);
+
+        setProjects(projectsResult.data || []);
+        setArticles(articlesResult || []);
       } catch (error) {
-        console.error('Error fetching home content:', error);
+        console.error('Error fetching home data:', error);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
-    fetchContent();
+
+    fetchData();
   }, []);
 
+  // Filter by mode and limit display
+  const displayPortfolio = projects.filter(i => (i.domain || 'creative') === mode).slice(0, 6);
+  const displayBlog = articles.filter(i => (i.domain || 'creative') === mode).slice(0, 5);
+
+  // Extended Categories for Scrolling
+  const creativeCategories = [
+    { label: 'Modelado 3D', icon: Move3d, color: 'from-blue-500 to-cyan-500' },
+    { label: 'Animación', icon: MonitorPlay, color: 'from-purple-500 to-pink-500' },
+    { label: 'Concept Art', icon: Palette, color: 'from-amber-500 to-orange-500' },
+    { label: 'Game Dev', icon: Gamepad2, color: 'from-green-500 to-emerald-500' },
+    { label: 'VFX', icon: Box, color: 'from-red-500 to-pink-600' },
+    { label: 'ArchViz', icon: Building2, color: 'from-slate-500 to-gray-600' },
+    { label: 'Ilustración', icon: PenTool, color: 'from-pink-500 to-rose-500' },
+    { label: 'VR / AR', icon: Globe, color: 'from-cyan-500 to-blue-600' },
+    { label: 'Fotografía', icon: Camera, color: 'from-indigo-500 to-blue-600' },
+    { label: 'Diseño Gráfico', icon: Layout, color: 'from-orange-400 to-red-500' },
+    { label: 'Música & SFX', icon: Music, color: 'from-rose-500 to-pink-600' },
+    { label: 'Edición Video', icon: Video, color: 'from-blue-600 to-indigo-600' },
+    { label: 'Moda 3D', icon: Shirt, color: 'from-fuchsia-500 to-purple-600' },
+    { label: 'Escritura', icon: BookOpen, color: 'from-emerald-600 to-teal-500' },
+    { label: 'Motion', icon: Aperture, color: 'from-yellow-500 to-orange-500' },
+  ];
+
+  const devCategories = [
+    { label: 'Frontend', icon: Code, color: 'from-blue-500 to-cyan-500' },
+    { label: 'Backend', icon: Server, color: 'from-green-500 to-emerald-500' },
+    { label: 'DevOps', icon: Cloud, color: 'from-orange-500 to-red-500' },
+    { label: 'Database', icon: Database, color: 'from-purple-500 to-pink-500' },
+    { label: 'Mobile', icon: Smartphone, color: 'from-teal-500 to-green-400' },
+    { label: 'Seguridad', icon: Shield, color: 'from-red-600 to-red-400' },
+    { label: 'QA Testing', icon: TestTube, color: 'from-yellow-500 to-amber-500' },
+    { label: 'AI & ML', icon: Cpu, color: 'from-indigo-500 to-purple-500' },
+    { label: 'Terminal', icon: Terminal, color: 'from-gray-600 to-gray-400' },
+    { label: 'Blockchain', icon: Bitcoin, color: 'from-orange-400 to-yellow-500' },
+    { label: 'IoT', icon: Wifi, color: 'from-cyan-600 to-blue-600' },
+    { label: 'Data Science', icon: Activity, color: 'from-emerald-500 to-teal-600' },
+    { label: 'XR Dev', icon: Glasses, color: 'from-violet-500 to-fuchsia-500' },
+    { label: 'SysAdmin', icon: ServerCog, color: 'from-slate-600 to-gray-500' },
+    { label: 'Robótica', icon: Bot, color: 'from-red-500 to-orange-600' },
+    { label: 'System Design', icon: PenLine, color: 'from-blue-400 to-indigo-500' },
+  ];
+
+  const categories = mode === 'dev' ? devCategories : creativeCategories;
+
+  // Generic Scroll Handler
+  const scrollContainer = (ref: React.RefObject<HTMLDivElement | null>, direction: 'left' | 'right') => {
+    if (ref.current) {
+      const container = ref.current;
+      const scrollAmount = container.clientWidth * 0.75;
+      container.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Legacy scroll for categories (uses smaller amount)
+  const scrollCategories = (direction: 'left' | 'right') => {
+    if (categoriesScrollRef.current) {
+      const { current } = categoriesScrollRef;
+      const scrollAmount = 300;
+      if (direction === 'left') {
+        current.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+      } else {
+        current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      }
+    }
+  };
+
+  // Theme colors
+  const accentText = mode === 'dev' ? 'text-blue-500' : 'text-amber-500';
+  const accentHoverText = mode === 'dev' ? 'hover:text-blue-500' : 'hover:text-amber-500';
+  const accentHoverBg = mode === 'dev' ? 'hover:bg-blue-500' : 'hover:bg-amber-500';
+  const gradientTitle = mode === 'dev'
+    ? 'from-blue-400 to-cyan-500'
+    : 'from-amber-400 to-orange-500';
+
+  const badgeBg = mode === 'dev' ? 'bg-blue-500/20 border-blue-500/20 text-blue-400' : 'bg-amber-500/20 border-amber-500/20 text-amber-400';
+
   return (
-    <div className="min-h-screen bg-white dark:bg-[#030304] transition-colors">
-      <SEOHead
-        title="Inicio"
-        description="Conecta con artistas, desarrolladores y creativos de Latinoamérica. Comparte tu trabajo, aprende de los mejores y construye tu carrera."
-        url="/"
-        keywords={['arte 3D', 'diseño', 'portafolio', 'creativos latinoamericanos', 'artistas']}
-      />
+    <div className="animate-fade-in pb-20">
 
-      {/* ===== HERO SECTION ===== */}
-      <section className="relative overflow-hidden">
-        {/* Background Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-rose-500/10 dark:from-amber-500/5 dark:to-rose-500/5" />
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-amber-500/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 dark:opacity-30" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-rose-500/20 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2 dark:opacity-20" />
+      {/* Cinematic Hero Section */}
+      <div className="relative w-full min-h-[300px] md:h-[400px] overflow-hidden">
+        <div className="absolute inset-0">
+          <img
+            src={mode === 'dev' ? "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=2000&auto=format&fit=crop" : "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2000&auto=format&fit=crop"}
+            alt="Latam Creativa Hero"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#030304] via-[#030304]/60 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-[#030304] via-[#030304]/80 to-transparent"></div>
+        </div>
 
-        <div className="relative max-w-7xl mx-auto px-6 py-20 md:py-32">
-          <div className="max-w-3xl">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-sm font-medium mb-6 animate-fade-in">
-              <Sparkles className="h-4 w-4" />
-              Comunidad Creativa de Latinoamérica
-            </div>
-
-            {/* Headline */}
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-slate-900 dark:text-white leading-tight mb-6 animate-fade-in">
-              Donde el talento{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-rose-500">
-                latinoamericano
-              </span>{' '}
-              brilla
+        <div className="relative z-10 h-full w-full max-w-[2560px] mx-auto px-4 md:px-12 2xl:px-16 flex flex-col justify-center py-12 md:py-0">
+          <div className="max-w-3xl animate-slide-up">
+            <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${badgeBg} text-[10px] md:text-xs font-bold uppercase tracking-widest mb-4 md:mb-6 border backdrop-blur-md`}>
+              <Globe className="h-3 w-3" /> Comunidad Oficial
+            </span>
+            <h1 className="text-3xl md:text-6xl font-bold text-white mb-4 md:mb-6 leading-tight font-display">
+              Latam Creativa <span className={`text-transparent bg-clip-text bg-gradient-to-r ${gradientTitle}`}>{mode === 'dev' ? 'Developers' : 'Originals'}</span>
             </h1>
-
-            {/* Subtitle */}
-            <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl animate-fade-in">
-              Conecta con artistas, desarrolladores y creativos. Comparte tu trabajo, aprende de los mejores y construye tu carrera.
+            <p className={`text-sm md:text-lg text-slate-300 mb-6 md:mb-8 max-w-xl leading-relaxed border-l-4 ${mode === 'dev' ? 'border-blue-500' : 'border-amber-500'} pl-4 md:pl-6`}>
+              {mode === 'dev'
+                ? 'Recursos, librerías y tutoriales para desarrolladores de software en Latinoamérica.'
+                : 'Descubre las historias, tutoriales y proyectos exclusivos producidos por y para la comunidad.'
+              }
             </p>
 
-            {/* CTAs */}
-            <div className="flex flex-wrap gap-4 animate-fade-in">
+            <div className="flex flex-wrap gap-4">
               <button
-                onClick={() => navigate('/portfolio')}
-                className="group flex items-center gap-2 px-8 py-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-2xl transition-all shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 hover:scale-105"
+                onClick={() => onNavigateToModule('blog')}
+                className={`px-6 py-3 bg-white text-black font-bold rounded-xl ${accentHoverBg} hover:text-white transition-colors shadow-lg text-sm md:text-base`}
               >
-                Explorar Portafolios
-                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                Leer Artículos
               </button>
-              {!state.user && (
-                <button
-                  onClick={() => navigate('/auth')}
-                  className="flex items-center gap-2 px-8 py-4 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-bold rounded-2xl hover:bg-slate-50 dark:hover:bg-white/20 transition-all"
-                >
-                  Crear Cuenta Gratis
-                </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full max-w-[2560px] mx-auto px-4 md:px-12 2xl:px-16 -mt-8 relative z-20">
+
+        {/* Main Layout Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+
+          {/* Main Content (Feed) - Full Width */}
+          <div className="lg:col-span-12 space-y-16">
+
+            {/* Quick Categories Carousel */}
+            <div className="relative group">
+              {/* Left Gradient/Arrow */}
+              <div className="hidden md:block absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-slate-50 dark:from-[#030304] to-transparent z-10 pointer-events-none"></div>
+              <button
+                onClick={() => scrollCategories('left')}
+                className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 -ml-3"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+
+              {/* Scroll Container */}
+              <div
+                ref={categoriesScrollRef}
+                className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4 px-1"
+              >
+                {categories.map((cat, idx) => (
+                  <div
+                    key={idx}
+                    className="flex-shrink-0 w-36 md:w-44 group/card relative h-20 rounded-xl bg-[#0A0A0C] border border-white/10 overflow-hidden cursor-pointer hover:-translate-y-1 transition-transform shadow-lg"
+                    onClick={() => navigate(`/search?q=${encodeURIComponent(cat.label)}`)}
+                  >
+                    <div className={`absolute inset-0 opacity-0 group-hover/card:opacity-10 bg-gradient-to-br ${cat.color} transition-opacity`}></div>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-4">
+                      <cat.icon className="h-6 w-6 text-white group-hover/card:scale-110 transition-transform" />
+                      <span className="text-xs font-bold text-slate-400 group-hover/card:text-white transition-colors">{cat.label}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Right Gradient/Arrow */}
+              <div className="hidden md:block absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-slate-50 dark:from-[#030304] to-transparent z-10 pointer-events-none"></div>
+              <button
+                onClick={() => scrollCategories('right')}
+                className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 -mr-3"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Featured Portfolio - Carousel */}
+            <section className="relative group/portfolio">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                  <Layers className={`h-5 w-5 md:h-6 md:w-6 ${accentText}`} />
+                  {mode === 'dev' ? 'Repositorios & Proyectos' : 'Portafolios'}
+                </h2>
+                <button onClick={() => onNavigateToModule('portfolio')} className={`text-xs md:text-sm font-bold text-slate-500 ${accentHoverText} transition-colors`}>Ver todo</button>
+              </div>
+
+              {loading ? (
+                <div className="flex justify-center items-center py-16">
+                  <Loader2 className={`h-10 w-10 animate-spin ${accentText}`} />
+                </div>
+              ) : displayPortfolio.length > 0 ? (
+                <div className="relative">
+                  {/* Left Arrow */}
+                  <button
+                    onClick={() => scrollContainer(portfolioScrollRef, 'left')}
+                    className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 border border-white/10 text-white opacity-0 group-hover/portfolio:opacity-100 transition-opacity hover:bg-amber-600 -ml-4 items-center justify-center backdrop-blur-md"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+
+                  {/* Scrollable Container */}
+                  <div
+                    ref={portfolioScrollRef}
+                    className="flex overflow-x-auto gap-4 md:gap-5 pb-4 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide snap-x scroll-smooth"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  >
+                    {displayPortfolio.map(item => (
+                      <div key={item.id} className="flex-none w-[calc(50%-8px)] md:w-[calc(20%-12px)] snap-start">
+                        <PortfolioCard item={item} onClick={() => onItemSelect(item.id, 'portfolio')} />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Right Arrow */}
+                  <button
+                    onClick={() => scrollContainer(portfolioScrollRef, 'right')}
+                    className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 border border-white/10 text-white opacity-0 group-hover/portfolio:opacity-100 transition-opacity hover:bg-amber-600 -mr-4 items-center justify-center backdrop-blur-md"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center py-10 text-slate-500 bg-white/5 rounded-2xl border border-white/5">
+                  No hay portafolios para mostrar en este momento.
+                </div>
               )}
-            </div>
+            </section>
 
-            {/* Stats */}
-            <div className="flex flex-wrap gap-8 mt-12 pt-8 border-t border-slate-200 dark:border-white/10 animate-fade-in">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-amber-500/10">
-                  <Users className="h-5 w-5 text-amber-500" />
-                </div>
-                <div>
-                  <div className="text-xl font-bold text-slate-900 dark:text-white">1,000+</div>
-                  <div className="text-sm text-slate-500">Creativos</div>
-                </div>
+            {/* Blog Articles - Carousel */}
+            <section className="relative group/blog">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+                  <Newspaper className="h-5 w-5 md:h-6 md:w-6 text-rose-500" />
+                  Artículos de Blog
+                </h2>
+                <button onClick={() => onNavigateToModule('blog')} className="text-xs md:text-sm font-bold text-slate-500 hover:text-rose-500 transition-colors">Ver más</button>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-rose-500/10">
-                  <Briefcase className="h-5 w-5 text-rose-500" />
-                </div>
-                <div>
-                  <div className="text-xl font-bold text-slate-900 dark:text-white">500+</div>
-                  <div className="text-sm text-slate-500">Proyectos</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-blue-500/10">
-                  <BookOpen className="h-5 w-5 text-blue-500" />
-                </div>
-                <div>
-                  <div className="text-xl font-bold text-slate-900 dark:text-white">100+</div>
-                  <div className="text-sm text-slate-500">Artículos</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ===== FEATURED PROJECTS ===== */}
-      <section className="py-16 md:py-24 bg-slate-50 dark:bg-white/[0.02]">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between mb-10">
-            <div>
-              <div className="flex items-center gap-2 text-amber-500 text-sm font-bold mb-2">
-                <TrendingUp className="h-4 w-4" />
-                DESTACADOS
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
-                Proyectos Recientes
-              </h2>
-            </div>
-            <button
-              onClick={() => navigate('/portfolio')}
-              className="hidden md:flex items-center gap-2 text-amber-500 hover:text-amber-600 font-medium transition-colors"
-            >
-              Ver todos
-              <ChevronRight className="h-5 w-5" />
-            </button>
-          </div>
+              {loading ? (
+                <div className="flex justify-center items-center py-16">
+                  <Loader2 className="h-10 w-10 animate-spin text-rose-500" />
+                </div>
+              ) : displayBlog.length > 0 ? (
+                <div className="relative">
+                  {/* Left Arrow */}
+                  <button
+                    onClick={() => scrollContainer(blogScrollRef, 'left')}
+                    className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 border border-white/10 text-white opacity-0 group-hover/blog:opacity-100 transition-opacity hover:bg-rose-600 -ml-4 items-center justify-center backdrop-blur-md"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
 
-          {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="aspect-[4/3] rounded-2xl bg-slate-200 dark:bg-white/5 animate-pulse" />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {featuredProjects.map((project) => (
-                <div
-                  key={project.id}
-                  onClick={() => navigate(`/portfolio/${project.id}`)}
-                  className="group cursor-pointer"
-                >
-                  <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-slate-200 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10">
-                    <img
-                      src={project.image}
-                      alt={project.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                      <h3 className="text-white font-bold line-clamp-1">{project.title}</h3>
-                      <p className="text-white/70 text-sm">{project.artist}</p>
-                    </div>
+                  {/* Scrollable Container */}
+                  <div
+                    ref={blogScrollRef}
+                    className="flex overflow-x-auto gap-4 md:gap-5 pb-4 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide snap-x scroll-smooth"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  >
+                    {displayBlog.map(article => (
+                      <div key={article.id} className="flex-none w-[calc(50%-8px)] md:w-[calc(20%-12px)] snap-start">
+                        <BlogCard
+                          article={article}
+                          onClick={() => onItemSelect(article.id, 'blog')}
+                        />
+                      </div>
+                    ))}
                   </div>
+
+                  {/* Right Arrow */}
+                  <button
+                    onClick={() => scrollContainer(blogScrollRef, 'right')}
+                    className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 border border-white/10 text-white opacity-0 group-hover/blog:opacity-100 transition-opacity hover:bg-rose-600 -mr-4 items-center justify-center backdrop-blur-md"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
                 </div>
-              ))}
-            </div>
-          )}
+              ) : (
+                <div className="text-center py-10 text-slate-500 bg-white/5 rounded-2xl border border-white/5">No hay artículos disponibles.</div>
+              )}
+            </section>
 
-          <button
-            onClick={() => navigate('/portfolio')}
-            className="md:hidden w-full mt-8 py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-slate-900 dark:text-white font-bold hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
-          >
-            Ver todos los proyectos
-          </button>
-        </div>
-      </section>
-
-      {/* ===== RECENT ARTICLES ===== */}
-      <section className="py-16 md:py-24">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between mb-10">
-            <div>
-              <div className="flex items-center gap-2 text-rose-500 text-sm font-bold mb-2">
-                <BookOpen className="h-4 w-4" />
-                BLOG
+            {/* Banner */}
+            <div className="rounded-2xl bg-gradient-to-r from-purple-900 to-indigo-900 p-6 md:p-8 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="relative z-10 max-w-lg">
+                <h2 className="text-xl md:text-2xl font-bold text-white mb-2">¿Listo para compartir tu trabajo?</h2>
+                <p className="text-purple-200 text-sm mb-4">Únete a miles de {mode === 'dev' ? 'desarrolladores' : 'creativos'} en nuestra plataforma.</p>
+                <button onClick={() => onNavigateToModule('portfolio')} className="px-6 py-2 bg-white text-purple-900 font-bold rounded-lg hover:scale-105 transition-transform text-sm w-full md:w-auto">
+                  Explorar Portafolios
+                </button>
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
-                Artículos Recientes
-              </h2>
+              <div className="hidden md:block relative z-10">
+                <Users className="h-24 w-24 text-white/20" />
+              </div>
             </div>
-            <button
-              onClick={() => navigate('/blog')}
-              className="hidden md:flex items-center gap-2 text-rose-500 hover:text-rose-600 font-medium transition-colors"
-            >
-              Ver todos
-              <ChevronRight className="h-5 w-5" />
-            </button>
+
           </div>
 
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="space-y-4">
-                  <div className="aspect-video rounded-2xl bg-slate-200 dark:bg-white/5 animate-pulse" />
-                  <div className="h-4 w-3/4 rounded bg-slate-200 dark:bg-white/5 animate-pulse" />
-                  <div className="h-4 w-1/2 rounded bg-slate-200 dark:bg-white/5 animate-pulse" />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {recentArticles.map((article) => (
-                <article
-                  key={article.id}
-                  onClick={() => navigate(`/blog/${article.id}`)}
-                  className="group cursor-pointer"
-                >
-                  <div className="relative aspect-video rounded-2xl overflow-hidden bg-slate-200 dark:bg-white/5 ring-1 ring-black/5 dark:ring-white/10 mb-4">
-                    <img
-                      src={article.image}
-                      alt={article.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute top-3 left-3">
-                      <span className="px-3 py-1 rounded-full bg-black/60 backdrop-blur-sm text-white text-xs font-medium">
-                        {article.category}
-                      </span>
-                    </div>
-                  </div>
-                  <h3 className="font-bold text-slate-900 dark:text-white line-clamp-2 group-hover:text-rose-500 transition-colors mb-2">
-                    {article.title}
-                  </h3>
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <img
-                      src={article.authorAvatar}
-                      alt={article.author}
-                      className="w-6 h-6 rounded-full object-cover"
-                    />
-                    <span>{article.author}</span>
-                    <span>•</span>
-                    <span>{article.readTime}</span>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-
-          <button
-            onClick={() => navigate('/blog')}
-            className="md:hidden w-full mt-8 py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-slate-900 dark:text-white font-bold hover:bg-slate-50 dark:hover:bg-white/10 transition-colors"
-          >
-            Ver todos los artículos
-          </button>
         </div>
-      </section>
-
-      {/* ===== CATEGORIES ===== */}
-      <section className="py-16 md:py-24 bg-slate-50 dark:bg-white/[0.02]">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <div className="flex items-center justify-center gap-2 text-blue-500 text-sm font-bold mb-2">
-              <Zap className="h-4 w-4" />
-              EXPLORA
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
-              Encuentra tu especialidad
-            </h2>
-            <p className="text-slate-600 dark:text-slate-400 max-w-xl mx-auto">
-              Descubre contenido organizado por categorías y encuentra exactamente lo que buscas.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {CATEGORY_ITEMS.filter(item => item.label !== 'Home').slice(0, 8).map((item) => (
-              <button
-                key={item.label}
-                onClick={() => onCategorySelect?.(item.label)}
-                className="group flex flex-col items-center gap-3 p-6 rounded-2xl bg-white dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.06] hover:border-amber-500/50 dark:hover:border-amber-500/30 hover:shadow-lg hover:shadow-amber-500/10 transition-all hover:scale-105"
-              >
-                <div className="p-4 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 group-hover:bg-amber-500/10 group-hover:text-amber-500 transition-colors">
-                  <item.icon className="h-6 w-6" strokeWidth={1.5} />
-                </div>
-                <span className="font-semibold text-slate-900 dark:text-white group-hover:text-amber-500 transition-colors">
-                  {item.label}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ===== CTA SECTION ===== */}
-      <section className="py-20 md:py-32">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6">
-            ¿Listo para mostrar tu trabajo al mundo?
-          </h2>
-          <p className="text-lg text-slate-600 dark:text-slate-400 mb-10 max-w-2xl mx-auto">
-            Únete a miles de creativos latinoamericanos que ya están compartiendo su talento y construyendo su red profesional.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            {!state.user ? (
-              <button
-                onClick={() => navigate('/auth')}
-                className="group flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-bold rounded-2xl transition-all shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 hover:scale-105"
-              >
-                Crear mi Portafolio
-                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            ) : (
-              <button
-                onClick={() => navigate('/create/portfolio')}
-                className="group flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-bold rounded-2xl transition-all shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 hover:scale-105"
-              >
-                Subir Proyecto
-                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-            )}
-            <button
-              onClick={() => navigate('/about')}
-              className="flex items-center gap-2 px-8 py-4 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white font-bold rounded-2xl hover:bg-slate-200 dark:hover:bg-white/20 transition-all"
-            >
-              Conocer más
-            </button>
-          </div>
-        </div>
-      </section>
-
+      </div>
     </div>
   );
 };
