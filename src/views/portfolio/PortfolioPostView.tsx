@@ -6,6 +6,8 @@ import { useAppStore } from '../../hooks/useAppStore';
 import { useDeleteProject, useProject, useProjectComments, useAddProjectComment, useDeleteProjectComment } from '../../hooks/useFirebase';
 import { useUserProfileData } from '../../hooks/useUserProfileData';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
+import { ReportModal } from '../../components/modals/ReportModal';
+import { Flag } from 'lucide-react';
 import { projectsService } from '../../services/modules/projects';
 import { usersService } from '../../services/modules/users';
 import { timeAgo, getYoutubeVideoId, getSketchfabModelId, renderDescriptionWithLinks } from '../../utils/helpers';
@@ -41,6 +43,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
   const { add: addComment, loading: isAddingComment } = useAddProjectComment();
   const { remove: deleteComment } = useDeleteProjectComment();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -415,6 +418,18 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
             >
               <Share2 className="h-4 w-4" />
             </button>
+            {state.user && state.user.id !== itemAuthorId && (
+              <>
+                <div className="w-px bg-white/10 my-1 mx-1"></div>
+                <button
+                  onClick={() => setIsReportModalOpen(true)}
+                  className="p-2 rounded-full hover:bg-white/10 text-slate-400 hover:text-red-400 transition-colors"
+                  title="Reportar"
+                >
+                  <Flag className="h-4 w-4" />
+                </button>
+              </>
+            )}
 
             {/* Author Actions */}
             {state.user?.name === item.artist && (
@@ -632,6 +647,14 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
         cancelText="Cancelar"
         type="danger"
         loading={isDeleting}
+      />
+
+      <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        contentType="project"
+        contentId={item?.id || ''}
+        contentTitle={item?.title}
       />
 
     </div>

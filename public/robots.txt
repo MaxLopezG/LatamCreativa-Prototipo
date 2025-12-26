@@ -1,12 +1,18 @@
+# Robots.txt para Latam Creativa
+# https://latamcreativa.com
+
 User-agent: *
 Allow: /
 
-# Disallow admin and auth pages
+# Páginas que no deben indexarse
 Disallow: /admin
 Disallow: /auth
+Disallow: /settings
+Disallow: /create/*
+Disallow: /success
 
-# Sitemap location
+# Sitemap
 Sitemap: https://latamcreativa.com/sitemap.xml
 
-# Crawl delay (optional, be nice to the server)
+# Crawl-delay (opcional)
 Crawl-delay: 1

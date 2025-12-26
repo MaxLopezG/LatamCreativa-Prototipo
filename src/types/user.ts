@@ -33,6 +33,15 @@ export interface SocialLinks {
     github?: string;
 }
 
+export interface NotificationPreferences {
+    emailDigest?: boolean;
+    newFollower?: boolean;
+    comments?: boolean;
+    likes?: boolean;
+    projectUpdates?: boolean;
+    platformNews?: boolean;
+}
+
 export interface User {
     id: string;
     uid: string;
@@ -58,6 +67,7 @@ export interface User {
     stats?: UserStats;
     createdAt?: string;
     availableForWork?: boolean;
+    notificationPreferences?: NotificationPreferences;
 }
 
 export interface ArtistProfile {

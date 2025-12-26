@@ -1,6 +1,8 @@
 /**
  * Blog Slice
- * Handles blog article pagination state
+ * Maneja el estado de paginación de artículos del blog
+ * 
+ * @module hooks/store/blogSlice
  */
 
 import { StateCreator } from 'zustand';

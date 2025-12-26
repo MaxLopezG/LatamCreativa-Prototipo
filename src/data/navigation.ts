@@ -17,7 +17,11 @@ export const PRIMARY_NAV_ITEMS: NavItem[] = [
   // 3. Content & News
   { id: 'blog', icon: Newspaper, label: 'Blog' },
 
-  // 4. Community & Collaboration (Coming Soon)
+  // 4. Learning & Services (Coming Soon)
+  { id: 'courses', icon: GraduationCap, label: 'Cursos', comingSoon: true },
+  { id: 'freelance', icon: Briefcase, label: 'Freelance', comingSoon: true },
+
+  // 5. Community & Collaboration (Coming Soon)
   { id: 'forum', icon: MessageCircleQuestion, label: 'Foro', comingSoon: true },
   { id: 'jobs', icon: Building2, label: 'Bolsa de Trabajo', comingSoon: true },
   { id: 'projects', icon: Users, label: 'Proyectos Colaborativos', comingSoon: true },

@@ -52,7 +52,11 @@ const App: React.FC = () => {
                 email: firebaseUser.email || '',
                 isAdmin: isAdminFromStore || isAdmin,
                 createdAt: userData.createdAt || (firebaseUser.metadata.creationTime || new Date().toISOString()),
-                availableForWork: userData.availableForWork || false
+                availableForWork: userData.availableForWork || false,
+                isProfileComplete: userData.isProfileComplete ?? false,
+                username: userData.username || '',
+                country: userData.country || '',
+                city: userData.city || ''
               };
 
               actions.setUser(appUser as any);

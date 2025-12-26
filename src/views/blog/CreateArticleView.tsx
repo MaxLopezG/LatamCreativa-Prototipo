@@ -5,6 +5,7 @@ import { useAppStore } from '../../hooks/useAppStore';
 import { NAV_SECTIONS, NAV_SECTIONS_DEV } from '../../data/navigation';
 import { useCreateArticle, useArticle, useUpdateArticle } from '../../hooks/useFirebase';
 import { RichTextEditor, ArticlePreview, ArticleSidebar, MobileActionBar, ContentBlock } from './components';
+import { EmailVerificationBanner } from '../../hooks/useContentVerification';
 
 interface CreateArticleViewProps {
   onBack: () => void;
@@ -348,6 +349,11 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
           )}
         </button>
       </header>
+
+      {/* Email Verification Banner */}
+      <div className="max-w-[1600px] w-full mx-auto px-6 pt-4">
+        <EmailVerificationBanner />
+      </div>
 
       {/* PREVIEW MODE - Render like BlogPostView */}
       {isPreview ? (

@@ -1,6 +1,8 @@
 /**
  * UI Slice
- * Handles user interface state: sidebar, modals, navigation, toasts
+ * Maneja el estado de la interfaz de usuario: sidebar, modales, navegación, toasts
+ * 
+ * @module hooks/store/uiSlice
  */
 
 import { StateCreator } from 'zustand';

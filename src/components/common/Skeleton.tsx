@@ -6,7 +6,9 @@ interface SkeletonProps {
 }
 
 /**
- * Base skeleton component with shimmer animation
+ * Componente skeleton base con animación shimmer
+ * 
+ * @module components/common/Skeleton
  */
 export const Skeleton: React.FC<SkeletonProps> = ({ className = '' }) => (
     <div
@@ -16,7 +18,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className = '' }) => (
 );
 
 /**
- * Portfolio card skeleton for loading states in grid views
+ * Skeleton de tarjeta de portfolio para estados de carga en vistas de grid
  */
 export const PortfolioCardSkeleton: React.FC = () => (
     <div className="rounded-2xl overflow-hidden bg-[#0A0A0C] border border-white/5">
@@ -32,7 +34,7 @@ export const PortfolioCardSkeleton: React.FC = () => (
 );
 
 /**
- * Blog card skeleton for loading states in blog views
+ * Skeleton de tarjeta de blog para estados de carga en vistas del blog
  */
 export const BlogCardSkeleton: React.FC = () => (
     <div className="rounded-2xl overflow-hidden bg-[#0A0A0C] border border-white/5">
@@ -53,7 +55,7 @@ export const BlogCardSkeleton: React.FC = () => (
 );
 
 /**
- * Grid of portfolio skeletons
+ * Grid de skeletons de portfolio
  */
 export const PortfolioGridSkeleton: React.FC<{ count?: number }> = ({ count = 12 }) => (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-5">
@@ -64,7 +66,7 @@ export const PortfolioGridSkeleton: React.FC<{ count?: number }> = ({ count = 12
 );
 
 /**
- * Grid of blog skeletons
+ * Grid de skeletons del blog
  */
 export const BlogGridSkeleton: React.FC<{ count?: number }> = ({ count = 6 }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -75,7 +77,7 @@ export const BlogGridSkeleton: React.FC<{ count?: number }> = ({ count = 6 }) =>
 );
 
 /**
- * User profile header skeleton
+ * Skeleton del header de perfil de usuario
  */
 export const ProfileHeaderSkeleton: React.FC = () => (
     <div className="relative">
@@ -91,7 +93,7 @@ export const ProfileHeaderSkeleton: React.FC = () => (
 );
 
 /**
- * Text content skeleton (for descriptions, etc.)
+ * Skeleton de contenido de texto (para descripciones, etc.)
  */
 export const TextSkeleton: React.FC<{ lines?: number }> = ({ lines = 3 }) => (
     <div className="space-y-2">

@@ -63,7 +63,7 @@ export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, con
                 </button>
                 {/* Coming Soon Badge */}
                 {item.comingSoon && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-orange-500 rounded-full animate-pulse"></span>
+                  <span className="absolute -top-1.5 -right-2 px-1 py-0.5 bg-orange-500 text-white text-[6px] 2xl:text-[8px] font-bold rounded uppercase tracking-wide">Pronto</span>
                 )}
                 {/* Tooltip */}
                 <div className={`absolute left-14 px-3 py-1.5 rounded-lg text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-[60] ${contentMode === 'dev' ? 'bg-blue-600' : 'bg-amber-600'}`}>

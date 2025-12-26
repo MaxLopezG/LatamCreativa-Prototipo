@@ -1,6 +1,8 @@
 /**
  * Auth Slice
- * Handles user authentication, profile, cart, likes, notifications, and collections
+ * Maneja autenticación de usuario, perfil, carrito, likes, notificaciones y colecciones
+ * 
+ * @module hooks/store/authSlice
  */
 
 import { StateCreator } from 'zustand';

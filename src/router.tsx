@@ -40,6 +40,14 @@ const NotFoundView = lazyImport(() => import('./views/general/NotFoundView').the
 // Service Coming Soon Pages
 import { ForumComingSoon, JobsComingSoon, ProjectsComingSoon, ContestsComingSoon } from './views/general/ServicePages';
 
+// New Services Coming Soon
+const CoursesView = lazyImport(() => import('./views/general/CoursesView').then(module => ({ default: module.CoursesView })));
+const FreelanceView = lazyImport(() => import('./views/general/FreelanceView').then(module => ({ default: module.FreelanceView })));
+
+// Legal Pages
+const TermsView = lazyImport(() => import('./views/legal/TermsView').then(module => ({ default: module.TermsView })));
+const PrivacyView = lazyImport(() => import('./views/legal/PrivacyView').then(module => ({ default: module.PrivacyView })));
+
 export const router = createBrowserRouter([
   {
     path: '/auth',
@@ -99,6 +107,12 @@ export const router = createBrowserRouter([
       { path: 'jobs', element: <JobsComingSoon /> },
       { path: 'projects', element: <ProjectsComingSoon /> },
       { path: 'contests', element: <ContestsComingSoon /> },
+      { path: 'courses', element: <SuspendedView Component={CoursesView} /> },
+      { path: 'freelance', element: <SuspendedView Component={FreelanceView} /> },
+
+      // Legal Pages
+      { path: 'terms', element: <SuspendedView Component={TermsView} /> },
+      { path: 'privacy', element: <SuspendedView Component={PrivacyView} /> },
 
       // 404 - Catch all unmatched routes
       { path: '*', element: <SuspendedView Component={NotFoundView} /> }

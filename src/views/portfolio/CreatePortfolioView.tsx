@@ -23,6 +23,7 @@ import {
 import { useAppStore } from '../../hooks/useAppStore';
 import { useCreateProject, useProject, useUpdateProject } from '../../hooks/useFirebase';
 import { GalleryItemCard, GalleryItem, MediaUploader } from './components';
+import { EmailVerificationBanner } from '../../hooks/useContentVerification';
 
 interface CreatePortfolioViewProps {
   onBack: () => void;
@@ -574,6 +575,11 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
       </header>
 
       <main className="flex-1 max-w-[1600px] w-full mx-auto p-6 md:p-8 pb-28 lg:pb-8 grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-10">
+
+        {/* Email Verification Banner */}
+        <div className="lg:col-span-2">
+          <EmailVerificationBanner />
+        </div>
 
         {/* LEFT COLUMN: Main Content */}
         <div className="flex flex-col gap-8 min-w-0 animate-fade-in">

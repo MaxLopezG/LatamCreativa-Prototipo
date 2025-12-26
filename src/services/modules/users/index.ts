@@ -8,6 +8,7 @@
  */
 import { usersProfile, UserProfile } from './profile';
 import { usersSocial } from './social';
+import { usersAuth } from './auth';
 
 /**
  * Servicio combinado que integra todos los sub-módulos de usuarios
@@ -34,10 +35,19 @@ export const usersService = {
     getChatMessages: usersSocial.getChatMessages,
     sendMessage: usersSocial.sendMessage,
     incrementProfileViews: usersSocial.incrementProfileViews,
-    getTotalProjectLikes: usersSocial.getTotalProjectLikes
+    getTotalProjectLikes: usersSocial.getTotalProjectLikes,
+
+    // Operaciones de Autenticación
+    updateUserEmail: usersAuth.updateUserEmail,
+    updateUserPassword: usersAuth.updateUserPassword,
+    deleteUserAccount: usersAuth.deleteUserAccount,
+    sendVerificationEmail: usersAuth.sendVerificationEmail,
+    resetPassword: usersAuth.resetPassword
 };
 
 // Re-exportar sub-módulos y tipos
 export { usersProfile } from './profile';
 export { usersSocial } from './social';
+export { usersAuth } from './auth';
 export type { UserProfile } from './profile';
+

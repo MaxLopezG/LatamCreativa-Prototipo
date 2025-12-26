@@ -1,14 +1,16 @@
 /**
- * Slug Utility Functions
+ * Funciones Utilitarias de Slug
  * 
- * Creates URL-friendly slugs from text for SEO-friendly URLs.
+ * Crea slugs amigables para URLs a partir de texto para URLs SEO-friendly.
+ * 
+ * @module utils/slugUtils
  */
 
 /**
- * Converts a string to a URL-friendly slug.
+ * Convierte una cadena de texto a un slug amigable para URLs.
  * 
- * @param text - The text to convert (e.g., article title)
- * @returns Lowercase slug with hyphens (e.g., "mi-articulo-genial")
+ * @param text - El texto a convertir (ej. título del artículo)
+ * @returns Slug en minúsculas con guiones (ej. "mi-articulo-genial")
  * 
  * @example
  * generateSlug("Mi Artículo Genial") // "mi-articulo-genial"
@@ -18,22 +20,22 @@ export const generateSlug = (text: string): string => {
     if (!text) return '';
 
     return text
-        .normalize('NFD')                          // Decompose accented characters
-        .replace(/[\u0300-\u036f]/g, '')           // Remove accent marks
-        .toLowerCase()                             // Convert to lowercase
-        .trim()                                    // Remove leading/trailing spaces
-        .replace(/[^a-z0-9\s-]/g, '')             // Remove special characters
-        .replace(/\s+/g, '-')                      // Replace spaces with hyphens
-        .replace(/-+/g, '-')                       // Replace multiple hyphens with single
-        .replace(/^-+|-+$/g, '');                  // Remove leading/trailing hyphens
+        .normalize('NFD')                          // Descomponer caracteres acentuados
+        .replace(/[\u0300-\u036f]/g, '')           // Remover marcas de acento
+        .toLowerCase()                             // Convertir a minúsculas
+        .trim()                                    // Remover espacios al inicio/final
+        .replace(/[^a-z0-9\s-]/g, '')             // Remover caracteres especiales
+        .replace(/\s+/g, '-')                      // Reemplazar espacios con guiones
+        .replace(/-+/g, '-')                       // Reemplazar guiones múltiples con uno
+        .replace(/^-+|-+$/g, '');                  // Remover guiones al inicio/final
 };
 
 /**
- * Generates a unique slug by appending a short random suffix.
- * Useful to avoid collisions when multiple items have similar titles.
+ * Genera un slug único agregando un sufijo aleatorio corto.
+ * Útil para evitar colisiones cuando múltiples items tienen títulos similares.
  * 
- * @param text - The text to convert
- * @returns Slug with unique suffix (e.g., "mi-articulo-a1b2c3")
+ * @param text - El texto a convertir
+ * @returns Slug con sufijo único (ej. "mi-articulo-a1b2c3")
  */
 export const generateUniqueSlug = (text: string): string => {
     const baseSlug = generateSlug(text);
@@ -42,10 +44,10 @@ export const generateUniqueSlug = (text: string): string => {
 };
 
 /**
- * Validates if a string is a valid slug format.
+ * Valida si una cadena tiene formato de slug válido.
  * 
- * @param slug - The slug to validate
- * @returns True if valid slug format
+ * @param slug - El slug a validar
+ * @returns True si es un formato de slug válido
  */
 export const isValidSlug = (slug: string): boolean => {
     return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);

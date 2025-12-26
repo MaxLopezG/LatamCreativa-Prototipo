@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, Heart, Share2, Bookmark, CheckCircle2, ThumbsUp, Edit, Trash2, UserPlus, UserCheck, MessageSquare, Reply, Send } from 'lucide-react';
+import { ArrowLeft, Clock, Heart, Share2, Bookmark, CheckCircle2, ThumbsUp, Edit, Trash2, UserPlus, UserCheck, MessageSquare, Reply, Send, Flag } from 'lucide-react';
 
 import { useArticle, useDeleteArticle, useRecommendedArticles, useSubscription, useArticleLike, useComments, useAddComment } from '../../hooks/useFirebase';
 import { useAppStore } from '../../hooks/useAppStore';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
+import { ReportModal } from '../../components/modals/ReportModal';
 
 import { shouldCountView } from '../../utils/viewTracking';
 import { timeAgo } from '../../utils/helpers';
@@ -41,6 +42,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
     const { isSubscribed, loading: subLoading, toggleSubscription, subscriberCount } = useSubscription(article?.authorId || '', state.user?.id);
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [isLikeLoading, setIsLikeLoading] = useState(false);
 
     // --- Comments State ---
@@ -273,6 +275,18 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                                     title="Eliminar Artículo"
                                 >
                                     <Trash2 className="h-5 w-5" />
+                                </button>
+                            </>
+                        )}
+                        {!isAuthor && state.user && (
+                            <>
+                                <div className="h-px w-8 bg-slate-200 dark:bg-white/10 my-1" />
+                                <button
+                                    onClick={() => setIsReportModalOpen(true)}
+                                    className="p-3 rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-500 transition-colors"
+                                    title="Reportar Artículo"
+                                >
+                                    <Flag className="h-5 w-5" />
                                 </button>
                             </>
                         )}
@@ -544,6 +558,14 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                 cancelText="Cancelar"
                 type="danger"
                 loading={isDeleting}
+            />
+
+            <ReportModal
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                contentType="article"
+                contentId={article?.id || ''}
+                contentTitle={article?.title}
             />
         </div >
     );

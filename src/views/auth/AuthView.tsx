@@ -17,6 +17,8 @@ export const AuthView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isVerificationSent, setIsVerificationSent] = useState(false);
+    const [isForgotPassword, setIsForgotPassword] = useState(false);
+    const [isResetSent, setIsResetSent] = useState(false);
 
     // Form State
     const [email, setEmail] = useState('');
@@ -177,6 +179,32 @@ export const AuthView: React.FC = () => {
         }
     };
 
+    // Handle Forgot Password
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!isEmailValid) {
+            setError('Por favor ingresa un email válido');
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            await usersService.resetPassword(email);
+            setIsResetSent(true);
+        } catch (err: any) {
+            console.error('Reset password error:', err);
+            if (err.code === 'auth/user-not-found') {
+                setError('No existe una cuenta con este correo electrónico.');
+            } else {
+                setError('Error al enviar el correo de recuperación.');
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen flex items-center justify-center p-4 animate-fade-in relative z-10">
             <div className="w-full max-w-lg">
@@ -223,13 +251,88 @@ export const AuthView: React.FC = () => {
                             <button
                                 onClick={() => {
                                     setIsVerificationSent(false);
-                                    setIsLogin(true); // Switch to login view
+                                    setIsLogin(true);
                                 }}
                                 className={`w-full py-3 rounded-xl text-white font-bold transition-all ${activeBg}`}
                             >
                                 Volver al Inicio de Sesión
                             </button>
                         </div>
+                    ) : isResetSent ? (
+                        /* Password Reset Sent Screen */
+                        <div className="text-center py-8 animate-fade-in relative z-10">
+                            <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-6 ${isDev ? 'bg-blue-500/10 text-blue-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                                <CheckCircle2 className="h-8 w-8" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Correo Enviado</h2>
+                            <p className="text-slate-600 dark:text-slate-400 mb-8">
+                                Hemos enviado instrucciones para restablecer tu contraseña a <strong>{email}</strong>.
+                                <br />Revisa tu bandeja de entrada y sigue el enlace.
+                            </p>
+                            <button
+                                onClick={() => {
+                                    setIsResetSent(false);
+                                    setIsForgotPassword(false);
+                                    setIsLogin(true);
+                                    setEmail('');
+                                }}
+                                className={`w-full py-3 rounded-xl text-white font-bold transition-all ${activeBg}`}
+                            >
+                                Volver al Inicio de Sesión
+                            </button>
+                        </div>
+                    ) : isForgotPassword ? (
+                        /* Forgot Password Form */
+                        <form onSubmit={handleForgotPassword} className="space-y-5 relative z-10 animate-fade-in">
+                            <div className="text-center mb-6">
+                                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Recuperar Contraseña</h2>
+                                <p className="text-sm text-slate-500 dark:text-slate-400">Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña.</p>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">Correo Electrónico</label>
+                                <div className="relative">
+                                    <Mail className={`absolute left-3 top-3 h-5 w-5 ${isEmailValid ? 'text-green-500' : 'text-slate-400'}`} />
+                                    <input
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="hola@ejemplo.com"
+                                        className={`w-full bg-slate-50 dark:bg-white/5 border rounded-xl pl-10 pr-10 py-3 text-slate-900 dark:text-white outline-none transition-all focus:ring-1 ${isEmailValid
+                                            ? 'border-green-500/50 focus:border-green-500'
+                                            : `border-slate-200 dark:border-white/10 ${focusRing}`
+                                            }`}
+                                        required
+                                    />
+                                    {isEmailValid && (
+                                        <CheckCircle2 className="absolute right-3 top-3 h-5 w-5 text-green-500" />
+                                    )}
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isLoading || !isEmailValid}
+                                className={`w-full py-3.5 rounded-xl text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-all ${activeBg} ${isLoading ? 'opacity-80 cursor-wait' : ''} disabled:opacity-50`}
+                            >
+                                {isLoading ? (
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                ) : (
+                                    'Enviar Enlace de Recuperación'
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsForgotPassword(false);
+                                    setError(null);
+                                }}
+                                className="w-full py-2 text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
+                            >
+                                ← Volver al inicio de sesión
+                            </button>
+                        </form>
                     ) : (
                         <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
 
@@ -381,6 +484,20 @@ export const AuthView: React.FC = () => {
                                     </>
                                 )}
                             </button>
+
+                            {/* Forgot Password Link (Login only) */}
+                            {isLogin && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsForgotPassword(true);
+                                        setError(null);
+                                    }}
+                                    className={`w-full text-center text-sm font-medium ${activeColor} hover:underline`}
+                                >
+                                    ¿Olvidaste tu contraseña?
+                                </button>
+                            )}
 
                         </form>
                     )}
