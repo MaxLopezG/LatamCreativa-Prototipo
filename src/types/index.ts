@@ -14,11 +14,21 @@ export * from './content';
 // Commerce Types (Courses, Assets, Services, Sales)
 export * from './commerce';
 
-// Community Types (Groups, Events, Forum, Challenges, Jobs)
-export * from './community';
+// Community Types (Groups, Events, Challenges, Jobs)
+// Note: Excluding legacy ForumReply and ForumPost to avoid conflicts with new forum types
+export {
+    type CommunityGroup,
+    type EventItem,
+    type ChallengeItem,
+    type JobItem
+} from './community';
+
+// Forum Types (Threads, Replies, Categories) - New complete forum system
+export * from './forum';
 
 // User Types (Profile, Auth, Social, Notifications)
 export * from './user';
 
 // Common Types (Collections, etc.)
 export * from './common';
+

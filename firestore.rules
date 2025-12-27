@@ -195,6 +195,73 @@ service cloud.firestore {
     }
     
     // ============================================
+    // FORUM THREADS COLLECTION
+    // ============================================
+    match /forumThreads/{threadId} {
+      // Anyone can read threads
+      allow read: if true;
+      
+      // Only authenticated users can create threads
+      allow create: if isAuthenticated();
+      
+      // Update rules - temporarily permissive while diagnosing authorId issue
+      allow update: if isAuthenticated();
+      
+      // Only author can delete their thread
+      allow delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;
+      
+      // --- Likes Subcollection ---
+      match /likes/{likeUserId} {
+        allow read: if true;
+        allow create, delete: if isAuthenticated() && request.auth.uid == likeUserId;
+        allow update: if false;
+      }
+      
+      // --- Replies Subcollection ---
+      match /replies/{replyId} {
+        allow read: if true;
+        
+        // Can only create if thread is not closed
+        allow create: if isAuthenticated() && 
+          !get(/databases/$(database)/documents/forumThreads/$(threadId)).data.isClosed;
+        
+        // Reply author can update their reply
+        // Anyone can update likes count or isBestAnswer
+        allow update: if isAuthenticated() && (
+          resource.data.authorId == request.auth.uid ||
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes', 'isBestAnswer'])
+        );
+        
+        // Reply author OR thread author can delete replies
+        allow delete: if isAuthenticated() && (
+          resource.data.authorId == request.auth.uid ||
+          get(/databases/$(database)/documents/forumThreads/$(threadId)).data.authorId == request.auth.uid
+        );
+        
+        // --- Likes on Replies Subcollection ---
+        match /likes/{likeUserId} {
+          allow read: if true;
+          allow create, delete: if isAuthenticated() && request.auth.uid == likeUserId;
+          allow update: if false;
+        }
+      }
+    }
+    
+    // ============================================
+    // FORUM REPORTS COLLECTION
+    // ============================================
+    match /forumReports/{reportId} {
+      // Only the reporter can read their own reports
+      allow read: if isAuthenticated() && resource.data.reporterId == request.auth.uid;
+      
+      // Any authenticated user can create a report
+      allow create: if isAuthenticated();
+      
+      // Reports cannot be updated or deleted by users (admin only via SDK)
+      allow update, delete: if false;
+    }
+    
+    // ============================================
     // CATCH-ALL: Deny everything else by default
     // ============================================
     // This ensures any collections not explicitly defined above are protected

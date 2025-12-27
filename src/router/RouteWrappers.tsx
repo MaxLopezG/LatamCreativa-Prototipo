@@ -241,6 +241,66 @@ export function BlogWrapper() {
   );
 }
 
+// --- Forum ---
+const ForumView = lazyImport(() => import('../views/forum/ForumView').then(module => ({ default: module.ForumView })));
+const ThreadView = lazyImport(() => import('../views/forum/ThreadView').then(module => ({ default: module.ThreadView })));
+const CreateThreadView = lazyImport(() => import('../views/forum/CreateThreadView').then(module => ({ default: module.CreateThreadView })));
+const EditThreadView = lazyImport(() => import('../views/forum/EditThreadView').then(module => ({ default: module.EditThreadView })));
+
+export function ForumWrapper() {
+  const navigate = useNavigate();
+  const { slug } = useParams<{ slug?: string }>();
+
+  return (
+    <Suspended>
+      <ForumView
+        activeCategory={slug}
+        onThreadSelect={(id) => navigate(`/forum/${id}`)}
+        onCreateClick={() => navigate('/forum/new')}
+      />
+    </Suspended>
+  );
+}
+
+export function ForumCategoryWrapper() {
+  const navigate = useNavigate();
+  const { slug } = useParams<{ slug: string }>();
+
+  return (
+    <Suspended>
+      <ForumView
+        activeCategory={slug}
+        onThreadSelect={(id) => navigate(`/forum/${id}`)}
+        onCreateClick={() => navigate('/forum/new')}
+      />
+    </Suspended>
+  );
+}
+
+export function ThreadWrapper() {
+  return (
+    <Suspended>
+      <ThreadView onBack={() => window.history.back()} />
+    </Suspended>
+  );
+}
+
+export function CreateThreadWrapper() {
+  return (
+    <Suspended>
+      <CreateThreadView />
+    </Suspended>
+  );
+}
+
+export function EditThreadWrapper() {
+  return (
+    <Suspended>
+      <EditThreadView />
+    </Suspended>
+  );
+}
+
 // Simple wrapper for views that don't need prop injection but need Suspense
 export const SuspendedView = ({ Component, ...props }: { Component: React.FC<any>, [key: string]: any }) => (
   <Suspended><Component {...props} /></Suspended>
@@ -258,3 +318,4 @@ export {
   ComingSoonView,
   AdminDashboard as AdminDashboardView
 };
+

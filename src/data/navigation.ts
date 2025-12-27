@@ -22,7 +22,7 @@ export const PRIMARY_NAV_ITEMS: NavItem[] = [
   { id: 'freelance', icon: Briefcase, label: 'Freelance', comingSoon: true },
 
   // 5. Community & Collaboration (Coming Soon)
-  { id: 'forum', icon: MessageCircleQuestion, label: 'Foro', comingSoon: true },
+  { id: 'forum', icon: MessageCircleQuestion, label: 'Foro' },
   { id: 'jobs', icon: Building2, label: 'Bolsa de Trabajo', comingSoon: true },
   { id: 'projects', icon: Users, label: 'Proyectos Colaborativos', comingSoon: true },
   { id: 'contests', icon: Trophy, label: 'Concursos', comingSoon: true },

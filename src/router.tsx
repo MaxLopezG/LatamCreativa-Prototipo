@@ -21,6 +21,11 @@ import {
   CollectionDetailWrapper,
   CreateWrapper,
   BlogWrapper,
+  ForumWrapper,
+  ForumCategoryWrapper,
+  ThreadWrapper,
+  CreateThreadWrapper,
+  EditThreadWrapper,
   Suspended,
   SuspendedView
 } from './router/RouteWrappers';
@@ -102,8 +107,14 @@ export const router = createBrowserRouter([
       { path: 'info/help', element: <SuspendedView Component={ComingSoonView} /> },
       { path: 'info/guides', element: <SuspendedView Component={ComingSoonView} /> },
 
-      // Coming Soon Services
-      { path: 'forum', element: <ForumComingSoon /> },
+      // Forum
+      { path: 'forum', element: <ForumWrapper /> },
+      { path: 'forum/new', element: <CreateThreadWrapper /> },
+      { path: 'forum/edit/:id', element: <EditThreadWrapper /> },
+      { path: 'forum/categoria/:slug', element: <ForumCategoryWrapper /> },
+      { path: 'forum/:slug', element: <ThreadWrapper /> },
+
+      // Other Coming Soon Services
       { path: 'jobs', element: <JobsComingSoon /> },
       { path: 'projects', element: <ProjectsComingSoon /> },
       { path: 'contests', element: <ContestsComingSoon /> },

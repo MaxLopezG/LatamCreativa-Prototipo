@@ -15,9 +15,9 @@ service firebase.storage {
       return isAuthenticated() && request.auth.uid == userId;
     }
     
-    // Max file size: 50MB
+    // Max file size: 5MB (images are compressed client-side)
     function isValidFileSize() {
-      return request.resource.size < 50 * 1024 * 1024;
+      return request.resource.size < 5 * 1024 * 1024;
     }
     
     // Only allow image types
@@ -41,6 +41,17 @@ service firebase.storage {
     // ============================================
     match /articles/{allPaths=**} {
       // Anyone can read article images
+      allow read: if true;
+      
+      // Only authenticated users can upload
+      allow write: if isAuthenticated() && isValidFileSize() && isImage();
+    }
+    
+    // ============================================
+    // FORUM IMAGES
+    // ============================================
+    match /forum/{allPaths=**} {
+      // Anyone can read forum images
       allow read: if true;
       
       // Only authenticated users can upload
