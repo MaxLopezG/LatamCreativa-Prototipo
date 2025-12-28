@@ -18,9 +18,9 @@ export const PrivacyView: React.FC = () => {
     const accentClass = contentMode === 'dev' ? 'text-blue-400' : 'text-amber-400';
 
     return (
-        <div className="min-h-screen bg-[#030304] text-white">
+        <div className="min-h-screen bg-[#0d0d0f] text-white">
             {/* Header */}
-            <div className="sticky top-0 z-10 bg-[#030304]/95 backdrop-blur-md border-b border-white/5 px-6 py-4">
+            <div className="sticky top-0 z-10 bg-[#0d0d0f]/95 backdrop-blur-md border-b border-white/5 px-6 py-4">
                 <div className="max-w-4xl mx-auto flex items-center gap-4">
                     <button
                         onClick={() => navigate(-1)}

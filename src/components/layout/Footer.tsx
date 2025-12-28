@@ -16,7 +16,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   };
 
   return (
-    <footer className="bg-[#050506] border-t border-white/5 pt-16 pb-8">
+    <footer className="bg-[#111114] border-t border-white/5 pt-16 pb-8">
       <div className="max-w-[1600px] mx-auto px-6 md:px-10">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 md:gap-10 mb-12 md:mb-16">
 
@@ -81,7 +81,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         </div>
 
         <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-slate-500 text-sm">© 2024 Latam Creativa. Todos los derechos reservados.</p>
+          <p className="text-slate-500 text-sm">© 2026 Latam Creativa. Todos los derechos reservados.</p>
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <Globe className="h-4 w-4" />
             <span>Español (Latinoamérica)</span>

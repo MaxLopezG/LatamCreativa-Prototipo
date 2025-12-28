@@ -53,9 +53,48 @@ function getTimeAgo(dateString: string): string {
 }
 
 /**
- * Renderiza contenido con soporte básico de markdown
+ * Detecta si el contenido es HTML (del editor WYSIWYG)
  */
-function renderContent(content: string): React.ReactNode {
+function isHtmlContent(content: string): boolean {
+    const trimmed = content.trim();
+    return trimmed.startsWith('<') && (
+        trimmed.includes('<p>') ||
+        trimmed.includes('<div>') ||
+        trimmed.includes('<h1>') ||
+        trimmed.includes('<h2>') ||
+        trimmed.includes('<h3>') ||
+        trimmed.includes('<ul>') ||
+        trimmed.includes('<ol>') ||
+        trimmed.includes('<blockquote>') ||
+        trimmed.includes('<pre>')
+    );
+}
+
+/**
+ * Renderiza contenido HTML (del editor WYSIWYG)
+ */
+function renderHtmlContent(content: string): React.ReactNode {
+    return (
+        <div
+            className="prose prose-invert prose-sm max-w-none
+                       prose-p:text-gray-300 prose-p:my-2
+                       prose-strong:text-white prose-strong:font-semibold
+                       prose-em:text-gray-300 prose-em:italic
+                       prose-a:text-purple-400 prose-a:no-underline hover:prose-a:underline
+                       prose-code:bg-black/30 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-purple-400 prose-code:text-sm prose-code:font-mono
+                       prose-pre:bg-black/40 prose-pre:rounded-lg prose-pre:p-4
+                       prose-blockquote:border-l-purple-500 prose-blockquote:bg-purple-500/5 prose-blockquote:px-4 prose-blockquote:py-2 prose-blockquote:rounded-r-lg
+                       prose-ul:text-gray-300 prose-ol:text-gray-300
+                       prose-img:rounded-xl prose-img:max-w-full"
+            dangerouslySetInnerHTML={{ __html: content }}
+        />
+    );
+}
+
+/**
+ * Renderiza contenido con soporte de Markdown
+ */
+function renderMarkdownContent(content: string): React.ReactNode {
     // Simple markdown-like rendering
     const lines = content.split('\n');
     const elements: React.ReactNode[] = [];
@@ -113,6 +152,19 @@ function renderContent(content: string): React.ReactNode {
     });
 
     return elements;
+}
+
+/**
+ * Renderiza contenido - detecta automáticamente HTML vs Markdown
+ */
+function renderContent(content: string): React.ReactNode {
+    if (!content) return null;
+
+    if (isHtmlContent(content)) {
+        return renderHtmlContent(content);
+    }
+
+    return renderMarkdownContent(content);
 }
 
 export const ReplyCard: React.FC<ReplyCardProps> = ({

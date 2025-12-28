@@ -299,7 +299,7 @@ export const InfoView: React.FC<InfoViewProps> = ({ pageId, onBack }) => {
     <div className="max-w-[1000px] mx-auto animate-fade-in pb-20">
 
       {/* Header */}
-      <div className="sticky top-0 z-30 bg-white/90 dark:bg-[#030304]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 h-16 flex items-center gap-4">
+      <div className="sticky top-0 z-30 bg-white/90 dark:bg-[#0d0d0f]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 h-16 flex items-center gap-4">
         <button
           onClick={onBack}
           className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors"

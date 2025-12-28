@@ -94,7 +94,7 @@ export const UserProfileInfo: React.FC<UserProfileInfoProps> = ({ displayUser, i
                 <div className="space-y-10 relative border-l border-white/10 ml-2 pl-8">
                     {experienceList.length > 0 ? experienceList.map((job: any) => (
                         <div key={job.id} className="relative">
-                            <div className="absolute -left-[37px] top-1.5 h-3 w-3 rounded-full bg-[#030304] border-2 border-amber-500"></div>
+                            <div className="absolute -left-[37px] top-1.5 h-3 w-3 rounded-full bg-[#0d0d0f] border-2 border-amber-500"></div>
 
                             <h4 className="text-lg 2xl:text-xl font-bold text-white leading-tight mb-1">{job.role}</h4>
                             <div className="text-sm 2xl:text-base text-amber-500 font-medium mb-1">{job.company}</div>
@@ -118,7 +118,7 @@ export const UserProfileInfo: React.FC<UserProfileInfoProps> = ({ displayUser, i
                 <div className="space-y-10 relative border-l border-white/10 ml-2 pl-8">
                     {educationList.length > 0 ? educationList.map((edu: any) => (
                         <div key={edu.id} className="relative">
-                            <div className="absolute -left-[37px] top-1.5 h-3 w-3 rounded-full bg-[#030304] border-2 border-blue-500"></div>
+                            <div className="absolute -left-[37px] top-1.5 h-3 w-3 rounded-full bg-[#0d0d0f] border-2 border-blue-500"></div>
 
                             <h4 className="text-lg 2xl:text-xl font-bold text-white leading-tight mb-1">{edu.degree}</h4>
                             <div className="text-sm 2xl:text-base text-blue-400 font-medium mb-1">{edu.school}</div>

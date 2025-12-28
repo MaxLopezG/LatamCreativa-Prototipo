@@ -125,7 +125,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
 
   if (isFetching) {
     return (
-      <div className="min-h-screen bg-[#030304] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d0d0f] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
       </div>
     );
@@ -290,7 +290,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
 
   if (!item) {
     return (
-      <div className="min-h-screen bg-[#030304] flex flex-col items-center justify-center p-8 text-center">
+      <div className="min-h-screen bg-[#0d0d0f] flex flex-col items-center justify-center p-8 text-center">
         <h2 className="text-2xl font-bold text-white mb-4">Proyecto no encontrado</h2>
         <p className="text-slate-400 mb-8">El proyecto que buscas no existe o ha sido eliminado.</p>
         <button onClick={onBack} className="px-6 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 transition-colors">
@@ -344,7 +344,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
   const softwares = item.software || [];
 
   return (
-    <div className="min-h-screen bg-[#030304] animate-fade-in relative">
+    <div className="min-h-screen bg-[#0d0d0f] animate-fade-in relative">
       <SEOHead
         title={item.title}
         description={item.description?.substring(0, 150) || `Proyecto de ${item.artist}`}
@@ -369,7 +369,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
       )}
 
       {/* STICKY HEADER */}
-      <div className="sticky top-0 z-40 bg-[#030304]/80 backdrop-blur-xl border-b border-white/5 h-16 flex items-center justify-between px-4 md:px-8 transition-all">
+      <div className="sticky top-0 z-40 bg-[#0d0d0f]/80 backdrop-blur-xl border-b border-white/5 h-16 flex items-center justify-between px-4 md:px-8 transition-all">
         <div className="flex items-center gap-4">
           <button
             onClick={onBack}
@@ -521,7 +521,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
                 )}
               </div>
               {heroContent.caption && (
-                <div className="bg-[#0A0A0C] border-l-2 border-amber-500 pl-4 py-2">
+                <div className="bg-[#18181b] border-l-2 border-amber-500 pl-4 py-2">
                   <p className="text-slate-300 text-sm italic">{heroContent.caption}</p>
                 </div>
               )}

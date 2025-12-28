@@ -171,9 +171,7 @@ const WysiwygEditor: React.FC<Omit<ForumEditorProps, 'category'>> = ({
 
         setUploading(true);
         try {
-            console.log(`Imagen original: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
             const compressedFile = await imageCompression(file, COMPRESSION_OPTIONS);
-            console.log(`Imagen comprimida: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
 
             const timestamp = Date.now();
             const path = `forum/content/${timestamp}.webp`;
@@ -404,9 +402,7 @@ const MarkdownEditor: React.FC<Omit<ForumEditorProps, 'category'>> = ({
 
         setUploading(true);
         try {
-            console.log(`Imagen original: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
             const compressedFile = await imageCompression(file, COMPRESSION_OPTIONS);
-            console.log(`Imagen comprimida: ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
 
             const timestamp = Date.now();
             const path = `forum/content/${timestamp}.webp`;

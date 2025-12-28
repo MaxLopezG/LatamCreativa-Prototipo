@@ -1,9 +1,9 @@
 import React from 'react';
-import { Plus, Newspaper, Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Plus, Newspaper, Loader2, ArrowLeft, ArrowRight, Code, Palette } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
 import { useArticles } from '../../hooks/useFirebase';
 import { BlogCard } from '../../components/cards/BlogCard';
-import { NAV_SECTIONS } from '../../data/navigation';
+import { NAV_SECTIONS, NAV_SECTIONS_DEV } from '../../data/navigation';
 import { BlogCategorySection } from './BlogCategorySection';
 
 interface BlogViewProps {
@@ -17,12 +17,29 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
   const { state, actions } = useAppStore();
   const { articles: blogPosts, loading, hasMore, currentPage, nextPage, prevPage } = useArticles();
   const { sortOption } = state.blogState;
+  const { contentMode } = state;
 
+  // Select navigation sections based on mode
+  const currentSections = contentMode === 'dev' ? NAV_SECTIONS_DEV : NAV_SECTIONS;
+
+  // Filter articles by domain (default to 'creative' for legacy articles)
+  const filteredPosts = blogPosts.filter(article =>
+    (article.domain || 'creative') === contentMode
+  );
+
+  // Mode-specific styling
+  const isDev = contentMode === 'dev';
+  const accentColor = isDev ? 'blue' : 'rose';
+  const accentText = isDev ? 'text-blue-400' : 'text-rose-400';
+  const accentBg = isDev ? 'bg-blue-600' : 'bg-rose-600';
+  const accentBgHover = isDev ? 'hover:bg-blue-500' : 'hover:bg-rose-500';
+  const accentBorder = isDev ? 'border-blue-500/30' : 'border-rose-500/30';
+  const accentBgLight = isDev ? 'bg-blue-500/10' : 'bg-rose-500/10';
 
   const isHomeView = activeCategory === 'Home';
 
   return (
-    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-0 pb-16 transition-colors animate-fade-in bg-[#0f0f12] min-h-screen relative">
+    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-0 pb-16 transition-colors animate-fade-in bg-[#1c1c21] min-h-screen relative">
 
 
 
@@ -35,22 +52,22 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
             className="absolute inset-0 w-full h-full object-cover opacity-40 animate-subtle-zoom"
             alt="Blog Hero"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-[#0f0f12]/80 to-[#0f0f12]"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-[#1c1c21]/80 to-[#1c1c21]"></div>
 
-          {/* Vibrant Glows - Rose/Red Theme for Editorial/News */}
-          <div className="absolute top-0 right-0 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-rose-600/20 rounded-full blur-[100px] md:blur-[150px] pointer-events-none mix-blend-screen"></div>
-          <div className="absolute bottom-0 left-0 w-[250px] md:w-[500px] h-[250px] md:h-[500px] bg-red-900/10 rounded-full blur-[100px] md:blur-[150px] pointer-events-none mix-blend-screen"></div>
+          {/* Vibrant Glows - Dynamic based on mode */}
+          <div className={`absolute top-0 right-0 w-[300px] md:w-[600px] h-[300px] md:h-[600px] ${isDev ? 'bg-blue-600/20' : 'bg-rose-600/20'} rounded-full blur-[100px] md:blur-[150px] pointer-events-none mix-blend-screen`}></div>
+          <div className={`absolute bottom-0 left-0 w-[250px] md:w-[500px] h-[250px] md:h-[500px] ${isDev ? 'bg-cyan-900/10' : 'bg-red-900/10'} rounded-full blur-[100px] md:blur-[150px] pointer-events-none mix-blend-screen`}></div>
         </div>
 
         <div className="relative z-10 px-6 w-full max-w-5xl text-center pt-10 md:pt-0">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-rose-400 text-xs font-bold uppercase tracking-wider mb-6 backdrop-blur-md shadow-lg">
-            <Newspaper className="h-3 w-3" /> Blog & Noticias
+          <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 ${accentText} text-xs font-bold uppercase tracking-wider mb-6 backdrop-blur-md shadow-lg`}>
+            {isDev ? <Code className="h-3 w-3" /> : <Newspaper className="h-3 w-3" />} {isDev ? 'Dev Blog' : 'Blog & Noticias'}
           </span>
           <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold text-white mb-6 leading-tight drop-shadow-2xl">
-            Historias que <br /><span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-red-300">Inspiran Creación</span>
+            {isDev ? 'Código que' : 'Historias que'} <br /><span className={`text-transparent bg-clip-text bg-gradient-to-r ${isDev ? 'from-blue-400 to-cyan-300' : 'from-rose-400 to-red-300'}`}>{isDev ? 'Transforma Ideas' : 'Inspiran Creación'}</span>
           </h1>
           <p className="text-base md:text-xl text-slate-300 mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed font-light">
-            Tutoriales en profundidad, entrevistas a expertos y las últimas novedades de la industria creativa y tecnológica.
+            {isDev ? 'Tutoriales de programación, arquitectura de software y las últimas tendencias en desarrollo.' : 'Tutoriales en profundidad, entrevistas a expertos y las últimas novedades de la industria creativa y tecnológica.'}
           </p>
         </div>
       </div>
@@ -60,7 +77,7 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={onCreateClick}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/50 transition-all font-bold text-sm"
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border ${accentBorder} ${accentBgLight} ${accentText} hover:opacity-80 transition-all font-bold text-sm`}
           >
             <Plus className="h-4 w-4" /> Escribir Artículo
           </button>
@@ -69,11 +86,11 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
 
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Newspaper className="h-6 w-6 text-rose-500" />
+          {isDev ? <Code className={`h-6 w-6 text-blue-500`} /> : <Newspaper className={`h-6 w-6 text-rose-500`} />}
           {activeCategory === 'Home' ? 'Explora por Categoría' : `Artículos de ${activeCategory}`}
         </h2>
         <p className="text-slate-400 mt-1 text-sm">
-          {activeCategory === 'Home' ? 'Descubre lo último en cada área creativa.' : `${blogPosts.length} historias curadas para ti.`}
+          {activeCategory === 'Home' ? (isDev ? 'Descubre lo último en desarrollo.' : 'Descubre lo último en cada área creativa.') : `${filteredPosts.length} historias curadas para ti.`}
         </p>
       </div>
 
@@ -85,10 +102,11 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
             title="Lo último"
             onArticleSelect={onArticleSelect}
             onSave={onSave}
+            contentMode={contentMode}
           />
 
-          {/* Render Sections from Navigation */}
-          {NAV_SECTIONS.filter(s => s.title !== 'Descubrir').map((section, idx) => {
+          {/* Render Sections from Navigation - use currentSections based on mode */}
+          {currentSections.filter(s => s.title !== 'Descubrir').map((section, idx) => {
             // Flatten all subItems and labels to capture all potential category tags
             const allCategories = section.items.flatMap(item => [item.label, ...(item.subItems || [])]);
 
@@ -99,6 +117,7 @@ export const BlogView: React.FC<BlogViewProps> = ({ activeCategory, onArticleSel
                 categories={allCategories}
                 onArticleSelect={onArticleSelect}
                 onSave={onSave}
+                contentMode={contentMode}
               />
             );
           })}

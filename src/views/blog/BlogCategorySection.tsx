@@ -1,25 +1,30 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ArrowRight, Newspaper, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, Newspaper, ChevronLeft, ChevronRight, Code } from 'lucide-react';
 import { ArticleItem } from '../../types';
 import { articlesService } from '../../services/modules/articles';
 import { BlogCard } from '../../components/cards/BlogCard';
+import { ContentMode } from '../../hooks/useAppStore';
 
 interface BlogCategorySectionProps {
     title: string;
     categories?: string[]; // Optional: if omitted, fetches newest articles globally
     onArticleSelect?: (id: string) => void;
     onSave?: (id: string, image: string) => void;
+    contentMode?: ContentMode;
 }
 
 export const BlogCategorySection: React.FC<BlogCategorySectionProps> = ({
     title,
     categories,
     onArticleSelect,
-    onSave
+    onSave,
+    contentMode = 'creative'
 }) => {
     const [articles, setArticles] = useState<ArticleItem[]>([]);
     const [loading, setLoading] = useState(true);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    const isDev = contentMode === 'dev';
 
     // Create a stable key for dependencies to prevent re-fetching on every render
     // simply because the parent passes a new array reference.
@@ -41,7 +46,12 @@ export const BlogCategorySection: React.FC<BlogCategorySectionProps> = ({
                     fetched = await articlesService.getRecentArticles(10);
                 }
 
-                setArticles(fetched);
+                // Filter by domain (default to 'creative' for legacy articles)
+                const filteredByDomain = fetched.filter(article =>
+                    (article.domain || 'creative') === contentMode
+                );
+
+                setArticles(filteredByDomain);
             } catch (error) {
                 console.error(`Error loading section ${title}:`, error);
             } finally {
@@ -53,7 +63,7 @@ export const BlogCategorySection: React.FC<BlogCategorySectionProps> = ({
 
         // Disable warning because we are using a stable stringified key for the array dependency
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [categoriesKey, title]);
+    }, [categoriesKey, title, contentMode]);
 
     const scroll = (direction: 'left' | 'right') => {
         if (scrollContainerRef.current) {

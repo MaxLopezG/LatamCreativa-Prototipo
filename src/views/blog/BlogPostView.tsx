@@ -206,7 +206,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                 keywords={article.tags || []}
             />
             {/* Top Navigation Bar */}
-            <div className="sticky top-0 z-20 bg-white/90 dark:bg-[#030304]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 py-4 flex items-center justify-between">
+            <div className="sticky top-0 z-20 bg-white/90 dark:bg-[#0d0d0f]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 py-4 flex items-center justify-between">
                 <button
                     onClick={onBack}
                     className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"

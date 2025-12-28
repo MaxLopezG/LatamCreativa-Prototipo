@@ -74,13 +74,13 @@ export const forumReplies = {
 
             const snapshot = await getDocs(q);
             const replies: ForumReply[] = snapshot.docs.map(docSnap => {
-                const data = docSnap.data();
+                const data = docSnap.data() as Record<string, unknown>;
                 return {
                     id: docSnap.id,
                     threadId,
                     ...data,
-                    createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-                    updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt
+                    createdAt: (data.createdAt as { toDate?: () => Date })?.toDate?.()?.toISOString() || data.createdAt as string,
+                    updatedAt: (data.updatedAt as { toDate?: () => Date })?.toDate?.()?.toISOString() || data.updatedAt as string | undefined
                 } as ForumReply;
             });
 

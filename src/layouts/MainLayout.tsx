@@ -82,7 +82,7 @@ export const MainLayout: React.FC = () => {
     // The Views handle createMode.
 
     return (
-        <div className={`flex w-full h-screen overflow-hidden bg-slate-50 dark:bg-[#030304] text-slate-600 dark:text-slate-300 font-sans ${selectionColor} transition-colors duration-500 antialiased`}>
+        <div className={`flex w-full h-screen overflow-hidden bg-slate-50 dark:bg-[#0d0d0f] text-slate-600 dark:text-slate-300 font-sans ${selectionColor} transition-colors duration-500 antialiased`}>
 
             {/* Enhanced Ambient Background - Hidden in learning mode for focus */}
             {!isLearningMode && (
@@ -117,7 +117,7 @@ export const MainLayout: React.FC = () => {
                 onToggleContentMode={actions.toggleContentMode}
             />
 
-            <main className={`relative flex min-w-0 flex-1 flex-col overflow-hidden z-10 ${isLearningMode ? 'bg-[#0A0A0C]' : ''}`}>
+            <main className={`relative flex min-w-0 flex-1 flex-col overflow-hidden z-10 ${isLearningMode ? 'bg-[#18181b]' : ''}`}>
                 {!isLearningMode && (
                     <Header
                         onMenuClick={() => actions.setIsSidebarOpen(true)}

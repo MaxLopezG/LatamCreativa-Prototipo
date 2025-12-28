@@ -551,17 +551,17 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
 
   if (isLoadingEdit) {
     return (
-      <div className="min-h-screen bg-[#030304] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d0d0f] flex items-center justify-center">
         <Loader2 className="h-8 w-8 text-amber-500 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#030304] text-slate-300 flex flex-col font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-[#0d0d0f] text-slate-300 flex flex-col font-sans selection:bg-indigo-500/30">
 
       {/* Header - Fixed & Minimal via Glassmorphism */}
-      <header className="sticky top-0 z-50 bg-[#030304]/80 backdrop-blur-xl border-b border-white/[0.06] h-16 flex items-center justify-between px-6">
+      <header className="sticky top-0 z-50 bg-[#0d0d0f]/80 backdrop-blur-xl border-b border-white/[0.06] h-16 flex items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors flex items-center gap-2 group">
             <ArrowLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
@@ -585,7 +585,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
         <div className="flex flex-col gap-8 min-w-0 animate-fade-in">
 
           {/* Title & Description Section (Moved to Main) */}
-          <div className="space-y-6 bg-[#0A0A0C] border border-white/[0.06] rounded-2xl p-8 shadow-xl shadow-black/20">
+          <div className="space-y-6 bg-[#18181b] border border-white/[0.06] rounded-2xl p-8 shadow-xl shadow-black/20">
             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-2">
               <Type className="h-4 w-4" /> Información del Proyecto
             </h3>
@@ -664,7 +664,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
         <div className="space-y-6">
 
           {/* Publishing Options (New) */}
-          <div className="bg-[#0A0A0C] rounded-2xl border border-white/[0.06] shadow-xl shadow-black/20 overflow-hidden">
+          <div className="bg-[#18181b] rounded-2xl border border-white/[0.06] shadow-xl shadow-black/20 overflow-hidden">
             <div className="bg-white/[0.02] border-b border-white/[0.06] px-6 py-4">
               <h3 className="text-sm font-bold text-slate-300">Opciones de Publicación</h3>
             </div>
@@ -675,7 +675,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
                 <div className="relative">
                   <button
                     onClick={() => setIsStatusOpen(!isStatusOpen)}
-                    className={`w-full text-left px-4 py-2.5 bg-[#030304] border rounded-xl text-sm transition-all flex items-center justify-between ${isStatusOpen
+                    className={`w-full text-left px-4 py-2.5 bg-[#0d0d0f] border rounded-xl text-sm transition-all flex items-center justify-between ${isStatusOpen
                       ? 'border-indigo-500/50 ring-1 ring-indigo-500/20 text-white'
                       : 'border-white/[0.06] text-slate-300 hover:border-white/20 hover:text-white'
                       }`}
@@ -691,7 +691,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
                   {isStatusOpen && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setIsStatusOpen(false)} />
-                      <div className="absolute top-full left-0 right-0 mt-1 bg-[#0A0A0C] border border-white/[0.06] rounded-xl shadow-2xl overflow-hidden z-20 animate-fade-in">
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-[#18181b] border border-white/[0.06] rounded-xl shadow-2xl overflow-hidden z-20 animate-fade-in">
                         <button
                           onClick={() => { setPublishStatus('draft'); setIsStatusOpen(false); }}
                           className="w-full text-left px-4 py-3 text-sm text-slate-300 hover:bg-white/[0.05] hover:text-white transition-colors flex items-center justify-between group"
@@ -751,7 +751,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
                         value={scheduledDate}
                         onChange={(e) => setScheduledDate(e.target.value)}
                         min={new Date().toISOString().slice(0, 16)}
-                        className="w-full px-4 py-2 bg-[#030304] border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500 transition-colors"
+                        className="w-full px-4 py-2 bg-[#0d0d0f] border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-amber-500 transition-colors"
                       />
                       <button
                         onClick={handleSchedule}
@@ -782,7 +782,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
           </div>
 
           {/* Thumbnail / Cover Setting (Moved to Sidebar) */}
-          <div className="bg-[#0A0A0C] p-4 rounded-xl border border-white/[0.06] shadow-xl shadow-black/20">
+          <div className="bg-[#18181b] p-4 rounded-xl border border-white/[0.06] shadow-xl shadow-black/20">
             <span className="text-xs font-bold text-slate-500 uppercase tracking-widest block mb-4 flex items-center justify-between">
               <span>Miniatura del Feed</span>
               {coverPreview && (
@@ -828,7 +828,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
           </div>
 
           {/* Classification */}
-          <div className="bg-[#0A0A0C] p-6 rounded-2xl border border-white/[0.06] space-y-6 shadow-xl shadow-black/20">
+          <div className="bg-[#18181b] p-6 rounded-2xl border border-white/[0.06] space-y-6 shadow-xl shadow-black/20">
 
             {/* Category */}
             <div className="space-y-3">
@@ -840,7 +840,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
                     onClick={() => setCategory(cat)}
                     className={`px-3 py-2.5 text-xs font-bold border rounded-lg transition-all text-left ${category === cat
                       ? 'bg-amber-500 text-black border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.4)]'
-                      : 'bg-[#030304] border-white/[0.06] text-slate-400 hover:border-white/20 hover:text-white'
+                      : 'bg-[#0d0d0f] border-white/[0.06] text-slate-400 hover:border-white/20 hover:text-white'
                       }`}
                   >
                     {cat}
@@ -873,11 +873,11 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
                   onChange={(e) => setSoftwareInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSoftware(softwareInput))}
                   placeholder="+ Añadir Software"
-                  className="w-full bg-[#030304] border border-white/[0.06] text-sm text-white rounded-xl px-4 py-2.5 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/20 transition-all placeholder-slate-600 peer"
+                  className="w-full bg-[#0d0d0f] border border-white/[0.06] text-sm text-white rounded-xl px-4 py-2.5 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/20 transition-all placeholder-slate-600 peer"
                 />
 
                 {/* Custom Autocomplete Dropdown */}
-                <div className="absolute top-full left-0 right-0 mt-1 bg-[#0A0A0C] border border-white/[0.06] rounded-xl shadow-2xl overflow-hidden z-20 hidden peer-focus:block hover:block animate-fade-in max-h-60 overflow-y-auto custom-scrollbar">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[#18181b] border border-white/[0.06] rounded-xl shadow-2xl overflow-hidden z-20 hidden peer-focus:block hover:block animate-fade-in max-h-60 overflow-y-auto custom-scrollbar">
                   {COMMON_SOFTWARE.filter(s => s.toLowerCase().includes(softwareInput.toLowerCase()) && !softwares.includes(s)).map(soft => (
                     <button
                       key={soft}
@@ -925,7 +925,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={(e) => (e.key === 'Enter' || e.key === ',') && (e.preventDefault(), addTag(tagInput))}
                 placeholder="+ Añadir Etiquetas"
-                className="w-full bg-[#030304] border border-white/[0.06] text-sm text-white rounded-xl px-4 py-2.5 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/20 transition-all placeholder-slate-600"
+                className="w-full bg-[#0d0d0f] border border-white/[0.06] text-sm text-white rounded-xl px-4 py-2.5 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/20 transition-all placeholder-slate-600"
               />
             </div>
 
@@ -950,7 +950,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
                 onChange={(e) => setCollaboratorInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCollaborator(collaboratorInput))}
                 placeholder="+ Etiquetar perfil"
-                className="w-full bg-[#030304] border border-white/[0.06] text-sm text-white rounded-xl px-4 py-2.5 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/20 transition-all placeholder-slate-600"
+                className="w-full bg-[#0d0d0f] border border-white/[0.06] text-sm text-white rounded-xl px-4 py-2.5 focus:border-indigo-500/50 focus:outline-none focus:ring-1 focus:ring-indigo-500/20 transition-all placeholder-slate-600"
               />
             </div>
 
@@ -963,7 +963,7 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
       {/* Crop Modal */}
       {imageToCrop && (
         <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-[#0A0A0C] border border-white/10 rounded-2xl p-6 max-w-2xl w-full flex flex-col gap-6 shadow-2xl">
+          <div className="bg-[#18181b] border border-white/10 rounded-2xl p-6 max-w-2xl w-full flex flex-col gap-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-bold text-white">Recortar Miniatura (1:1)</h3>
               <button onClick={() => setImageToCrop(null)} className="text-slate-400 hover:text-white">
@@ -1003,11 +1003,11 @@ export const CreatePortfolioView: React.FC<CreatePortfolioViewProps> = ({ onBack
       )}
 
       {/* Mobile Floating Action Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#030304]/95 backdrop-blur-xl border-t border-white/10 p-4 flex gap-3 animate-slide-up">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0d0d0f]/95 backdrop-blur-xl border-t border-white/10 p-4 flex gap-3 animate-slide-up">
         <button
           onClick={() => actions.showToast('Guardado como borrador', 'success')}
           disabled={isSubmitting}
-          className="flex-1 py-3 bg-[#0A0A0C] border border-white/10 text-slate-300 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+          className="flex-1 py-3 bg-[#18181b] border border-white/10 text-slate-300 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
         >
           <Save className="h-4 w-4" />
           Borrador

@@ -7,7 +7,7 @@ export const NotFoundView: React.FC = () => {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-[#030304] flex items-center justify-center p-6">
+        <div className="min-h-screen bg-[#0d0d0f] flex items-center justify-center p-6">
             <div className="max-w-2xl w-full text-center animate-fade-in">
 
                 {/* Animated 404 Number */}

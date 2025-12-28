@@ -1,19 +1,26 @@
-/**
- * UI Slice
- * Maneja el estado de la interfaz de usuario: sidebar, modales, navegación, toasts
- * 
- * @module hooks/store/uiSlice
- */
-
 import { StateCreator } from 'zustand';
 import { UISlice, AppStore, ToastType, ContentMode, CreateMode, ItemType } from './types';
+
+// Helper to safely read from localStorage
+const getSavedContentMode = (): ContentMode => {
+    if (typeof window === 'undefined') return 'creative';
+    try {
+        const saved = localStorage.getItem('latamcreativa_content_mode');
+        if (saved === 'dev' || saved === 'creative') {
+            return saved;
+        }
+    } catch (error) {
+        console.warn('Error reading content mode from localStorage:', error);
+    }
+    return 'creative';
+};
 
 export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set, get) => ({
     // Initial State
     isSidebarOpen: false,
     activeCategory: 'Home',
     activeModule: 'home',
-    contentMode: 'creative' as ContentMode,
+    contentMode: getSavedContentMode(),
     createMode: null as CreateMode,
     searchQuery: '',
     toast: null,
@@ -72,6 +79,13 @@ export const createUISlice: StateCreator<AppStore, [], [], UISlice> = (set, get)
         }
 
         if (currentMode === mode) return;
+
+        // Save to localStorage
+        try {
+            localStorage.setItem('latamcreativa_content_mode', mode);
+        } catch (error) {
+            console.warn('Error saving content mode to localStorage:', error);
+        }
 
         set({ contentMode: mode, activeCategory: 'Home' });
         get().showToast(mode === 'dev' ? 'Modo Desarrollador Activado 👨‍💻' : 'Modo Creativo Activado 🎨', 'info');

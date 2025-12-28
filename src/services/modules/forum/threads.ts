@@ -249,14 +249,7 @@ export const forumThreadsCrud = {
             const now = new Date().toISOString();
 
             // Generate unique slug
-            const slug = await generateUniqueSlug(
-                threadData.title,
-                async (testSlug) => {
-                    const q = query(threadsRef, where('slug', '==', testSlug), limit(1));
-                    const snapshot = await getDocs(q);
-                    return snapshot.empty;
-                }
-            );
+            const slug = generateUniqueSlug(threadData.title);
 
             // Upload attachments if any
             let attachments: { id: string; url: string; type: 'image' | 'file'; name: string; size: number }[] = [];
@@ -349,7 +342,7 @@ export const forumThreadsCrud = {
             if (thread?.attachments) {
                 await Promise.all(
                     thread.attachments.map(att =>
-                        storageService.deleteImage(att.url).catch(console.error)
+                        storageService.deleteFromUrl(att.url).catch(console.error)
                     )
                 );
             }

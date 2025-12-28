@@ -70,7 +70,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ onNavigate }) => {
             <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto pb-20 px-4 md:px-6 transition-all duration-300">
 
                 {/* Hero Section */}
-                <div className="relative overflow-hidden rounded-3xl bg-[#0A0A0C] border border-white/10 mt-6 min-h-[500px] flex items-center shadow-2xl">
+                <div className="relative overflow-hidden rounded-3xl bg-[#18181b] border border-white/10 mt-6 min-h-[500px] flex items-center shadow-2xl">
 
                     {/* Mobile Background Image (Subtle) */}
                     <img

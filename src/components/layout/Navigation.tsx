@@ -39,7 +39,7 @@ export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, con
   }, []);
 
   return (
-    <aside className="hidden flex-col border-r border-white/10 md:flex z-50 bg-[#050506] w-[72px] 2xl:w-[88px] h-screen sticky top-0 transition-all duration-300">
+    <aside className="hidden flex-col border-r border-white/10 md:flex z-50 bg-[#111114] w-[72px] 2xl:w-[88px] h-screen sticky top-0 transition-all duration-300">
 
       {/* Scrollable Navigation Area */}
       <div className="flex-1 flex flex-col w-full min-h-0 py-2 2xl:py-8">
@@ -76,7 +76,7 @@ export const PrimarySidebar = ({ activeModule = 'portfolio', onModuleSelect, con
       </div>
 
       {/* Fixed Bottom Actions */}
-      <div className="flex flex-col gap-2 2xl:gap-5 items-center pb-4 2xl:pb-8 shrink-0 bg-gradient-to-t from-[#050506] to-transparent w-full z-10" ref={profileMenuRef}>
+      <div className="flex flex-col gap-2 2xl:gap-5 items-center pb-4 2xl:pb-8 shrink-0 bg-gradient-to-t from-[#111114] to-transparent w-full z-10" ref={profileMenuRef}>
 
         {/* Toggle Mode Button */}
         <div className="relative group flex items-center justify-center">
@@ -401,12 +401,12 @@ export const SecondarySidebar = ({
       )}
 
       <aside className={`
-        fixed inset-y-0 z-40 flex flex-col border-r border-slate-200 dark:border-white/[0.06] bg-white dark:bg-[#08080A]
+        fixed inset-y-0 z-40 flex flex-col border-r border-slate-200 dark:border-white/[0.06] bg-white dark:bg-[#141417]
         transition-all duration-300 ease-[cubic-bezier(0.2,0,0,1)]
         left-0 md:left-[88px] xl:left-0
         w-[85vw] max-w-[300px] md:w-72
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        ${hiddenOnDesktop ? 'xl:hidden' : (isOpen ? 'xl:w-72 xl:translate-x-0 xl:static xl:bg-white/50 dark:xl:bg-[#08080A]/50 xl:backdrop-blur-md xl:h-screen xl:sticky xl:top-0' : 'xl:w-0 xl:translate-x-0 xl:static xl:border-none xl:overflow-hidden')}
+        ${hiddenOnDesktop ? 'xl:hidden' : (isOpen ? 'xl:w-72 xl:translate-x-0 xl:static xl:bg-white/50 dark:xl:bg-[#141417]/50 xl:backdrop-blur-md xl:h-screen xl:sticky xl:top-0' : 'xl:w-0 xl:translate-x-0 xl:static xl:border-none xl:overflow-hidden')}
       `}>
         <div className="flex h-20 items-center justify-between border-b border-slate-200 dark:border-white/[0.06] px-6 shrink-0 transition-colors">
           <span className="text-lg font-semibold tracking-tight text-slate-900 dark:text-white">Menú {contentMode === 'dev' && <span className="text-xs bg-blue-500 text-white px-2 py-0.5 rounded ml-2">DEV</span>}</span>
@@ -437,7 +437,7 @@ export const SecondarySidebar = ({
                 onKeyDown={handleSearchSubmit}
                 placeholder="Buscar proyectos, artículos..."
                 className={`w-full pl-10 pr-4 py-3 rounded-xl border text-sm font-medium transition-all ${showSuggestions
-                  ? `bg-white dark:bg-[#0A0A0C] ${contentMode === 'dev' ? 'border-blue-500/50 ring-2 ring-blue-500/20' : 'border-amber-500/50 ring-2 ring-amber-500/20'} text-slate-900 dark:text-white`
+                  ? `bg-white dark:bg-[#18181b] ${contentMode === 'dev' ? 'border-blue-500/50 ring-2 ring-blue-500/20' : 'border-amber-500/50 ring-2 ring-amber-500/20'} text-slate-900 dark:text-white`
                   : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-600 dark:text-slate-300'
                   } placeholder-slate-400 focus:outline-none`}
               />

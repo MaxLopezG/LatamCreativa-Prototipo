@@ -148,8 +148,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateToModule, onItemSe
             alt="Latam Creativa Hero"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#030304] via-[#030304]/60 to-transparent"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#030304] via-[#030304]/80 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0f] via-[#0d0d0f]/60 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0d0d0f] via-[#0d0d0f]/80 to-transparent"></div>
         </div>
 
         <div className="relative z-10 h-full w-full max-w-[2560px] mx-auto px-4 md:px-12 2xl:px-16 flex flex-col justify-center py-12 md:py-0">
@@ -190,7 +190,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateToModule, onItemSe
             {/* Quick Categories Carousel */}
             <div className="relative group">
               {/* Left Gradient/Arrow */}
-              <div className="hidden md:block absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-slate-50 dark:from-[#030304] to-transparent z-10 pointer-events-none"></div>
+              <div className="hidden md:block absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-slate-50 dark:from-[#0d0d0f] to-transparent z-10 pointer-events-none"></div>
               <button
                 onClick={() => scrollCategories('left')}
                 className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 -ml-3"
@@ -206,7 +206,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateToModule, onItemSe
                 {categories.map((cat, idx) => (
                   <div
                     key={idx}
-                    className="flex-shrink-0 w-36 md:w-44 group/card relative h-20 rounded-xl bg-[#0A0A0C] border border-white/10 overflow-hidden cursor-pointer hover:-translate-y-1 transition-transform shadow-lg"
+                    className="flex-shrink-0 w-36 md:w-44 group/card relative h-20 rounded-xl bg-[#18181b] border border-white/10 overflow-hidden cursor-pointer hover:-translate-y-1 transition-transform shadow-lg"
                     onClick={() => navigate(`/search?q=${encodeURIComponent(cat.label)}`)}
                   >
                     <div className={`absolute inset-0 opacity-0 group-hover/card:opacity-10 bg-gradient-to-br ${cat.color} transition-opacity`}></div>
@@ -219,7 +219,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigateToModule, onItemSe
               </div>
 
               {/* Right Gradient/Arrow */}
-              <div className="hidden md:block absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-slate-50 dark:from-[#030304] to-transparent z-10 pointer-events-none"></div>
+              <div className="hidden md:block absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-slate-50 dark:from-[#0d0d0f] to-transparent z-10 pointer-events-none"></div>
               <button
                 onClick={() => scrollCategories('right')}
                 className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 z-20 p-2 bg-white/80 dark:bg-black/50 backdrop-blur-md rounded-full shadow-lg text-slate-900 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110 -mr-3"

@@ -42,7 +42,7 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
                     alt="Cover"
                     className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#030304] via-[#030304]/40 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0f] via-[#0d0d0f]/40 to-transparent"></div>
             </div>
 
             {/* Profile Header Info */}
@@ -52,7 +52,7 @@ export const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
                     {/* Avatar with Level Frame */}
                     <div className="relative group">
                         <div className={`h-32 w-32 md:h-40 md:w-40 2xl:h-48 2xl:w-48 rounded-3xl p-[4px] ${levelFrameClass}`}>
-                            <div className="h-full w-full rounded-2xl overflow-hidden bg-[#030304] border-4 border-[#030304]">
+                            <div className="h-full w-full rounded-2xl overflow-hidden bg-[#0d0d0f] border-4 border-[#0d0d0f]">
                                 <img
                                     src={displayUser.avatar}
                                     alt={name}

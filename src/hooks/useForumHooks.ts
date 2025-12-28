@@ -125,9 +125,13 @@ export function useForumThread(slugOrId: string | undefined) {
                 const result = await forumService.getThreadBySlug(slugOrId);
                 setThread(result);
 
-                // Increment views (fire and forget)
+                // Increment views only once per session (prevent spam)
                 if (result) {
-                    forumService.incrementViews(result.id).catch(console.error);
+                    const viewedKey = `forum_viewed_${result.id}`;
+                    if (!sessionStorage.getItem(viewedKey)) {
+                        sessionStorage.setItem(viewedKey, 'true');
+                        forumService.incrementViews(result.id).catch(console.error);
+                    }
                 }
             } catch (err) {
                 console.error('Error fetching thread:', err);

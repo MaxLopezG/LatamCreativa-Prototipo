@@ -96,7 +96,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white dark:bg-[#08080A] w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="bg-white dark:bg-[#141417] w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 flex flex-col max-h-[90vh] overflow-hidden">
 
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02]">
@@ -146,7 +146,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                     alt="Cover"
                                     className="w-full h-full object-cover opacity-60"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#030304] to-transparent"></div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#0d0d0f] to-transparent"></div>
 
                                 {/* Change Cover Button */}
                                 <button
@@ -171,11 +171,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                             <div className="px-6 md:px-12 relative -mt-12 md:-mt-14 z-10">
                                 <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
                                     <div className="relative group shrink-0">
-                                        <div className="h-36 w-36 md:h-44 md:w-44 rounded-3xl p-1 bg-[#030304]">
+                                        <div className="h-36 w-36 md:h-44 md:w-44 rounded-3xl p-1 bg-[#0d0d0f]">
                                             <img
                                                 src={images.previewAvatar || user.avatar || "https://cdn.ui-avatars.com/api/?name=User&background=random"}
                                                 alt="Avatar"
-                                                className="w-full h-full object-cover rounded-2xl bg-slate-800 border-4 border-[#030304]"
+                                                className="w-full h-full object-cover rounded-2xl bg-slate-800 border-4 border-[#0d0d0f]"
                                             />
                                             {/* Change Avatar Overlay */}
                                             <div

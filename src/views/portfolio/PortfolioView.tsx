@@ -114,7 +114,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, on
     : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2000&auto=format&fit=crop';
 
   return (
-    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-0 pb-16 transition-colors animate-fade-in bg-[#0f0f12] min-h-screen">
+    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-0 pb-16 transition-colors animate-fade-in bg-[#1c1c21] min-h-screen">
 
       {/* Cinematic Hero Banner - Full Width */}
       <div className="relative -mx-6 md:-mx-10 2xl:-mx-16 h-[500px] flex items-center justify-center overflow-hidden mb-12">
@@ -125,7 +125,7 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, on
             className="absolute inset-0 w-full h-full object-cover opacity-40 animate-subtle-zoom"
             alt="Portfolio Hero"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-[#0f0f12]/80 to-[#0f0f12]"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-[#1c1c21]/80 to-[#1c1c21]"></div>
 
           {/* Vibrant Glows */}
           <div className={`absolute top-0 right-0 w-[600px] h-[600px] ${mode === 'dev' ? 'bg-blue-600/20' : 'bg-pink-600/20'} rounded-full blur-[150px] pointer-events-none mix-blend-screen`}></div>

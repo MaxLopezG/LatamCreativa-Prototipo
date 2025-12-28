@@ -280,7 +280,7 @@ export function ForumCategoryWrapper() {
 export function ThreadWrapper() {
   return (
     <Suspended>
-      <ThreadView onBack={() => window.history.back()} />
+      <ThreadView />
     </Suspended>
   );
 }

@@ -92,7 +92,7 @@ export const PortfolioSidebar: React.FC<PortfolioSidebarProps> = ({
             <div className="sticky top-24 space-y-6">
 
                 {/* Author Card */}
-                <div className="bg-[#0A0A0C] p-6 rounded-2xl border border-white/5 shadow-xl relative overflow-hidden group">
+                <div className="bg-[#18181b] p-6 rounded-2xl border border-white/5 shadow-xl relative overflow-hidden group">
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 to-purple-500"></div>
 
                     <div
@@ -162,7 +162,7 @@ export const PortfolioSidebar: React.FC<PortfolioSidebarProps> = ({
                 </div>
 
                 {/* Stats Card */}
-                <div className="bg-[#0A0A0C] p-5 rounded-2xl border border-white/5">
+                <div className="bg-[#18181b] p-5 rounded-2xl border border-white/5">
                     <div className="grid grid-cols-3 gap-2 text-center divide-x divide-white/5">
                         <div>
                             <div className="text-white font-bold">{(item.views || 0).toLocaleString()}</div>
@@ -180,7 +180,7 @@ export const PortfolioSidebar: React.FC<PortfolioSidebarProps> = ({
                 </div>
 
                 {/* Tags */}
-                <div className="bg-[#0A0A0C] p-5 rounded-2xl border border-white/5">
+                <div className="bg-[#18181b] p-5 rounded-2xl border border-white/5">
                     <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Etiquetas</h4>
                     <div className="flex flex-wrap gap-2">
                         {(item.tags && item.tags.length > 0 ? item.tags : [item.category]).map(tag => (
@@ -192,7 +192,7 @@ export const PortfolioSidebar: React.FC<PortfolioSidebarProps> = ({
                 </div>
 
                 {/* Collaborators */}
-                <div className="bg-[#0A0A0C] p-5 rounded-2xl border border-white/5">
+                <div className="bg-[#18181b] p-5 rounded-2xl border border-white/5">
                     <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Colaboradores</h4>
                     <div className="flex flex-wrap gap-2">
                         {item.collaborators && item.collaborators.length > 0 ? (

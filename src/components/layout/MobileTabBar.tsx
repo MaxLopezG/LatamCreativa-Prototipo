@@ -69,7 +69,7 @@ export const MobileTabBar: React.FC<MobileTabBarProps> = ({ activeModule, onNavi
       </div>
 
       {/* Tab Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#050506]/95 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 z-[60] md:hidden pb-safe">
+      <div className="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-[#111114]/95 backdrop-blur-xl border-t border-slate-200 dark:border-white/10 z-[60] md:hidden pb-safe">
         <div className="flex justify-around items-center h-16 px-2">
 
           <button

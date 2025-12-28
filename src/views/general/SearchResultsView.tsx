@@ -127,7 +127,7 @@ export const SearchResultsView: React.FC<SearchResultsViewProps> = ({ onItemSele
   const hasResults = results.length > 0;
 
   return (
-    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors animate-fade-in bg-[#0f0f12] min-h-screen">
+    <div className="w-full max-w-[2560px] mx-auto px-6 md:px-10 2xl:px-16 pt-8 pb-16 transition-colors animate-fade-in bg-[#1c1c21] min-h-screen">
 
       {/* Header */}
       <div className="mb-8">

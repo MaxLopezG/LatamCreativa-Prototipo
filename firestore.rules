@@ -204,8 +204,16 @@ service cloud.firestore {
       // Only authenticated users can create threads
       allow create: if isAuthenticated();
       
-      // Update rules - temporarily permissive while diagnosing authorId issue
-      allow update: if isAuthenticated();
+      // Update rules:
+      // - Author can update their thread content
+      // - Any authenticated user can update stats only (views, likes, replies, lastActivityAt)
+      allow update: if (
+        isAuthenticated() && resource.data.authorId == request.auth.uid
+      ) || (
+        isAuthenticated() && 
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['views', 'likes', 'replies', 'lastActivityAt'])
+      );
       
       // Only author can delete their thread
       allow delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;

@@ -20,7 +20,7 @@ export const ProUpgradeView: React.FC<ProUpgradeViewProps> = ({ onBack }) => {
     <div className="max-w-[1400px] mx-auto animate-fade-in pb-20">
       
       {/* Navbar Overlay */}
-      <div className="sticky top-0 z-30 bg-white/90 dark:bg-[#030304]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 h-16 flex items-center justify-between">
+      <div className="sticky top-0 z-30 bg-white/90 dark:bg-[#0d0d0f]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 h-16 flex items-center justify-between">
         <button 
           onClick={onBack}
           className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
@@ -116,7 +116,7 @@ export const ProUpgradeView: React.FC<ProUpgradeViewProps> = ({ onBack }) => {
                  </div>
 
                  {/* PRO Plan */}
-                 <div className="bg-[#0A0A0C] dark:bg-black p-8 rounded-3xl border-2 border-amber-500 relative transform md:scale-110 shadow-2xl shadow-amber-500/20">
+                 <div className="bg-[#18181b] dark:bg-black p-8 rounded-3xl border-2 border-amber-500 relative transform md:scale-110 shadow-2xl shadow-amber-500/20">
                      <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-amber-500 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
                          Más Popular
                      </div>

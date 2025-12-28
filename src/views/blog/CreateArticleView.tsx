@@ -324,10 +324,10 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
   };
 
   return (
-    <div className="min-h-screen bg-[#030304] text-slate-300 flex flex-col font-sans selection:bg-rose-500/30">
+    <div className="min-h-screen bg-[#0d0d0f] text-slate-300 flex flex-col font-sans selection:bg-rose-500/30">
 
       {/* Header - Fixed & Minimal via Glassmorphism */}
-      <header className="sticky top-0 z-50 bg-[#030304]/80 backdrop-blur-xl border-b border-white/[0.06] h-16 flex items-center justify-between px-6">
+      <header className="sticky top-0 z-50 bg-[#0d0d0f]/80 backdrop-blur-xl border-b border-white/[0.06] h-16 flex items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <button onClick={onBack} className="text-slate-400 hover:text-white transition-colors flex items-center gap-2 group">
             <X className="h-5 w-5" />
@@ -382,7 +382,7 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
             )}
 
             {/* Title Section - First */}
-            <div className="bg-[#0A0A0C] border border-white/[0.06] rounded-2xl p-6 shadow-xl shadow-black/20">
+            <div className="bg-[#18181b] border border-white/[0.06] rounded-2xl p-6 shadow-xl shadow-black/20">
               <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-4">
                 <Type className="h-4 w-4" /> Título del Artículo
               </h3>
@@ -396,7 +396,7 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
             </div>
 
             {/* Category & Tags - Mobile Only */}
-            <div className="lg:hidden bg-[#0A0A0C] border border-white/[0.06] rounded-2xl p-6 shadow-xl shadow-black/20 space-y-4">
+            <div className="lg:hidden bg-[#18181b] border border-white/[0.06] rounded-2xl p-6 shadow-xl shadow-black/20 space-y-4">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                 <Layers className="h-3 w-3" /> Categoría y Etiquetas
               </h3>
@@ -493,7 +493,7 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
             </div>
 
             {/* Cover Image Section - Second */}
-            <div className="bg-[#0A0A0C] border border-white/[0.06] rounded-2xl p-6 shadow-xl shadow-black/20">
+            <div className="bg-[#18181b] border border-white/[0.06] rounded-2xl p-6 shadow-xl shadow-black/20">
               <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-4">
                 <ImageIcon className="h-4 w-4" /> Portada del Artículo
               </h3>
@@ -545,7 +545,7 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
             </div>
 
             {/* Content Blocks Section - Third */}
-            <div className="bg-[#0A0A0C] border border-white/[0.06] rounded-2xl p-8 shadow-xl shadow-black/20 space-y-6">
+            <div className="bg-[#18181b] border border-white/[0.06] rounded-2xl p-8 shadow-xl shadow-black/20 space-y-6">
               <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                 <Layers className="h-4 w-4" /> Contenido del Artículo
               </h3>
@@ -728,7 +728,7 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
           <aside className="hidden lg:flex flex-col gap-6 sticky top-24 h-fit">
 
             {/* Publish Actions Panel */}
-            <div className="bg-[#0A0A0C] p-6 rounded-xl border border-white/[0.06] shadow-xl shadow-black/20 space-y-4">
+            <div className="bg-[#18181b] p-6 rounded-xl border border-white/[0.06] shadow-xl shadow-black/20 space-y-4">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Publicación</h3>
 
               {/* Publish Button (Primary) */}
@@ -776,7 +776,7 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
             </div>
 
             {/* Category & Tags Panel */}
-            <div className="bg-[#0A0A0C] p-6 rounded-xl border border-white/[0.06] shadow-xl shadow-black/20 space-y-4">
+            <div className="bg-[#18181b] p-6 rounded-xl border border-white/[0.06] shadow-xl shadow-black/20 space-y-4">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                 <Layers className="h-3 w-3" /> Categoría
               </h3>
@@ -875,7 +875,7 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
           </aside>
 
           {/* Mobile Action Bar (Fixed Bottom) - Only on smaller screens */}
-          <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#030304]/90 backdrop-blur-xl border-t border-white/[0.06] py-4 px-6 z-30">
+          <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#0d0d0f]/90 backdrop-blur-xl border-t border-white/[0.06] py-4 px-6 z-30">
             <div className="flex items-center justify-center gap-4">
               <button
                 onClick={handlePublish}

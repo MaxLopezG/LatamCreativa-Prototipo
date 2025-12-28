@@ -63,7 +63,7 @@ export const GalleryItemCard: React.FC<GalleryItemCardProps> = ({
     onUpdateCaption,
 }) => {
     return (
-        <div className="bg-[#0A0A0C] border border-white/[0.06] rounded-2xl overflow-hidden animate-fade-in group hover:border-white/10 transition-colors">
+        <div className="bg-[#18181b] border border-white/[0.06] rounded-2xl overflow-hidden animate-fade-in group hover:border-white/10 transition-colors">
             {/* Preview Area */}
             <div className="relative bg-black/50 min-h-[400px] flex items-center justify-center p-4">
                 <img
@@ -138,7 +138,7 @@ export const GalleryItemCard: React.FC<GalleryItemCardProps> = ({
             </div>
 
             {/* Caption Input */}
-            <div className="p-6 bg-[#0E0E10] border-t border-white/[0.06]">
+            <div className="p-6 bg-[#1a1a1e] border-t border-white/[0.06]">
                 <div className="flex items-start gap-4">
                     <div className="mt-1">
                         <div className="w-8 h-8 rounded-full bg-white/[0.05] flex items-center justify-center text-slate-500 font-bold text-xs">

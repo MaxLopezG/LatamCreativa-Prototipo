@@ -185,7 +185,7 @@ export const Header = ({
     const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
-        <header className="flex h-20 w-full items-center justify-between border-b border-slate-200 dark:border-white/[0.06] bg-white/80 dark:bg-[#030304]/80 px-4 md:px-8 backdrop-blur-xl absolute top-0 right-0 left-0 z-40 transition-colors">
+        <header className="flex h-20 w-full items-center justify-between border-b border-slate-200 dark:border-white/[0.06] bg-white/80 dark:bg-[#0d0d0f]/80 px-4 md:px-8 backdrop-blur-xl absolute top-0 right-0 left-0 z-40 transition-colors">
 
             {/* LEFT: Logo & Mobile Menu */}
             <div className="flex items-center gap-3 md:gap-5 flex-1 md:w-1/3 md:flex-none">
@@ -222,7 +222,7 @@ export const Header = ({
                             if (searchResults.length > 0) setShowSuggestions(true);
                         }}
                         className={`block w-full pl-10 pr-12 py-2.5 border rounded-2xl text-sm font-medium transition-all ${isSearchFocused
-                            ? `bg-white dark:bg-[#0A0A0C] ${accentBorder} ring-2 ${accentRing} text-slate-900 dark:text-white`
+                            ? `bg-white dark:bg-[#18181b] ${accentBorder} ring-2 ${accentRing} text-slate-900 dark:text-white`
                             : 'bg-slate-100 dark:bg-white/[0.05] border-transparent text-slate-600 dark:text-slate-300'
                             } placeholder-slate-400 focus:outline-none`}
                     />
@@ -315,7 +315,7 @@ export const Header = ({
                         >
                             <ShoppingCart className="h-5 w-5 group-hover:scale-110 transition-transform" />
                             {cartCount > 0 && (
-                                <span className={`absolute top-2 right-2 h-3.5 w-3.5 rounded-full ${accentBg} ring-2 ring-white dark:ring-[#030304] flex items-center justify-center text-[8px] font-bold text-white`}>
+                                <span className={`absolute top-2 right-2 h-3.5 w-3.5 rounded-full ${accentBg} ring-2 ring-white dark:ring-[#0d0d0f] flex items-center justify-center text-[8px] font-bold text-white`}>
                                     {cartCount}
                                 </span>
                             )}
@@ -332,7 +332,7 @@ export const Header = ({
                             >
                                 <Bell className={`h-5 w-5 ${isNotificationsOpen ? 'fill-current' : ''} group-hover:rotate-12 transition-transform`} />
                                 {unreadCount > 0 && (
-                                    <span className="absolute top-2 right-2 h-4 w-4 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#030304] flex items-center justify-center text-[9px] font-bold text-white">
+                                    <span className="absolute top-2 right-2 h-4 w-4 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#0d0d0f] flex items-center justify-center text-[9px] font-bold text-white">
                                         {unreadCount}
                                     </span>
                                 )}

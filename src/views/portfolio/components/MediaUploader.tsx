@@ -111,7 +111,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
 
     if (mode === 'youtube') {
         return (
-            <div className="border border-white/[0.06] bg-[#0A0A0C] rounded-2xl p-8 flex flex-col items-center justify-center gap-4 animate-fade-in">
+            <div className="border border-white/[0.06] bg-[#18181b] rounded-2xl p-8 flex flex-col items-center justify-center gap-4 animate-fade-in">
                 <h4 className="text-sm font-bold text-white flex items-center gap-2">
                     <svg className="w-5 h-5 text-red-500 fill-current" viewBox="0 0 24 24">
                         <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 4-8 4z" />
@@ -124,7 +124,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                         value={youtubeLink}
                         onChange={(e) => onYoutubeLinkChange(e.target.value)}
                         placeholder="Pega el enlace aquí (ej: https://www.youtube.com/watch?v=...)"
-                        className="flex-1 bg-[#030304] border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-red-500 transition-colors placeholder-slate-600"
+                        className="flex-1 bg-[#0d0d0f] border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-red-500 transition-colors placeholder-slate-600"
                         autoFocus
                         onKeyDown={(e) => e.key === 'Enter' && onAddYoutube()}
                     />
@@ -144,7 +144,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
 
     // mode === 'sketchfab'
     return (
-        <div className="border border-white/[0.06] bg-[#0A0A0C] rounded-2xl p-8 flex flex-col items-center justify-center gap-4 animate-fade-in">
+        <div className="border border-white/[0.06] bg-[#18181b] rounded-2xl p-8 flex flex-col items-center justify-center gap-4 animate-fade-in">
             <h4 className="text-sm font-bold text-white flex items-center gap-2">
                 <svg className="w-5 h-5 text-[#1CAAD9]" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 0L1.75 6v12L12 24l10.25-6V6L12 0zm0 2.25l8 4.7v9.4l-8 4.7-8-4.7V7L12 2.25z" />
@@ -158,7 +158,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                     value={sketchfabLink}
                     onChange={(e) => onSketchfabLinkChange(e.target.value)}
                     placeholder="Pega el enlace (ej: https://sketchfab.com/3d-models/nombre-modelo-abc123...)"
-                    className="flex-1 bg-[#030304] border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-[#1CAAD9] transition-colors placeholder-slate-600"
+                    className="flex-1 bg-[#0d0d0f] border border-white/10 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-[#1CAAD9] transition-colors placeholder-slate-600"
                     autoFocus
                     onKeyDown={(e) => e.key === 'Enter' && onAddSketchfab()}
                 />

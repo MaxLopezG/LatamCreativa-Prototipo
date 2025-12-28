@@ -21,7 +21,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className = '' }) => (
  * Skeleton de tarjeta de portfolio para estados de carga en vistas de grid
  */
 export const PortfolioCardSkeleton: React.FC = () => (
-    <div className="rounded-2xl overflow-hidden bg-[#0A0A0C] border border-white/5">
+    <div className="rounded-2xl overflow-hidden bg-[#18181b] border border-white/5">
         <Skeleton className="aspect-[3/4] w-full rounded-none" />
         <div className="p-4 space-y-3">
             <Skeleton className="h-4 w-3/4" />
@@ -37,7 +37,7 @@ export const PortfolioCardSkeleton: React.FC = () => (
  * Skeleton de tarjeta de blog para estados de carga en vistas del blog
  */
 export const BlogCardSkeleton: React.FC = () => (
-    <div className="rounded-2xl overflow-hidden bg-[#0A0A0C] border border-white/5">
+    <div className="rounded-2xl overflow-hidden bg-[#18181b] border border-white/5">
         <Skeleton className="aspect-video w-full rounded-none" />
         <div className="p-5 space-y-3">
             <Skeleton className="h-3 w-16" />
@@ -83,7 +83,7 @@ export const ProfileHeaderSkeleton: React.FC = () => (
     <div className="relative">
         <Skeleton className="h-48 md:h-64 w-full rounded-none" />
         <div className="absolute -bottom-16 left-8 flex items-end gap-6">
-            <Skeleton className="h-32 w-32 rounded-full border-4 border-[#030304]" />
+            <Skeleton className="h-32 w-32 rounded-full border-4 border-[#0d0d0f]" />
             <div className="mb-4 space-y-2">
                 <Skeleton className="h-6 w-40" />
                 <Skeleton className="h-4 w-24" />

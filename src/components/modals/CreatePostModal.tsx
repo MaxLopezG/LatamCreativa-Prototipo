@@ -124,7 +124,7 @@ export const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClos
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white dark:bg-[#08080A] w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="bg-white dark:bg-[#141417] w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 flex flex-col max-h-[90vh] overflow-hidden">
 
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/[0.02]">

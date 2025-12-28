@@ -154,7 +154,7 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
 
             {/* Comment Input */}
             {state.user ? (
-                <div className="flex gap-4 mb-8 bg-slate-50 dark:bg-[#0A0A0C] p-4 rounded-xl border border-slate-200 dark:border-white/5">
+                <div className="flex gap-4 mb-8 bg-slate-50 dark:bg-[#18181b] p-4 rounded-xl border border-slate-200 dark:border-white/5">
                     <img
                         src={state.user.avatar}
                         alt="Tu avatar"

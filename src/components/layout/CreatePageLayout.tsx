@@ -24,7 +24,7 @@ export const CreatePageLayout: React.FC<CreatePageLayoutProps> = ({
   return (
     <div className="max-w-[1200px] mx-auto animate-fade-in pb-20">
       {/* Navbar Overlay */}
-      <div className="sticky top-0 z-30 bg-white/90 dark:bg-[#030304]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 h-16 flex items-center justify-between transition-colors">
+      <div className="sticky top-0 z-30 bg-white/90 dark:bg-[#0d0d0f]/90 backdrop-blur-xl border-b border-slate-200 dark:border-white/[0.06] px-6 h-16 flex items-center justify-between transition-colors">
         <button
           onClick={onBack}
           disabled={isLoading}

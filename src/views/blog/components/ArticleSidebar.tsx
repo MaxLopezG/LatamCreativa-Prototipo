@@ -85,7 +85,7 @@ export const ArticleSidebar: React.FC<ArticleSidebarProps> = ({
         <aside className="hidden lg:flex flex-col gap-6 sticky top-24 h-fit">
 
             {/* Publish Actions Panel */}
-            <div className="bg-[#0A0A0C] p-6 rounded-xl border border-white/[0.06] shadow-xl shadow-black/20 space-y-4">
+            <div className="bg-[#18181b] p-6 rounded-xl border border-white/[0.06] shadow-xl shadow-black/20 space-y-4">
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Publicación</h3>
 
                 {/* Publish Button */}
@@ -133,7 +133,7 @@ export const ArticleSidebar: React.FC<ArticleSidebarProps> = ({
             </div>
 
             {/* Category & Tags Panel */}
-            <div className="bg-[#0A0A0C] p-6 rounded-xl border border-white/[0.06] shadow-xl shadow-black/20 space-y-4">
+            <div className="bg-[#18181b] p-6 rounded-xl border border-white/[0.06] shadow-xl shadow-black/20 space-y-4">
                 <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2">
                     <Layers className="h-3 w-3" /> Categoría
                 </h3>
@@ -250,7 +250,7 @@ export const MobileActionBar: React.FC<MobileActionBarProps> = ({
     handleSaveDraft
 }) => {
     return (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#030304]/90 backdrop-blur-xl border-t border-white/[0.06] py-4 px-6 z-30">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-[#0d0d0f]/90 backdrop-blur-xl border-t border-white/[0.06] py-4 px-6 z-30">
             <div className="flex items-center justify-center gap-4">
                 <button
                     onClick={handlePublish}

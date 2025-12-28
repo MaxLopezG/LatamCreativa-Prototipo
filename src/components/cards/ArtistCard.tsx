@@ -43,7 +43,7 @@ export const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onClick }) => {
                 {/* Avatar with Dynamic Level Frame */}
                 <div className="-mt-10 mb-3 flex justify-between items-end">
                     <div className={`h-20 w-20 rounded-2xl p-[3px] ${levelFrameClass} group-hover:scale-105 transition-transform duration-300`}>
-                        <div className="h-full w-full rounded-xl overflow-hidden border-2 border-white dark:border-[#0A0A0C] bg-slate-100 dark:bg-slate-800">
+                        <div className="h-full w-full rounded-xl overflow-hidden border-2 border-white dark:border-[#18181b] bg-slate-100 dark:bg-slate-800">
                             <img src={artist.avatar} alt={artist.name} loading="lazy" className="w-full h-full object-cover" />
                         </div>
                     </div>
