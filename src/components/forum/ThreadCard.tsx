@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { ForumThread } from '../../types/forum';
 import { getCategoryById, CATEGORY_COLOR_CLASSES } from '../../data/forumCategories';
+import { useAuthorInfo } from '../../hooks/useAuthorInfo';
 
 interface ThreadCardProps {
     thread: ForumThread;
@@ -47,6 +48,13 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({ thread, onClick }) => {
     const navigate = useNavigate();
     const category = getCategoryById(thread.category);
     const colorClasses = CATEGORY_COLOR_CLASSES[category?.color || 'gray'];
+
+    // Live author lookup - fetches current name/avatar from user profile
+    const { authorName, authorAvatar } = useAuthorInfo(
+        thread.authorId,
+        thread.authorName,
+        thread.authorAvatar
+    );
 
     const handleClick = () => {
         if (onClick) {
@@ -123,13 +131,13 @@ export const ThreadCard: React.FC<ThreadCardProps> = ({ thread, onClick }) => {
                 {/* Author */}
                 <div className="flex items-center gap-2">
                     <img
-                        src={thread.authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(thread.authorName)}&background=6366f1&color=fff`}
-                        alt={thread.authorName}
+                        src={authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=6366f1&color=fff`}
+                        alt={authorName}
                         className="w-6 h-6 rounded-full object-cover"
                     />
                     <div className="flex items-center gap-1.5">
                         <span className="text-sm text-gray-300 hover:text-white transition-colors">
-                            {thread.authorName}
+                            {authorName}
                         </span>
                         {thread.authorRole && (
                             <span className="text-xs text-gray-500">

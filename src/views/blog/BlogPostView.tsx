@@ -5,6 +5,7 @@ import { ArrowLeft, Clock, Heart, Share2, Bookmark, CheckCircle2, ThumbsUp, Edit
 
 import { useArticle, useDeleteArticle, useRecommendedArticles, useSubscription, useArticleLike, useComments, useAddComment } from '../../hooks/useFirebase';
 import { useAppStore } from '../../hooks/useAppStore';
+import { useAuthorInfo } from '../../hooks/useAuthorInfo';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
 import { ReportModal } from '../../components/modals/ReportModal';
 
@@ -40,6 +41,13 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
         state.user ? { name: state.user.name, avatar: state.user.avatar || '' } : undefined
     );
     const { isSubscribed, loading: subLoading, toggleSubscription, subscriberCount } = useSubscription(article?.authorId || '', state.user?.id);
+
+    // Live author lookup - fetches current name/avatar from user profile
+    const { authorName, authorUsername, authorAvatar, loading: authorLoading } = useAuthorInfo(
+        article?.authorId,
+        typeof article?.author === 'object' ? (article.author as any).name : article?.author,
+        article?.authorAvatar
+    );
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -315,27 +323,21 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                             <div
                                 className="h-12 w-12 rounded-full overflow-hidden ring-2 ring-slate-100 dark:ring-white/10 cursor-pointer hover:ring-amber-500 transition-all"
                                 onClick={() => {
-                                    const cleanName = typeof article.author === 'object' ? (article.author as any).name || 'Unknown' : String(article.author);
-                                    const cleanId = typeof article.authorId === 'object' ? (article.authorId as any).id || (article.authorId as any).uid : String(article.authorId || 'unknown');
-                                    const username = (article as any).authorUsername || undefined;
-                                    onAuthorClick?.({ name: cleanName, avatar: article.authorAvatar, id: cleanId, username });
+                                    onAuthorClick?.({ name: authorName, avatar: authorAvatar, id: article.authorId, username: authorUsername });
                                 }}
                             >
-                                <img src={article.authorAvatar} alt={String(article.author)} className="h-full w-full object-cover" />
+                                <img src={authorAvatar} alt={authorName} className="h-full w-full object-cover" />
                             </div>
 
                             <div className="flex flex-col">
                                 <div
                                     className="flex items-center gap-1.5 cursor-pointer group"
                                     onClick={() => {
-                                        const cleanName = typeof article.author === 'object' ? (article.author as any).name || 'Unknown' : String(article.author);
-                                        const cleanId = typeof article.authorId === 'object' ? (article.authorId as any).id || (article.authorId as any).uid : String(article.authorId || 'unknown');
-                                        const username = (article as any).authorUsername || undefined;
-                                        onAuthorClick?.({ name: cleanName, avatar: article.authorAvatar, id: cleanId, username });
+                                        onAuthorClick?.({ name: authorName, avatar: authorAvatar, id: article.authorId, username: authorUsername });
                                     }}
                                 >
                                     <h3 className="font-bold text-lg text-slate-900 dark:text-white leading-none group-hover:text-amber-500 transition-colors">
-                                        {typeof article.author === 'object' ? (article.author as any).name || String(article.author) : article.author}
+                                        {authorName}
                                     </h3>
                                     <CheckCircle2 className="h-4 w-4 text-amber-500 fill-amber-500/20" />
                                 </div>

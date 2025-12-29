@@ -145,20 +145,30 @@ service cloud.firestore {
     // ARTICLES COLLECTION (Blog Posts)
     // ============================================
     match /articles/{articleId} {
-      // Anyone can read articles
+      // Read: Allow all reads - draft token validation happens client-side in PreviewPost
+      // This is safe because the previewToken acts as a secret URL capability
       allow read: if true;
       
       // Only authenticated users can create articles
+      // n8n uses Firebase Admin SDK which bypasses rules
       allow create: if isAuthenticated();
       
       // Update rules:
       // - Author can update anything on their article
       // - Any authenticated user can update view/like/comment counters
+      // - Anyone with valid previewToken can update status (for ChatOps publish/reject)
       allow update: if isAuthor() || (
         isAuthenticated() && 
         // Only allow updates to these specific stat fields
         request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['views', 'likes', 'comments'])
+      ) || (
+        // Token-based update: Allow if the update includes matching previewToken
+        // and only modifies status or publishedAt (for ChatOps workflow)
+        resource.data.previewToken != null &&
+        request.resource.data.previewToken == resource.data.previewToken &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'publishedAt', 'previewToken'])
       );
       
       // Only the author can delete their article

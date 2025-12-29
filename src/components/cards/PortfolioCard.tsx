@@ -1,16 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Lock, Bookmark } from 'lucide-react';
 import { PortfolioItem } from '../../types';
 import { useAppStore } from '../../hooks/useAppStore';
-import { usersService } from '../../services/modules/users';
-
-/** 
- * Caché simple en memoria para perfiles de autor para evitar fetches redundantes.
- * Las entradas expiran después de CACHE_TTL milisegundos.
- */
-const authorProfileCache: Map<string, { name: string; avatar: string; timestamp: number }> = new Map();
-/** Tiempo de vida del caché en milisegundos (1 minuto) */
-const CACHE_TTL = 60000;
+import { useAuthorInfo } from '../../hooks/useAuthorInfo';
 
 /**
  * Props para el componente PortfolioCard
@@ -35,7 +27,7 @@ interface PortfolioCardProps {
 /**
  * Componente de tarjeta para mostrar proyectos de portafolio en grids y feeds.
  * Muestra imagen de portada, título, info del autor y acciones interactivas (guardar, ver).
- * Obtiene datos del perfil del autor con caché para minimizar llamadas API.
+ * Obtiene datos del perfil del autor en tiempo real para mantener nombre actualizado.
  * 
  * @example
  * ```tsx
@@ -56,36 +48,17 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
   extraAction
 }) => {
   const { state } = useAppStore();
-  const [authorProfile, setAuthorProfile] = useState<{ name: string; avatar: string } | null>(null);
 
-  // Fetch author profile with caching
-  useEffect(() => {
-    const authorId = item.authorId;
-    if (!authorId) return;
+  // Live author lookup - fetches current name/avatar from user profile
+  const { authorName, authorAvatar } = useAuthorInfo(
+    item.authorId,
+    item.artist,
+    item.artistAvatar
+  );
 
-    // Check cache first
-    const cached = authorProfileCache.get(authorId);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      setAuthorProfile({ name: cached.name, avatar: cached.avatar });
-      return;
-    }
-
-    // Fetch fresh profile
-    usersService.getUserProfile(authorId).then(profile => {
-      if (profile) {
-        const profileData = { name: profile.name, avatar: profile.avatar };
-        setAuthorProfile(profileData);
-        // Update cache
-        authorProfileCache.set(authorId, { ...profileData, timestamp: Date.now() });
-      }
-    }).catch(err => {
-      console.warn('Could not fetch author profile:', err);
-    });
-  }, [item.authorId]);
-
-  // Use live author profile data if available, fallback to item's snapshot data
-  const displayName = authorProfile?.name || item.artist || 'Unknown';
-  const displayAvatar = authorProfile?.avatar || item.artistAvatar || '';
+  // Use live author profile data
+  const displayName = authorName || 'Unknown';
+  const displayAvatar = authorAvatar || '';
 
   const handleSave = (e: React.MouseEvent) => {
     e.stopPropagation();

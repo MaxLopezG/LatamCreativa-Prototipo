@@ -45,6 +45,11 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
       setTags(existingArticle.tags || []);
       setCoverImage(existingArticle.image);
 
+      // Preserve the original status when editing (don't auto-publish drafts)
+      if (existingArticle.status) {
+        setPublishStatus(existingArticle.status as 'draft' | 'published' | 'scheduled');
+      }
+
       // Parse content back to blocks (simple heuristic: split by \n\n)
       // Ideally we would store blocks structure in DB, but for now we reconstruct
       // This assumes the plain text structure we saved. 
@@ -221,9 +226,13 @@ export const CreateArticleView: React.FC<CreateArticleViewProps> = ({ onBack }) 
       content: blocks.map(b => b.content).join('\n\n'),
       tags: tags,
       domain: state.contentMode,
-      // Publication status
-      status: publishStatus,
-      scheduledAt: publishStatus === 'scheduled' ? scheduledDate : null
+      // Publication status - preserve existing status when editing, otherwise use selected
+      status: isEditMode && existingArticle ? existingArticle.status : publishStatus,
+      scheduledAt: publishStatus === 'scheduled' ? scheduledDate : null,
+      // Preserve special fields from n8n automation
+      source: isEditMode && existingArticle ? (existingArticle as any).source : undefined,
+      previewToken: isEditMode && existingArticle ? (existingArticle as any).previewToken : undefined,
+      originalLink: isEditMode && existingArticle ? (existingArticle as any).originalLink : undefined
     };
 
     try {

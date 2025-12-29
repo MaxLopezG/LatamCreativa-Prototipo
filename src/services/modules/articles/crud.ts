@@ -44,10 +44,22 @@ export const articlesCrud = {
      */
     getArticles: async (lastDoc: QueryDocumentSnapshot<DocumentData> | null = null, pageSize = 10, sortField: 'date' | 'likes' = 'date', sortDirection: 'desc' | 'asc' = 'desc'): Promise<PaginatedResult<ArticleItem>> => {
         try {
-            let q = query(collection(db, 'articles'), orderBy(sortField, sortDirection), limit(pageSize));
+            // Only fetch published articles for public listings
+            let q = query(
+                collection(db, 'articles'),
+                where('status', '==', 'published'),
+                orderBy(sortField, sortDirection),
+                limit(pageSize)
+            );
 
             if (lastDoc) {
-                q = query(collection(db, 'articles'), orderBy(sortField, sortDirection), startAfter(lastDoc), limit(pageSize));
+                q = query(
+                    collection(db, 'articles'),
+                    where('status', '==', 'published'),
+                    orderBy(sortField, sortDirection),
+                    startAfter(lastDoc),
+                    limit(pageSize)
+                );
             }
 
             const snapshot = await getDocs(q);
@@ -177,7 +189,13 @@ export const articlesCrud = {
      */
     getRecentArticles: async (limitCount = 4): Promise<ArticleItem[]> => {
         try {
-            const q = query(collection(db, 'articles'), orderBy('date', 'desc'), limit(limitCount));
+            // Only fetch published articles
+            const q = query(
+                collection(db, 'articles'),
+                where('status', '==', 'published'),
+                orderBy('date', 'desc'),
+                limit(limitCount)
+            );
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ArticleItem));
         } catch (error) {
@@ -243,10 +261,24 @@ export const articlesCrud = {
 
             const limitedCategories = categories.slice(0, 10);
 
-            let q = query(collection(db, 'articles'), where('category', 'in', limitedCategories), orderBy('date', 'desc'), limit(limitCount));
+            // Only fetch published articles
+            let q = query(
+                collection(db, 'articles'),
+                where('status', '==', 'published'),
+                where('category', 'in', limitedCategories),
+                orderBy('date', 'desc'),
+                limit(limitCount)
+            );
 
             if (lastDoc) {
-                q = query(collection(db, 'articles'), where('category', 'in', limitedCategories), orderBy('date', 'desc'), startAfter(lastDoc), limit(limitCount));
+                q = query(
+                    collection(db, 'articles'),
+                    where('status', '==', 'published'),
+                    where('category', 'in', limitedCategories),
+                    orderBy('date', 'desc'),
+                    startAfter(lastDoc),
+                    limit(limitCount)
+                );
             }
 
             const snapshot = await getDocs(q);
@@ -273,10 +305,24 @@ export const articlesCrud = {
      */
     getArticlesByTag: async (tag: string, lastDoc: QueryDocumentSnapshot<DocumentData> | null = null, limitCount = 10): Promise<PaginatedResult<ArticleItem>> => {
         try {
-            let q = query(collection(db, 'articles'), where('tags', 'array-contains', tag), orderBy('date', 'desc'), limit(limitCount));
+            // Only fetch published articles
+            let q = query(
+                collection(db, 'articles'),
+                where('status', '==', 'published'),
+                where('tags', 'array-contains', tag),
+                orderBy('date', 'desc'),
+                limit(limitCount)
+            );
 
             if (lastDoc) {
-                q = query(collection(db, 'articles'), where('tags', 'array-contains', tag), orderBy('date', 'desc'), startAfter(lastDoc), limit(limitCount));
+                q = query(
+                    collection(db, 'articles'),
+                    where('status', '==', 'published'),
+                    where('tags', 'array-contains', tag),
+                    orderBy('date', 'desc'),
+                    startAfter(lastDoc),
+                    limit(limitCount)
+                );
             }
 
             const snapshot = await getDocs(q);

@@ -53,6 +53,9 @@ const FreelanceView = lazyImport(() => import('./views/general/FreelanceView').t
 const TermsView = lazyImport(() => import('./views/legal/TermsView').then(module => ({ default: module.TermsView })));
 const PrivacyView = lazyImport(() => import('./views/legal/PrivacyView').then(module => ({ default: module.PrivacyView })));
 
+// Blog Preview (n8n automation)
+const PreviewPost = lazyImport(() => import('./views/blog/PreviewPost').then(module => ({ default: module.PreviewPost })));
+
 export const router = createBrowserRouter([
   {
     path: '/auth',
@@ -84,6 +87,9 @@ export const router = createBrowserRouter([
       { path: 'blog/categoria/:slug', element: <BlogWrapper /> },
       { path: 'blog/:id', element: <BlogPostWrapper /> },
       { path: 'create/article', element: <CreateWrapper Component={CreateArticleView} /> },
+
+      // Blog Preview (n8n automation - token-secured)
+      { path: 'preview/:id', element: <SuspendedView Component={PreviewPost} /> },
 
       // User Profile
       { path: 'profile', element: <UserProfileWrapper /> },

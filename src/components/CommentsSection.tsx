@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Heart, MessageSquare, Trash2, Send, Reply } from 'lucide-react';
 import { useAppStore } from '../hooks/useAppStore';
 import { timeAgo } from '../utils/helpers';
+import { useAuthorInfo } from '../hooks/useAuthorInfo';
 
 /**
  * Interfaz unificada de comentario que funciona con comentarios de Portfolio y Blog.
@@ -23,6 +24,79 @@ interface Comment {
     likes?: number;
     parentId?: string;
 }
+
+/**
+ * Componente para mostrar info del autor con lookup en vivo
+ */
+interface AuthorDisplayProps {
+    comment: Comment;
+    onClick?: () => void;
+    className?: string;
+    avatarClassName?: string;
+    nameClassName?: string;
+    showAvatar?: boolean;
+    showName?: boolean;
+}
+
+const AuthorDisplay: React.FC<AuthorDisplayProps> = ({
+    comment,
+    onClick,
+    className = '',
+    avatarClassName = 'h-10 w-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-amber-500 transition-all',
+    nameClassName = 'font-bold text-slate-900 dark:text-white text-sm hover:text-amber-500 cursor-pointer',
+    showAvatar = true,
+    showName = true
+}) => {
+    // Live author lookup - fetches current name/avatar from user profile
+    const { authorName, authorAvatar, authorUsername } = useAuthorInfo(
+        comment.authorId,
+        comment.authorName || comment.author,
+        comment.authorAvatar || comment.avatar
+    );
+
+    const handleClick = () => {
+        if (onClick) {
+            onClick();
+        }
+    };
+
+    if (showAvatar && !showName) {
+        return (
+            <img
+                src={authorAvatar || '/default-avatar.png'}
+                alt={authorName || 'Usuario'}
+                className={avatarClassName}
+                onClick={handleClick}
+            />
+        );
+    }
+
+    if (showName && !showAvatar) {
+        return (
+            <span className={nameClassName} onClick={handleClick}>
+                {authorName || 'Usuario'}
+            </span>
+        );
+    }
+
+    return (
+        <div className={`flex items-center gap-2 ${className}`}>
+            {showAvatar && (
+                <img
+                    src={authorAvatar || '/default-avatar.png'}
+                    alt={authorName || 'Usuario'}
+                    className={avatarClassName}
+                    onClick={handleClick}
+                />
+            )}
+            {showName && (
+                <span className={nameClassName} onClick={handleClick}>
+                    {authorName || 'Usuario'}
+                </span>
+            )}
+        </div>
+    );
+};
 
 /**
  * Props para el componente CommentsSection
@@ -88,9 +162,7 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
                 new Date(b.createdAt || b.date || 0).getTime()
             );
 
-    // Helpers to normalize field names
-    const getAuthorName = (c: Comment) => c.authorName || c.author || 'Usuario';
-    const getAvatar = (c: Comment) => c.authorAvatar || c.avatar || '/default-avatar.png';
+    // Helpers to get text and date (keep these simple, author is handled by AuthorDisplay)
     const getText = (c: Comment) => c.text || c.content || '';
     const getDate = (c: Comment) => c.createdAt || c.date || '';
 
@@ -200,20 +272,20 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
                     rootComments.map((comment) => (
                         <div key={comment.id} className="border-b border-slate-100 dark:border-white/5 pb-6 last:border-0">
                             <div className="flex gap-4">
-                                <img
-                                    src={getAvatar(comment)}
-                                    alt={getAuthorName(comment)}
-                                    className="h-10 w-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-amber-500 transition-all"
+                                <AuthorDisplay
+                                    comment={comment}
                                     onClick={() => comment.authorUsername && navigate(`/user/${comment.authorUsername}`)}
+                                    showName={false}
+                                    avatarClassName="h-10 w-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-amber-500 transition-all"
                                 />
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <span
-                                            className="font-bold text-slate-900 dark:text-white text-sm hover:text-amber-500 cursor-pointer"
+                                        <AuthorDisplay
+                                            comment={comment}
                                             onClick={() => comment.authorUsername && navigate(`/user/${comment.authorUsername}`)}
-                                        >
-                                            {getAuthorName(comment)}
-                                        </span>
+                                            showAvatar={false}
+                                            nameClassName="font-bold text-slate-900 dark:text-white text-sm hover:text-amber-500 cursor-pointer"
+                                        />
                                         <span className="text-xs text-slate-400">{timeAgo(getDate(comment))}</span>
                                     </div>
                                     <p className="text-slate-600 dark:text-slate-300 text-sm whitespace-pre-wrap mb-2">
@@ -284,20 +356,20 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
                                         <div className="mt-4 ml-4 border-l-2 border-slate-100 dark:border-white/10 pl-4 space-y-4">
                                             {getReplies(comment.id).map((reply) => (
                                                 <div key={reply.id} className="flex gap-3">
-                                                    <img
-                                                        src={getAvatar(reply)}
-                                                        alt={getAuthorName(reply)}
-                                                        className="h-8 w-8 rounded-full object-cover cursor-pointer"
+                                                    <AuthorDisplay
+                                                        comment={reply}
                                                         onClick={() => reply.authorUsername && navigate(`/user/${reply.authorUsername}`)}
+                                                        showName={false}
+                                                        avatarClassName="h-8 w-8 rounded-full object-cover cursor-pointer"
                                                     />
                                                     <div className="flex-1">
                                                         <div className="flex items-center gap-2 mb-1">
-                                                            <span
-                                                                className="font-bold text-slate-900 dark:text-white text-xs hover:text-amber-500 cursor-pointer"
+                                                            <AuthorDisplay
+                                                                comment={reply}
                                                                 onClick={() => reply.authorUsername && navigate(`/user/${reply.authorUsername}`)}
-                                                            >
-                                                                {getAuthorName(reply)}
-                                                            </span>
+                                                                showAvatar={false}
+                                                                nameClassName="font-bold text-slate-900 dark:text-white text-xs hover:text-amber-500 cursor-pointer"
+                                                            />
                                                             <span className="text-[10px] text-slate-400">{timeAgo(getDate(reply))}</span>
                                                             {canDelete(reply.authorId) && (
                                                                 <button

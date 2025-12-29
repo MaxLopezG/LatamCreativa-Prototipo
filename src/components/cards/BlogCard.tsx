@@ -2,6 +2,7 @@
 import React from 'react';
 import { Calendar, Clock, MessageSquare, Heart, Lock, Bookmark } from 'lucide-react';
 import { ArticleItem } from '../../types';
+import { useAuthorInfo } from '../../hooks/useAuthorInfo';
 
 interface BlogCardProps {
   article: ArticleItem;
@@ -10,6 +11,13 @@ interface BlogCardProps {
 }
 
 export const BlogCard: React.FC<BlogCardProps> = ({ article, onClick, onSave }) => {
+  // Live author lookup - fetches current name/avatar from user profile
+  const { authorName, authorAvatar } = useAuthorInfo(
+    article.authorId,
+    article.author,
+    article.authorAvatar
+  );
+
   return (
     <article
       onClick={onClick}
@@ -54,8 +62,8 @@ export const BlogCard: React.FC<BlogCardProps> = ({ article, onClick, onSave }) 
       {/* Content */}
       <div className="flex flex-col flex-1 p-5 -mt-6 relative z-10">
         <div className="flex items-center gap-2 mb-3 text-xs font-medium text-slate-400">
-          <img src={article.authorAvatar} alt={article.author} loading="lazy" className="w-5 h-5 rounded-full ring-1 ring-white/20" />
-          <span className="text-slate-300">{article.author}</span>
+          <img src={authorAvatar} alt={authorName} loading="lazy" className="w-5 h-5 rounded-full ring-1 ring-white/20" />
+          <span className="text-slate-300">{authorName}</span>
         </div>
 
         <h3 className="font-bold text-lg text-white mb-2 leading-tight group-hover:text-rose-400 transition-colors line-clamp-2">

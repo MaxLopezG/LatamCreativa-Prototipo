@@ -52,11 +52,23 @@ export interface ArticleItem {
     role?: string;
     tags?: string[];
     /** Article publication status */
-    status?: 'draft' | 'published' | 'scheduled';
+    status?: 'draft' | 'published' | 'scheduled' | 'rejected';
     /** ISO date string for scheduled publication */
     scheduledAt?: string;
     /** View count */
     views?: number;
+
+    // ============================================
+    // AUTOMATION FIELDS (n8n Integration)
+    // ============================================
+    /** Content source: 'manual' for user-created, 'n8n' for automated */
+    source?: 'manual' | 'n8n';
+    /** Secret token for secure preview access (drafts only) */
+    previewToken?: string;
+    /** Original source URL (for automated/curated content) */
+    originalLink?: string;
+    /** ISO date when article was published */
+    publishedAt?: string;
 }
 
 export interface BlogComment {

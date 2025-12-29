@@ -32,6 +32,7 @@ import {
     useReplyActions,
     useDeleteThread
 } from '../../hooks/useForumHooks';
+import { useAuthorInfo } from '../../hooks/useAuthorInfo';
 import { ReplyCard, ForumEditor, ForumStats } from '../../components/forum';
 import { getCategoryById, CATEGORY_COLOR_CLASSES } from '../../data/forumCategories';
 import { ReplySortOption } from '../../types/forum';
@@ -197,6 +198,13 @@ export const ThreadView: React.FC<ThreadViewProps> = ({ threadId: propThreadId, 
     const category = thread ? getCategoryById(thread.category) : null;
     const colorClasses = CATEGORY_COLOR_CLASSES[category?.color || 'gray'];
 
+    // Live author lookup - fetches current name/avatar from user profile
+    const { authorName, authorUsername, authorAvatar } = useAuthorInfo(
+        thread?.authorId,
+        thread?.authorName,
+        thread?.authorAvatar
+    );
+
     // Permissions
     const isAuthor = state.user?.uid === thread?.authorId;
     const isAdmin = state.user?.isAdmin;
@@ -343,18 +351,18 @@ export const ThreadView: React.FC<ThreadViewProps> = ({ threadId: propThreadId, 
                         <div className="flex items-center justify-between px-6 pb-4 border-b border-white/5">
                             <div className="flex items-center gap-3">
                                 <img
-                                    src={thread.authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(thread.authorName)}&background=6366f1&color=fff`}
-                                    alt={thread.authorName}
-                                    onClick={() => thread.authorUsername && navigate(`/user/${thread.authorUsername}`)}
+                                    src={authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=6366f1&color=fff`}
+                                    alt={authorName}
+                                    onClick={() => authorUsername && navigate(`/user/${authorUsername}`)}
                                     className="w-10 h-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-purple-500 transition-all"
                                 />
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <span
-                                            onClick={() => thread.authorUsername && navigate(`/user/${thread.authorUsername}`)}
+                                            onClick={() => authorUsername && navigate(`/user/${authorUsername}`)}
                                             className="text-white font-medium hover:text-purple-400 cursor-pointer transition-colors"
                                         >
-                                            {thread.authorName}
+                                            {authorName}
                                         </span>
                                         {thread.authorRole && (
                                             <span className="text-xs text-gray-500">
