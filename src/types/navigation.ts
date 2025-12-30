@@ -25,13 +25,6 @@ export interface CategoryItem {
     subItems?: string[];
 }
 
-export interface Subscription {
-    id: string;
-    name: string;
-    image: string;
-    isLive?: boolean;
-}
-
 export interface Chip {
     id: string;
     label: string;

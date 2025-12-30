@@ -1,18 +1,13 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Menu, Bell, Plus, FileText, Layers, Video, Box, Users, Search, Command, Briefcase, MessageCircleQuestion, CalendarDays, Heart, UserPlus, Check, ShoppingCart, Building2, Aperture, Trash2, Sparkles, ArrowRight, Loader2, Image as ImageIcon, User, Newspaper } from 'lucide-react';
+import { Menu, Bell, Plus, FileText, Layers, Search, Command, Heart, UserPlus, Check, ShoppingCart, Trash2, Sparkles, Loader2, User, Newspaper } from 'lucide-react';
 import { Notification } from '../../types';
 import { ContentMode, useAppStore } from '../../hooks/useAppStore';
 import { searchService, SearchResult } from '../../services/modules/search';
 
 interface HeaderProps {
     onMenuClick?: () => void;
-    activeCategory?: string;
-    onCreateAction?: (actionId: string) => void;
     onLogoClick?: () => void;
-    onSearch?: (query: string) => void;
-    cartCount?: number;
-    onCartClick?: () => void;
     notifications?: Notification[];
     onMarkRead?: (id: string | number) => void;
     onMarkAllRead?: () => void;
@@ -23,12 +18,7 @@ interface HeaderProps {
 
 export const Header = ({
     onMenuClick,
-    activeCategory = 'Home',
-    onCreateAction,
     onLogoClick,
-    onSearch,
-    cartCount = 0,
-    onCartClick,
     notifications = [],
     onMarkRead,
     onMarkAllRead,

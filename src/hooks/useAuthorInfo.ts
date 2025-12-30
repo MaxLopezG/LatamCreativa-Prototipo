@@ -23,17 +23,18 @@ interface AuthorInfo {
 /**
  * Safely extracts a string value from potentially nested data (handles n8n edge cases)
  */
-function safeString(value: any, fallback: string = ''): string {
+function safeString(value: unknown, fallback: string = ''): string {
     if (!value) return fallback;
     if (typeof value === 'string') return value;
-    if (typeof value === 'object') {
+    if (typeof value === 'object' && value !== null) {
+        const obj = value as Record<string, unknown>;
         // Handle { name: 'value' } format
-        if (value.name && typeof value.name === 'string') return value.name;
+        if (typeof obj.name === 'string') return obj.name;
         // Handle { text: 'value' } format (Gemini API)
-        if (value.text && typeof value.text === 'string') return value.text;
+        if (typeof obj.text === 'string') return obj.text;
         // Handle nested parts structure
-        if (value.parts && Array.isArray(value.parts) && value.parts[0]?.text) {
-            return value.parts[0].text;
+        if (Array.isArray(obj.parts) && obj.parts[0] && typeof (obj.parts[0] as Record<string, unknown>).text === 'string') {
+            return (obj.parts[0] as Record<string, unknown>).text as string;
         }
     }
     return String(value) || fallback;
@@ -42,12 +43,13 @@ function safeString(value: any, fallback: string = ''): string {
 /**
  * Safely extracts author ID from potentially nested data
  */
-function safeAuthorId(value: any): string | undefined {
+function safeAuthorId(value: unknown): string | undefined {
     if (!value) return undefined;
     if (typeof value === 'string') return value;
-    if (typeof value === 'object') {
-        if (value.id) return String(value.id);
-        if (value.uid) return String(value.uid);
+    if (typeof value === 'object' && value !== null) {
+        const obj = value as Record<string, unknown>;
+        if (obj.id) return String(obj.id);
+        if (obj.uid) return String(obj.uid);
     }
     return undefined;
 }

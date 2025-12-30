@@ -171,12 +171,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
     const { articles: userArticles, loading: articlesLoading, error: articlesError } = useUserArticles(name, userIdForQuery);
 
 
-    // 5. Saved Items (Likes)
-    const savedItems = useMemo(() => {
-        // NOTE: Not implemented - saved items feature pending product decision
-        return [];
-    }, []);
-
     // 6. Collections
     const [otherUserCollections, setOtherUserCollections] = useState<CollectionItem[]>([]);
 
@@ -267,7 +261,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ author, author
                         profileUserId={displayUser.id}
                         userPortfolio={userPortfolio}
                         userArticles={userArticles}
-                        savedItems={savedItems}
                         userCollections={userCollections}
                         projectsLoading={projectsLoading}
                         articlesError={articlesError}

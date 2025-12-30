@@ -4,7 +4,7 @@ import {
   ImageIcon, Store, Newspaper, Compass, Flame, Clock, Layout, Briefcase, MessageCircleQuestion, CalendarDays, UsersRound, Trophy, Building2, Bookmark,
   PenTool, Cuboid, Brush, Camera, Lightbulb, Code, Smartphone, Server, Database, Cloud, Cpu, Terminal
 } from 'lucide-react';
-import { NavItem, NavSection, Subscription, Chip, CategoryItem } from '../types';
+import { NavItem, NavSection, Chip, CategoryItem } from '../types';
 
 // --- MAIN SIDEBAR MODULES (REORDERED LOGICALLY) ---
 export const PRIMARY_NAV_ITEMS: NavItem[] = [
@@ -108,12 +108,6 @@ export const NAV_SECTIONS_DEV: NavSection[] = [
 ];
 
 export const CATEGORY_ITEMS: CategoryItem[] = NAV_SECTIONS.flatMap(section => section.items);
-
-export const SUBSCRIPTIONS: Subscription[] = [
-  { id: '1', name: 'Motion School', image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=100&auto=format&fit=crop', isLive: true },
-  { id: '2', name: 'Design Daily', image: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?q=80&w=100&auto=format&fit=crop' },
-  { id: '3', name: 'Code Master', image: 'https://images.unsplash.com/photo-1628157588553-5eeea00af15c?q=80&w=100&auto=format&fit=crop' },
-];
 
 // --- HEADER CHIPS ---
 const GENERAL_CHIPS: Chip[] = [

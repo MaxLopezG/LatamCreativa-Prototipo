@@ -41,5 +41,6 @@ export {
 export {
     useUserProfile,
     useAllUsers,
-    useSubscription
+    useFollow,
+    useSubscription // Deprecated alias, use useFollow
 } from './useUserHooks';

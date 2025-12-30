@@ -18,7 +18,7 @@ import { useAppStore } from '../../hooks/useAppStore';
 import { useCreateThread } from '../../hooks/useForumHooks';
 import { ForumEditor } from '../../components/forum';
 import { FORUM_CATEGORIES, getCategoryById, CATEGORY_COLOR_CLASSES } from '../../data/forumCategories';
-import * as Icons from 'lucide-react';
+import { getForumIcon } from '../../utils/forumIcons';
 
 export const CreateThreadView: React.FC = () => {
     const navigate = useNavigate();
@@ -201,7 +201,7 @@ export const CreateThreadView: React.FC = () => {
                             <>
                                 <div className={`p-2 rounded-lg ${selectedColorClasses?.bg} ${selectedColorClasses?.border} border`}>
                                     {React.createElement(
-                                        (Icons as Record<string, React.FC<{ className?: string }>>)[selectedCategory.icon] || Icons.MessageSquare,
+                                        getForumIcon(selectedCategory.icon),
                                         { className: `w-5 h-5 ${selectedColorClasses?.text}` }
                                     )}
                                 </div>
@@ -239,7 +239,7 @@ export const CreateThreadView: React.FC = () => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                     {FORUM_CATEGORIES.map(cat => {
                                         const colorClasses = CATEGORY_COLOR_CLASSES[cat.color];
-                                        const IconComponent = (Icons as Record<string, React.FC<{ className?: string }>>)[cat.icon] || Icons.MessageSquare;
+                                        const IconComponent = getForumIcon(cat.icon);
 
                                         return (
                                             <button

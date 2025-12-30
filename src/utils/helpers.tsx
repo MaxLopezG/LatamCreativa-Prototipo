@@ -65,3 +65,47 @@ export const renderDescriptionWithLinks = (text: string) => {
         return part;
     });
 };
+
+/**
+ * Extrae el mensaje de un error de tipo unknown de forma type-safe.
+ * Útil para catch blocks con `catch (err: unknown)`.
+ * 
+ * @param error - El error capturado (tipo unknown)
+ * @param fallback - Mensaje a devolver si no se puede extraer uno (default: 'Error desconocido')
+ * @returns El mensaje del error o el fallback
+ */
+export const getErrorMessage = (error: unknown, fallback = 'Error desconocido'): string => {
+    if (error instanceof Error) return error.message;
+    if (typeof error === 'string') return error;
+    if (typeof error === 'object' && error !== null && 'message' in error) {
+        return String((error as { message: unknown }).message);
+    }
+    return fallback;
+};
+
+/**
+ * Mapea errores de Firebase Auth a mensajes amigables en español.
+ * Útil para catch blocks en autenticación.
+ * 
+ * @param error - El error capturado (tipo unknown)
+ * @param fallback - Mensaje por defecto
+ * @returns Mensaje de error traducido
+ */
+export const getFirebaseAuthError = (error: unknown, fallback = 'Ocurrió un error al autenticar.'): string => {
+    if (typeof error === 'object' && error !== null && 'code' in error) {
+        const code = (error as { code: string }).code;
+        const errorMessages: Record<string, string> = {
+            'auth/invalid-email': 'El correo electrónico no es válido.',
+            'auth/user-not-found': 'No existe una cuenta con este correo.',
+            'auth/wrong-password': 'Contraseña incorrecta.',
+            'auth/email-already-in-use': 'Este correo ya está registrado.',
+            'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
+            'auth/too-many-requests': 'Demasiados intentos. Intenta de nuevo más tarde.',
+            'auth/network-request-failed': 'Error de conexión. Verifica tu internet.',
+            'auth/popup-closed-by-user': 'Inicio de sesión cancelado.',
+            'auth/invalid-credential': 'Credenciales inválidas.'
+        };
+        return errorMessages[code] || fallback;
+    }
+    return getErrorMessage(error, fallback);
+};

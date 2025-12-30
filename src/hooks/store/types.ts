@@ -4,6 +4,7 @@
  */
 
 import { CartItem, Notification, CollectionItem, PortfolioItem, ArticleItem, ItemType, CreateMode, User, SocialLinks } from '../../types';
+import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 
 // Re-export for convenience
 export type { CreateMode, ItemType } from '../../types';
@@ -90,11 +91,11 @@ export interface AuthSlice {
 // --- Blog Slice ---
 export interface BlogState {
     articles: ArticleItem[];
-    pageStack: any[];
+    pageStack: QueryDocumentSnapshot<DocumentData>[];
     currentPage: number;
     hasMore: boolean;
     loading: boolean;
-    lastDoc: any | null;
+    lastDoc: QueryDocumentSnapshot<DocumentData> | null;
     sortOption: 'recent' | 'oldest' | 'popular';
 }
 

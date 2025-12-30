@@ -103,21 +103,22 @@ export const useEditProfile = (isOpen: boolean, onClose: () => void) => {
         }
     }, [isOpen, user]);
 
-    const handleInputChange = (field: keyof EditProfileState, value: any) => {
+    const handleInputChange = <K extends keyof EditProfileState>(field: K, value: EditProfileState[K]) => {
         setFormData(prev => ({ ...prev, [field]: value }));
 
         if (field === 'role') {
             const filtered = COMMON_ROLES.filter(r =>
-                r.toLowerCase().includes(value.toLowerCase())
+                r.toLowerCase().includes((value as string).toLowerCase())
             );
             setSuggestions(prev => ({ ...prev, filteredRoles: filtered }));
         }
 
         if (field === 'username') {
+            const usernameValue = value as string;
             // Basic validation
-            if (value.length < 3) {
+            if (usernameValue.length < 3) {
                 setUsernameError('Mínimo 3 caracteres');
-            } else if (!/^[a-z0-9_]+$/.test(value)) {
+            } else if (!/^[a-z0-9_]+$/.test(usernameValue)) {
                 setUsernameError('Solo letras minúsculas, números y guiones bajos');
             } else {
                 setUsernameError('');
@@ -125,7 +126,7 @@ export const useEditProfile = (isOpen: boolean, onClose: () => void) => {
         }
     };
 
-    const updateCollection = (key: keyof CollectionState, value: any) => {
+    const updateCollection = <K extends keyof CollectionState>(key: K, value: CollectionState[K]) => {
         setCollections(prev => ({ ...prev, [key]: value }));
     };
 

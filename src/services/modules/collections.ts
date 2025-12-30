@@ -1,6 +1,6 @@
 
 import { db } from '../../lib/firebase';
-import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, query, where, orderBy } from 'firebase/firestore';
+import { collection, doc, getDocs, getDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy } from 'firebase/firestore';
 import { CollectionItem, SavedItemReference } from '../../types';
 
 export const collectionsService = {
@@ -135,7 +135,7 @@ export const collectionsService = {
 
             if (snapshot.exists()) {
                 const data = snapshot.data();
-                const currentItems = (data.items || []) as any[];
+                const currentItems = (data.items || []) as SavedItemReference[];
 
                 // Filter out the item
                 const newItems = currentItems.filter(i => i.id !== itemId);

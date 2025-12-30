@@ -1,8 +1,9 @@
 import React from 'react';
 import { Palette, Linkedin, Twitter, Instagram, Github, Globe, Briefcase, GraduationCap } from 'lucide-react';
+import { User, ExperienceItem, EducationItem } from '../../../types';
 
 interface UserProfileInfoProps {
-    displayUser: any;
+    displayUser: User;
     isOwnProfile: boolean;
 }
 
@@ -92,7 +93,7 @@ export const UserProfileInfo: React.FC<UserProfileInfoProps> = ({ displayUser, i
                     <Briefcase className="h-5 w-5 text-amber-500" /> Experiencia
                 </h3>
                 <div className="space-y-10 relative border-l border-white/10 ml-2 pl-8">
-                    {experienceList.length > 0 ? experienceList.map((job: any) => (
+                    {experienceList.length > 0 ? experienceList.map((job: ExperienceItem) => (
                         <div key={job.id} className="relative">
                             <div className="absolute -left-[37px] top-1.5 h-3 w-3 rounded-full bg-[#0d0d0f] border-2 border-amber-500"></div>
 
@@ -116,7 +117,7 @@ export const UserProfileInfo: React.FC<UserProfileInfoProps> = ({ displayUser, i
                     <GraduationCap className="h-5 w-5 text-blue-500" /> Educación
                 </h3>
                 <div className="space-y-10 relative border-l border-white/10 ml-2 pl-8">
-                    {educationList.length > 0 ? educationList.map((edu: any) => (
+                    {educationList.length > 0 ? educationList.map((edu: EducationItem) => (
                         <div key={edu.id} className="relative">
                             <div className="absolute -left-[37px] top-1.5 h-3 w-3 rounded-full bg-[#0d0d0f] border-2 border-blue-500"></div>
 

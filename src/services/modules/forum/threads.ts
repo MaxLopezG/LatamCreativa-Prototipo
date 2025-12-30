@@ -21,46 +21,22 @@ import {
     where,
     increment,
     QueryDocumentSnapshot,
-    DocumentData,
-    serverTimestamp,
-    Timestamp
+    DocumentData
 } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { ForumThread, ForumPaginatedResult } from '../../../types/forum';
 import { storageService } from '../storage';
-import { notificationsService } from '../notifications';
 import { sanitizeData } from '../utils';
 import { generateUniqueSlug } from '../../../utils/slugUtils';
 
 const COLLECTION_NAME = 'forumThreads';
 
 /**
- * Calcula el tiempo transcurrido desde una fecha
- */
-function getTimeAgo(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    const diffWeeks = Math.floor(diffDays / 7);
-    const diffMonths = Math.floor(diffDays / 30);
-
-    if (diffMins < 1) return 'ahora';
-    if (diffMins < 60) return `hace ${diffMins}m`;
-    if (diffHours < 24) return `hace ${diffHours}h`;
-    if (diffDays < 7) return `hace ${diffDays}d`;
-    if (diffWeeks < 4) return `hace ${diffWeeks}sem`;
-    return `hace ${diffMonths}mes`;
-}
-
-/**
  * Genera un extracto del contenido (limpia HTML y Markdown)
  */
 function generateExcerpt(content: string, maxLength = 150): string {
     // Remove HTML tags (from WYSIWYG editor)
-    let plainText = content
+    const plainText = content
         .replace(/<[^>]*>/g, ' ')         // Remove all HTML tags
         .replace(/&nbsp;/g, ' ')          // Replace &nbsp; with space
         .replace(/&amp;/g, '&')           // Decode &amp;
@@ -70,7 +46,7 @@ function generateExcerpt(content: string, maxLength = 150): string {
         // Also clean markdown formatting
         .replace(/```[\s\S]*?```/g, '')   // Remove code blocks
         .replace(/`[^`]*`/g, '')          // Remove inline code
-        .replace(/[#*_~\[\]]/g, '')       // Remove markdown symbols
+        .replace(/[#*_~[\\]]/g, '')       // Remove markdown symbols
         .replace(/!\[.*?\]\(.*?\)/g, '')  // Remove markdown images
         .replace(/\[.*?\]\(.*?\)/g, '')   // Remove markdown links
         .replace(/\s+/g, ' ')             // Normalize whitespace

@@ -1,13 +1,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Lock, Globe, Share2, Trash2, Edit3, X, Check, Loader2, MoreHorizontal, Plus } from 'lucide-react';
+import { ArrowLeft, Lock, Globe, Share2, Trash2, Edit3, X, Check, Loader2, Plus } from 'lucide-react';
 import { useAppStore } from '../../hooks/useAppStore';
 import { PortfolioCard } from '../../components/cards/PortfolioCard';
 import { projectsService } from '../../services/modules/projects';
 import { articlesService } from '../../services/modules/articles';
 import { collectionsService } from '../../services/modules/collections';
-import { PORTFOLIO_ITEMS, BLOG_ITEMS } from '../../data/content';
 import { PortfolioItem, CollectionItem } from '../../types';
 
 interface CollectionDetailViewProps {
@@ -82,9 +81,9 @@ export const CollectionDetailView: React.FC<CollectionDetailViewProps> = ({ coll
                         allIds.length > 0 ? articlesService.getArticlesByIds(allIds) : Promise.resolve([])
                     ]);
 
-                    // Merge with local/static items to ensure we find everything (e.g. newly created local items)
-                    const localProjects = [...(state.createdItems || []), ...PORTFOLIO_ITEMS];
-                    const localArticles = [...(state.blogPosts || []), ...BLOG_ITEMS];
+                    // Merge with local items from state (for optimistic updates)
+                    const localProjects = state.createdItems || [];
+                    const localArticles = state.blogPosts || [];
 
                     const allProjects = [...projects];
                     // Add local projects if matched by ID and not already in fetched list

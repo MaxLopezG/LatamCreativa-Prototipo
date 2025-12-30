@@ -8,9 +8,6 @@ import { PortfolioItem, ArticleItem, CollectionItem } from '../../../types';
 /** Identificadores válidos para las tabs del perfil */
 type ProfileTab = 'portfolio' | 'blog' | 'collections';
 
-/** Tipo unión para cualquier item que puede aparecer en la tab "guardados" */
-type SavedItem = PortfolioItem | ArticleItem;
-
 /**
  * Props para el componente UserProfileTabs
  */
@@ -27,8 +24,6 @@ interface UserProfileTabsProps {
     userPortfolio: PortfolioItem[];
     /** Artículos del blog del usuario */
     userArticles: ArticleItem[];
-    /** Items guardados/marcados por el usuario */
-    savedItems: SavedItem[];
     /** Colecciones del usuario */
     userCollections: CollectionItem[];
     /** Si los proyectos están cargando */
@@ -49,7 +44,6 @@ export const UserProfileTabs: React.FC<UserProfileTabsProps> = ({
     profileUserId,
     userPortfolio,
     userArticles,
-    savedItems,
     userCollections,
     projectsLoading,
     articlesError,

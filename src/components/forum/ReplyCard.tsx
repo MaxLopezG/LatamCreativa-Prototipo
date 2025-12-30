@@ -19,6 +19,7 @@ import {
 import { ForumReply } from '../../types/forum';
 import { useReplyLike } from '../../hooks/useForumHooks';
 import { useAppStore } from '../../hooks/useAppStore';
+import { useAuthorInfo } from '../../hooks/useAuthorInfo';
 
 interface ReplyCardProps {
     reply: ForumReply;
@@ -190,10 +191,17 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
     const canMarkBest = isThreadAuthor && !reply.isBestAnswer;
     const canUnmarkBest = isThreadAuthor && reply.isBestAnswer;
 
+    // Live author lookup - fetches current name/avatar from user profile
+    const { authorName, authorAvatar, authorUsername } = useAuthorInfo(
+        reply.authorId,
+        reply.authorName,
+        reply.authorAvatar
+    );
+
     const handleAuthorClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (reply.authorUsername) {
-            navigate(`/user/${reply.authorUsername}`);
+        if (authorUsername || reply.authorUsername) {
+            navigate(`/user/${authorUsername || reply.authorUsername}`);
         }
     };
 
@@ -225,8 +233,8 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
             <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                     <img
-                        src={reply.authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.authorName)}&background=6366f1&color=fff`}
-                        alt={reply.authorName}
+                        src={authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=6366f1&color=fff`}
+                        alt={authorName}
                         onClick={handleAuthorClick}
                         className="w-10 h-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-purple-500 transition-all"
                     />
@@ -236,7 +244,7 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
                                 onClick={handleAuthorClick}
                                 className="text-white font-medium hover:text-purple-400 cursor-pointer transition-colors"
                             >
-                                {reply.authorName}
+                                {authorName}
                             </span>
                             {reply.authorId === threadAuthorId && (
                                 <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-xs font-medium rounded">

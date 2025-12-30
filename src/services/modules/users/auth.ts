@@ -202,7 +202,7 @@ export const usersAuth = {
                 await Promise.all(allFiles.items.map(item => deleteObject(item)));
                 // Eliminar subcarpetas
                 for (const prefix of allFiles.prefixes) {
-                    const deleteFolder = async (folderRef: any) => {
+                    const deleteFolder = async (folderRef: ReturnType<typeof ref>) => {
                         const folderFiles = await listAll(folderRef);
                         await Promise.all(folderFiles.items.map(item => deleteObject(item)));
                         for (const subPrefix of folderFiles.prefixes) {

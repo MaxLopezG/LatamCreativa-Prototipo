@@ -3,7 +3,6 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { PrimarySidebar, SecondarySidebar } from '../components/layout/Navigation';
 import { Header } from '../components/layout/Header';
 import { Footer } from '../components/layout/Footer';
-import { MobileTabBar } from '../components/layout/MobileTabBar';
 import { SaveToCollectionModal } from '../components/modals/SaveToCollectionModal';
 import { ShareModal } from '../components/modals/ShareModal';
 import { CheckCircle, AlertCircle, Info } from 'lucide-react';
@@ -121,12 +120,7 @@ export const MainLayout: React.FC = () => {
                 {!isLearningMode && (
                     <Header
                         onMenuClick={() => actions.setIsSidebarOpen(true)}
-                        activeCategory={state.activeCategory}
-                        onCreateAction={actions.handleCreateAction}
                         onLogoClick={handleLogoClick}
-                        onSearch={handleGlobalSearch}
-                        cartCount={state.cartItems.length}
-                        onCartClick={() => handleModuleNavigation('cart')}
                         notifications={state.notifications}
                         onMarkRead={actions.markNotificationRead}
                         onMarkAllRead={actions.markAllNotificationsRead}

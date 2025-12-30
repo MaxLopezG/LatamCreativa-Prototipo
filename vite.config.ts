@@ -58,7 +58,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     build: {
-      chunkSizeWarningLimit: 500,
+      chunkSizeWarningLimit: 600, // Firebase SDK es ~526KB, subimos el límite
       rollupOptions: {
         output: {
           manualChunks: {

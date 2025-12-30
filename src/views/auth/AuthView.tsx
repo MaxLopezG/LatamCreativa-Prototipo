@@ -6,6 +6,7 @@ import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, Eye, EyeOff, Zap, C
 import { auth, googleProvider, db } from '../../lib/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, signInWithPopup, sendEmailVerification, signOut } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { getFirebaseAuthError } from '../../utils/helpers';
 
 export const AuthView: React.FC = () => {
     const { state, actions } = useAppStore();
@@ -123,18 +124,9 @@ export const AuthView: React.FC = () => {
             navigate('/');
 
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Auth error:", err);
-            let msg = "Ocurrió un error al autenticar.";
-
-            // Map common Firebase errors
-            if (err.code === 'auth/invalid-email') msg = "El correo electrónico no es válido.";
-            if (err.code === 'auth/user-not-found') msg = "No existe una cuenta con este correo.";
-            if (err.code === 'auth/wrong-password') msg = "Contraseña incorrecta.";
-            if (err.code === 'auth/email-already-in-use') msg = "Este correo ya está registrado.";
-            if (err.code === 'auth/weak-password') msg = "La contraseña debe tener al menos 6 caracteres.";
-
-            setError(msg);
+            setError(getFirebaseAuthError(err));
         } finally {
             setIsLoading(false);
         }
@@ -171,9 +163,9 @@ export const AuthView: React.FC = () => {
             }
 
             navigate('/');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Google auth error:", err);
-            setError("Error al iniciar sesión con Google.");
+            setError(getFirebaseAuthError(err, "Error al iniciar sesión con Google."));
         } finally {
             setIsLoading(false);
         }
@@ -193,13 +185,9 @@ export const AuthView: React.FC = () => {
         try {
             await usersService.resetPassword(email);
             setIsResetSent(true);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Reset password error:', err);
-            if (err.code === 'auth/user-not-found') {
-                setError('No existe una cuenta con este correo electrónico.');
-            } else {
-                setError('Error al enviar el correo de recuperación.');
-            }
+            setError(getFirebaseAuthError(err, 'Error al enviar el correo de recuperación.'));
         } finally {
             setIsLoading(false);
         }

@@ -1,6 +1,6 @@
 /**
  * User Hooks
- * Domain-specific hooks for user profile, subscription, and admin operations
+ * Domain-specific hooks for user profile, follow, and admin operations
  */
 
 import { useState, useEffect } from 'react';
@@ -58,11 +58,11 @@ export const useAllUsers = () => {
     return { users, loading };
 };
 
-// --- Hook for Subscriptions (Follow/Unfollow) ---
-export const useSubscription = (targetUserId: string, currentUserId: string | undefined) => {
+// --- Hook for Follow/Unfollow ---
+export const useFollow = (targetUserId: string, currentUserId: string | undefined) => {
     const { actions } = useAppStore();
-    const [isSubscribed, setIsSubscribed] = useState(false);
-    const [subscriberCount, setSubscriberCount] = useState(0);
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [followerCount, setFollowerCount] = useState(0);
     const [loading, setLoading] = useState(false);
 
     // Initial check and fetch count
@@ -70,15 +70,15 @@ export const useSubscription = (targetUserId: string, currentUserId: string | un
         if (!targetUserId) return;
         setLoading(true);
         try {
-            // Check if subscribed
+            // Check if following
             if (currentUserId) {
-                const subscribed = await usersService.getSubscriptionStatus(targetUserId, currentUserId);
-                setIsSubscribed(subscribed);
+                const following = await usersService.isFollowing(targetUserId, currentUserId);
+                setIsFollowing(following);
             }
 
-            // Fetch subscriber count
+            // Fetch follower count
             const followers = await usersService.getFollowers(targetUserId);
-            setSubscriberCount(followers.length);
+            setFollowerCount(followers.length);
         } catch (error) {
             console.error(error);
         } finally {
@@ -90,32 +90,35 @@ export const useSubscription = (targetUserId: string, currentUserId: string | un
         init();
     }, [targetUserId, currentUserId]);
 
-    const toggleSubscription = async () => {
+    const toggleFollow = async () => {
         if (!currentUserId || !targetUserId) return;
 
         // Optimistic update: Store previous state for rollback
-        const previousIsSubscribed = isSubscribed;
-        const offset = previousIsSubscribed ? -1 : 1;
+        const wasFollowing = isFollowing;
+        const offset = wasFollowing ? -1 : 1;
 
         // Update UI immediately (Optimistic)
-        setIsSubscribed(!previousIsSubscribed);
-        setSubscriberCount(prev => Math.max(0, prev + offset));
+        setIsFollowing(!wasFollowing);
+        setFollowerCount(prev => Math.max(0, prev + offset));
 
         try {
-            if (previousIsSubscribed) {
-                await usersService.unsubscribeFromUser(targetUserId, currentUserId);
+            if (wasFollowing) {
+                await usersService.unfollowUser(targetUserId, currentUserId);
             } else {
-                await usersService.subscribeToUser(targetUserId, currentUserId);
+                await usersService.followUser(targetUserId, currentUserId);
             }
             // Trigger global update for sidebar
-            actions.triggerSubscriptionUpdate();
+            actions.triggerFollowUpdate();
         } catch (error) {
-            console.error("Error toggling subscription:", error);
+            console.error("Error toggling follow:", error);
             // Revert state on error
-            setIsSubscribed(previousIsSubscribed);
-            setSubscriberCount(prev => Math.max(0, prev - offset));
+            setIsFollowing(wasFollowing);
+            setFollowerCount(prev => Math.max(0, prev - offset));
         }
     };
 
-    return { isSubscribed, loading, toggleSubscription, setSubscriberCount, subscriberCount };
+    return { isFollowing, loading, toggleFollow, setFollowerCount, followerCount };
 };
+
+// Backward compatibility alias (deprecated)
+export const useSubscription = useFollow;

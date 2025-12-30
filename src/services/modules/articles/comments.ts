@@ -1,205 +1,110 @@
 /**
  * Sistema de Comentarios de Artículos
  * 
- * Módulo que maneja comentarios, respuestas y likes de comentarios
- * para artículos del blog.
+ * Wrapper sobre el servicio compartido de comentarios.
+ * Mantiene la API pública para compatibilidad con componentes existentes.
  * 
  * @module services/articles/comments
  */
 import {
     collection,
     doc,
-    getDoc,
-    setDoc,
-    deleteDoc,
     updateDoc,
     query,
     orderBy,
     getDocs,
-    increment,
-    addDoc
+    onSnapshot
 } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
 import { BlogComment } from '../../../types';
-import { sanitizeData } from '../utils';
+import { articlesCommentsShared } from '../shared/comments';
 
 export const articlesComments = {
     /**
      * Obtiene los comentarios de un artículo.
-     * 
-     * Incluye cálculo automático de "timeAgo" para cada comentario.
-     * 
-     * @param articleId - ID del artículo
-     * @returns Array de comentarios con timeAgo calculado
+     * Wrapper sobre el servicio compartido con tipado específico.
      */
     getComments: async (articleId: string): Promise<BlogComment[]> => {
-        try {
-            const q = query(
-                collection(db, 'articles', articleId, 'comments'),
-                orderBy('date', 'desc')
-            );
-            const snapshot = await getDocs(q);
-            return snapshot.docs.map(doc => {
-                const data = doc.data();
-                const date = new Date(data.date);
-                const now = new Date();
-                const diffInHours = Math.abs(now.getTime() - date.getTime()) / 36e5;
-                let timeAgo = 'Hace un momento';
-                if (diffInHours >= 24) timeAgo = `Hace ${Math.floor(diffInHours / 24)} días`;
-                else if (diffInHours >= 1) timeAgo = `Hace ${Math.floor(diffInHours)} horas`;
+        const comments = await articlesCommentsShared.getComments(articleId);
+        return comments as BlogComment[];
+    },
 
-                return {
-                    id: doc.id,
-                    ...data,
-                    timeAgo
-                } as BlogComment;
-            });
-        } catch (error) {
-            console.error("Error fetching comments:", error);
-            return [];
-        }
+    /**
+     * Suscripción en tiempo real a los comentarios (para consistencia con projects).
+     */
+    listenToComments: (articleId: string, callback: (comments: BlogComment[]) => void) => {
+        const commentsQuery = query(
+            collection(db, 'articles', articleId, 'comments'),
+            orderBy('createdAt', 'desc')
+        );
+
+        return onSnapshot(commentsQuery, (snapshot) => {
+            const comments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as BlogComment[];
+            callback(comments);
+        });
     },
 
     /**
      * Agrega un comentario a un artículo.
-     * 
-     * Envía notificación al autor del artículo (asíncrona, no bloqueante).
-     * 
-     * @param articleId - ID del artículo
-     * @param commentData - Datos del comentario (autor, texto, etc.)
      */
-    addComment: async (articleId: string, commentData: { authorId: string; authorName: string; authorUsername?: string; authorAvatar: string; text: string; parentId?: string }): Promise<void> => {
-        try {
-            const commentsCol = collection(db, 'articles', articleId, 'comments');
-            const newCommentRef = doc(commentsCol);
-
-            const finalComment = sanitizeData({
-                ...commentData,
-                id: newCommentRef.id,
-                createdAt: new Date().toISOString(),
-                likes: 0
-            });
-
-            await setDoc(newCommentRef, finalComment);
-
-            const articleRef = doc(db, 'articles', articleId);
-
-            try {
-                const articleSnap = await getDoc(articleRef);
-                const articleData = articleSnap.data();
-
-                await updateDoc(articleRef, { comments: increment(1) });
-
-                // Send notification to article author (async, non-blocking)
-                if (articleData && articleData.authorId && articleData.authorId !== commentData.authorId) {
-                    addDoc(collection(db, 'users', articleData.authorId, 'notifications'), {
-                        type: 'comment',
-                        user: commentData.authorName,
-                        avatar: commentData.authorAvatar,
-                        content: `comentó en tu artículo "${articleData.title || 'Sin título'}"`,
-                        link: `/blog/${articleId}`,
-                        time: new Date().toISOString(),
-                        read: false
-                    }).catch(err => console.warn('Could not create comment notification:', err));
-                }
-            } catch (updateError) {
-                console.warn("Could not update comment count:", updateError);
-            }
-        } catch (error) {
-            console.error("Error adding comment:", error);
-            throw error;
+    addComment: async (
+        articleId: string,
+        commentData: {
+            authorId: string;
+            authorName: string;
+            authorUsername?: string;
+            authorAvatar: string;
+            text: string;
         }
+    ): Promise<void> => {
+        await articlesCommentsShared.addComment(articleId, commentData);
+    },
+
+    /**
+     * Agrega una respuesta a un comentario.
+     */
+    addReply: async (
+        articleId: string,
+        parentCommentId: string,
+        replyData: {
+            authorId: string;
+            authorName: string;
+            authorUsername?: string;
+            authorAvatar: string;
+            text: string;
+        }
+    ): Promise<string> => {
+        return articlesCommentsShared.addReply(articleId, parentCommentId, replyData);
     },
 
     /**
      * Alterna el like de un comentario.
-     * 
-     * @param articleId - ID del artículo
-     * @param commentId - ID del comentario
-     * @param userId - ID del usuario
-     * @returns true si ahora tiene like, false si se quitó
      */
-    toggleCommentLike: async (articleId: string, commentId: string, userId: string): Promise<boolean> => {
-        try {
-            const commentRef = doc(db, 'articles', articleId, 'comments', commentId);
-            const likeRef = doc(db, 'articles', articleId, 'comments', commentId, 'likes', userId);
-
-            const likeSnap = await getDoc(likeRef);
-            const isLiked = likeSnap.exists();
-
-            if (isLiked) {
-                await deleteDoc(likeRef);
-                await updateDoc(commentRef, { likes: increment(-1) });
-                return false;
-            } else {
-                await setDoc(likeRef, { userId, createdAt: new Date().toISOString() });
-                await updateDoc(commentRef, { likes: increment(1) });
-                return true;
-            }
-        } catch (error) {
-            console.error("Error toggling comment like:", error);
-            throw error;
-        }
+    toggleCommentLike: (articleId: string, commentId: string, userId: string): Promise<boolean> => {
+        return articlesCommentsShared.toggleCommentLike(articleId, commentId, userId);
     },
 
     /**
      * Verifica si un usuario ha dado like a un comentario.
-     * 
-     * @param articleId - ID del artículo
-     * @param commentId - ID del comentario
-     * @param userId - ID del usuario
-     * @returns true si el usuario dio like, false si no
      */
-    getCommentLikeStatus: async (articleId: string, commentId: string, userId: string): Promise<boolean> => {
-        try {
-            const likeRef = doc(db, 'articles', articleId, 'comments', commentId, 'likes', userId);
-            const snap = await getDoc(likeRef);
-            return snap.exists();
-        } catch (error) {
-            console.error("Error checking comment like status:", error);
-            return false;
-        }
+    getCommentLikeStatus: (articleId: string, commentId: string, userId: string): Promise<boolean> => {
+        return articlesCommentsShared.getCommentLikeStatus(articleId, commentId, userId);
     },
 
     /**
-     * Obtiene el estado de likes para múltiples comentarios a la vez.
-     * 
-     * Útil para cargar el estado inicial sin hacer múltiples llamadas.
-     * 
-     * @param articleId - ID del artículo
-     * @param commentIds - Array de IDs de comentarios
-     * @param userId - ID del usuario
-     * @returns Objeto mapeando commentId => boolean (liked)
+     * Obtiene el estado de likes para múltiples comentarios.
      */
-    getCommentsLikeStatuses: async (articleId: string, commentIds: string[], userId: string): Promise<Record<string, boolean>> => {
-        try {
-            const statuses: Record<string, boolean> = {};
-
-            const promises = commentIds.map(async (commentId) => {
-                const likeRef = doc(db, 'articles', articleId, 'comments', commentId, 'likes', userId);
-                const snap = await getDoc(likeRef);
-                statuses[commentId] = snap.exists();
-            });
-
-            await Promise.all(promises);
-            return statuses;
-        } catch (error) {
-            console.error("Error fetching comment like statuses:", error);
-            return {};
-        }
+    getCommentsLikeStatuses: (articleId: string, commentIds: string[], userId: string): Promise<Record<string, boolean>> => {
+        return articlesCommentsShared.getCommentsLikeStatuses(articleId, commentIds, userId);
     },
 
     /**
      * Actualiza el contenido de un comentario.
-     * 
-     * @param articleId - ID del artículo
-     * @param commentId - ID del comentario
-     * @param content - Nuevo contenido
      */
     updateComment: async (articleId: string, commentId: string, content: string): Promise<void> => {
         try {
             const commentRef = doc(db, 'articles', articleId, 'comments', commentId);
-            await updateDoc(commentRef, { content, isEdited: true });
+            await updateDoc(commentRef, { text: content, isEdited: true });
         } catch (error) {
             console.error("Error updating comment:", error);
             throw error;
@@ -208,20 +113,8 @@ export const articlesComments = {
 
     /**
      * Elimina un comentario.
-     * 
-     * También decrementa el contador de comentarios del artículo.
-     * 
-     * @param articleId - ID del artículo
-     * @param commentId - ID del comentario
      */
-    deleteComment: async (articleId: string, commentId: string): Promise<void> => {
-        try {
-            await deleteDoc(doc(db, 'articles', articleId, 'comments', commentId));
-            const articleRef = doc(db, 'articles', articleId);
-            await updateDoc(articleRef, { comments: increment(-1) });
-        } catch (error) {
-            console.error("Error deleting comment:", error);
-            throw error;
-        }
+    deleteComment: (articleId: string, commentId: string): Promise<void> => {
+        return articlesCommentsShared.deleteComment(articleId, commentId);
     }
 };

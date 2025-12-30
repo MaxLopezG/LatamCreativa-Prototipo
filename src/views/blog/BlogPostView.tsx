@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, Heart, Share2, Bookmark, CheckCircle2, ThumbsUp, Edit, Trash2, UserPlus, UserCheck, MessageSquare, Reply, Send, Flag } from 'lucide-react';
 
-import { useArticle, useDeleteArticle, useRecommendedArticles, useSubscription, useArticleLike, useComments, useAddComment } from '../../hooks/useFirebase';
+import { useArticle, useDeleteArticle, useRecommendedArticles, useFollow, useArticleLike, useComments, useAddComment } from '../../hooks/useFirebase';
 import { useAppStore } from '../../hooks/useAppStore';
 import { useAuthorInfo } from '../../hooks/useAuthorInfo';
 import { ConfirmationModal } from '../../components/modals/ConfirmationModal';
@@ -40,7 +40,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
         state.user?.id,
         state.user ? { name: state.user.name, avatar: state.user.avatar || '' } : undefined
     );
-    const { isSubscribed, loading: subLoading, toggleSubscription, subscriberCount } = useSubscription(article?.authorId || '', state.user?.id);
+    const { isFollowing, loading: followLoading, toggleFollow, followerCount } = useFollow(article?.authorId || '', state.user?.id);
 
     // Live author lookup - fetches current name/avatar from user profile
     const { authorName, authorUsername, authorAvatar, loading: authorLoading } = useAuthorInfo(
@@ -341,19 +341,19 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                                     </h3>
                                     <CheckCircle2 className="h-4 w-4 text-amber-500 fill-amber-500/20" />
                                 </div>
-                                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{subscriberCount} seguidores</span>
+                                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{followerCount} seguidores</span>
                             </div>
 
                             {!isAuthor && (
                                 <button
-                                    onClick={toggleSubscription}
-                                    disabled={subLoading}
-                                    className={`ml-4 h-10 px-6 rounded-2xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg hover:shadow-xl ${isSubscribed
+                                    onClick={toggleFollow}
+                                    disabled={followLoading}
+                                    className={`ml-4 h-10 px-6 rounded-2xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg hover:shadow-xl ${isFollowing
                                         ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white hover:bg-slate-200 dark:hover:bg-white/20'
                                         : 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20 hover:shadow-amber-500/30'
-                                        } ${subLoading ? 'opacity-50 cursor-wait' : 'hover:scale-105 active:scale-95'} `}
+                                        } ${followLoading ? 'opacity-50 cursor-wait' : 'hover:scale-105 active:scale-95'} `}
                                 >
-                                    {isSubscribed ? (
+                                    {isFollowing ? (
                                         <>
                                             <UserCheck className="h-4 w-4" />
                                             Siguiendo

@@ -230,5 +230,21 @@ export const usersSocial = {
             console.error("Error calculating total project likes:", error);
             return 0;
         }
+    },
+
+    // --- Alias semánticos para mejor legibilidad ---
+    /** Alias de subscribeToUser - sigue a un usuario */
+    followUser: async (targetUserId: string, currentUserId: string): Promise<void> => {
+        return usersSocial.subscribeToUser(targetUserId, currentUserId);
+    },
+
+    /** Alias de unsubscribeFromUser - deja de seguir a un usuario */
+    unfollowUser: async (targetUserId: string, currentUserId: string): Promise<void> => {
+        return usersSocial.unsubscribeFromUser(targetUserId, currentUserId);
+    },
+
+    /** Alias de getSubscriptionStatus - verifica si sigue a un usuario */
+    isFollowing: async (targetUserId: string, currentUserId: string): Promise<boolean> => {
+        return usersSocial.getSubscriptionStatus(targetUserId, currentUserId);
     }
 };

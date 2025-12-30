@@ -97,7 +97,7 @@ export const articlesCrud = {
                         15000,
                         "Image upload timed out (15s). Please check your connection."
                     );
-                } catch (uploadError: any) {
+                } catch (uploadError: unknown) {
                     console.error("Error uploading image:", uploadError);
                 }
             }
@@ -166,7 +166,7 @@ export const articlesCrud = {
                 try {
                     const imagePath = `articles/${Date.now()}_${imageFile.name}`;
                     imageUrl = await storageService.uploadImage(imageFile, imagePath, { maxSizeMB: 5, compress: true });
-                } catch (uploadError: any) {
+                } catch (uploadError: unknown) {
                     console.error("Error uploading new image:", uploadError);
                 }
             }

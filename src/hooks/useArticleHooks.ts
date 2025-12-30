@@ -9,6 +9,7 @@ import { ArticleItem, BlogComment } from '../types';
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { NAV_SECTIONS, NAV_SECTIONS_DEV } from '../data/navigation';
 import { articlesService } from '../services/modules/articles';
+import { getErrorMessage } from '../utils/helpers';
 
 // --- Hook for Blog Articles (Paged) ---
 export const useArticles = () => {
@@ -81,8 +82,8 @@ export const useArticles = () => {
                 hasMore: result.hasMore,
                 loading: false
             });
-        } catch (err: any) {
-            setError(err.message || 'Error loading articles');
+        } catch (err: unknown) {
+            setError(getErrorMessage(err, 'Error loading articles'));
             actions.setBlogState({ loading: false });
         }
     };
@@ -147,8 +148,8 @@ export const useArticle = (slugOrId: string | undefined) => {
                 // Uses getArticleBySlug which tries slug first, then falls back to ID
                 const data = await articlesService.getArticleBySlug(slugOrId);
                 setArticle(data);
-            } catch (err: any) {
-                setError(err.message);
+            } catch (err: unknown) {
+                setError(getErrorMessage(err));
             } finally {
                 setLoading(false);
             }
@@ -171,8 +172,8 @@ export const useCreateArticle = () => {
         try {
             const result = await articlesService.createArticle(data, file);
             return result; // { id, slug }
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -192,8 +193,8 @@ export const useUpdateArticle = () => {
         setError(null);
         try {
             await articlesService.updateArticle(id, data, file);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -213,8 +214,8 @@ export const useDeleteArticle = () => {
         setError(null);
         try {
             await articlesService.deleteArticle(id);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -238,8 +239,8 @@ export const useUserArticles = (authorName: string | undefined, authorId?: strin
             try {
                 const data = await articlesService.getUserArticles(authorName || '', authorId);
                 setArticles(data);
-            } catch (err: any) {
-                setError(err.message);
+            } catch (err: unknown) {
+                setError(getErrorMessage(err));
             } finally {
                 setLoading(false);
             }
@@ -289,8 +290,8 @@ export const useComments = (articleId: string | undefined) => {
         try {
             const data = await articlesService.getComments(articleId);
             setComments(data);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
         } finally {
             setLoading(false);
         }
@@ -317,8 +318,8 @@ export const useAddComment = () => {
         setError(null);
         try {
             await articlesService.addComment(articleId, commentData);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -337,7 +338,7 @@ export const useCommentActions = () => {
     const toggleLike = async (articleId: string, commentId: string, userId: string): Promise<boolean> => {
         try {
             return await articlesService.toggleCommentLike(articleId, commentId, userId);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
             throw err;
         }
@@ -347,8 +348,8 @@ export const useCommentActions = () => {
         setLoading(true);
         try {
             await articlesService.updateComment(articleId, commentId, content);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -359,8 +360,8 @@ export const useCommentActions = () => {
         setLoading(true);
         try {
             await articlesService.deleteComment(articleId, commentId);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);

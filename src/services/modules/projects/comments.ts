@@ -1,87 +1,32 @@
 /**
  * Sistema de Comentarios de Proyectos
  * 
- * Módulo que maneja comentarios, respuestas y likes de comentarios
- * para proyectos de portafolio.
+ * Wrapper sobre el servicio compartido de comentarios.
+ * Mantiene la API pública para compatibilidad con componentes existentes.
  * 
  * @module services/projects/comments
  */
 import {
     collection,
-    doc,
-    getDoc,
-    setDoc,
-    deleteDoc,
-    updateDoc,
     query,
     orderBy,
-    onSnapshot,
-    increment,
-    addDoc
+    onSnapshot
 } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
+import { projectsCommentsShared } from '../shared/comments';
 
 export const projectsComments = {
     /**
-     * Agrega un comentario a un proyecto.
-     * 
-     * Crea el comentario en Firestore y envía una notificación al autor
-     * del proyecto (asíncrona, no bloqueante).
-     * 
-     * @param projectId - ID del proyecto
-     * @param commentData - Datos del comentario (autor, texto, etc.)
+     * Obtiene los comentarios de un proyecto (fetch único).
      */
-    addComment: async (projectId: string, commentData: { authorId: string; authorName: string; authorUsername?: string; authorAvatar: string; text: string; }) => {
-        const commentsCol = collection(db, 'projects', projectId, 'comments');
-        const newCommentRef = doc(commentsCol);
-        await setDoc(newCommentRef, {
-            ...commentData,
-            id: newCommentRef.id,
-            createdAt: new Date().toISOString(),
-            likes: 0,
-            replies: []
-        });
-
-        // Incrementar contador de comentarios
-        const projectRef = doc(db, 'projects', projectId);
-        await updateDoc(projectRef, {
-            'stats.commentCount': increment(1)
-        });
-
-        // Enviar notificación (async, fire and forget)
-        (async () => {
-            try {
-                const projectSnap = await getDoc(projectRef);
-                const projectData = projectSnap.data();
-
-                if (projectData && projectData.authorId && projectData.authorId !== commentData.authorId) {
-                    await addDoc(collection(db, 'users', projectData.authorId, 'notifications'), {
-                        type: 'comment',
-                        user: commentData.authorName,
-                        avatar: commentData.authorAvatar,
-                        content: `comentó en tu proyecto "${projectData.title || 'Sin título'}"`,
-                        image: projectData.image || '',
-                        time: new Date().toISOString(),
-                        read: false,
-                        link: `/portfolio/${projectId}`
-                    });
-                }
-            } catch (error) {
-                console.error("Error creando notificación de comentario:", error);
-            }
-        })();
+    getComments: async (projectId: string) => {
+        return projectsCommentsShared.getComments(projectId);
     },
 
     /**
      * Listener en tiempo real para comentarios de un proyecto.
-     * 
-     * Se actualiza automáticamente cuando se agregan, modifican o eliminan comentarios.
-     * 
-     * @param projectId - ID del proyecto
-     * @param callback - Función que recibe el array de comentarios actualizados
-     * @returns Función para cancelar la suscripción
      */
-    listenToComments: (projectId: string, callback: (comments: any[]) => void) => {
+    listenToComments: (projectId: string, callback: (comments: Array<{ id: string;[key: string]: unknown }>) => void) => {
         const commentsQuery = query(
             collection(db, 'projects', projectId, 'comments'),
             orderBy('createdAt', 'desc')
@@ -94,143 +39,63 @@ export const projectsComments = {
     },
 
     /**
-     * Elimina un comentario de un proyecto.
-     * 
-     * También decrementa el contador de comentarios del proyecto.
-     * 
-     * @param projectId - ID del proyecto
-     * @param commentId - ID del comentario a eliminar
+     * Agrega un comentario a un proyecto.
      */
-    deleteComment: async (projectId: string, commentId: string) => {
-        const commentRef = doc(db, 'projects', projectId, 'comments', commentId);
-        await deleteDoc(commentRef);
-
-        const projectRef = doc(db, 'projects', projectId);
-        await updateDoc(projectRef, {
-            'stats.commentCount': increment(-1)
-        });
-    },
-
-    /**
-     * Alterna el like de un comentario.
-     * 
-     * @param projectId - ID del proyecto
-     * @param commentId - ID del comentario
-     * @param userId - ID del usuario
-     * @returns true si ahora tiene like, false si se quitó
-     */
-    toggleCommentLike: async (projectId: string, commentId: string, userId: string): Promise<boolean> => {
-        try {
-            const commentRef = doc(db, 'projects', projectId, 'comments', commentId);
-            const likeRef = doc(db, 'projects', projectId, 'comments', commentId, 'likes', userId);
-
-            const likeSnap = await getDoc(likeRef);
-            const isLiked = likeSnap.exists();
-
-            if (isLiked) {
-                await deleteDoc(likeRef);
-                await updateDoc(commentRef, { likes: increment(-1) });
-                return false;
-            } else {
-                await setDoc(likeRef, {
-                    userId,
-                    createdAt: new Date().toISOString()
-                });
-                await updateDoc(commentRef, { likes: increment(1) });
-                return true;
-            }
-        } catch (error) {
-            console.error("Error alternando like de comentario:", error);
-            throw error;
+    addComment: async (
+        projectId: string,
+        commentData: {
+            authorId: string;
+            authorName: string;
+            authorUsername?: string;
+            authorAvatar: string;
+            text: string;
         }
+    ) => {
+        return projectsCommentsShared.addComment(projectId, commentData);
     },
 
     /**
-     * Verifica si un usuario ha dado like a un comentario.
-     * 
-     * @param projectId - ID del proyecto
-     * @param commentId - ID del comentario
-     * @param userId - ID del usuario
-     * @returns true si el usuario dio like, false si no
-     */
-    getCommentLikeStatus: async (projectId: string, commentId: string, userId: string): Promise<boolean> => {
-        try {
-            const likeRef = doc(db, 'projects', projectId, 'comments', commentId, 'likes', userId);
-            const snap = await getDoc(likeRef);
-            return snap.exists();
-        } catch (error) {
-            console.error("Error verificando estado de like:", error);
-            return false;
-        }
-    },
-
-    /**
-     * Obtiene el estado de likes para múltiples comentarios a la vez.
-     * 
-     * Útil para cargar el estado inicial de todos los comentarios
-     * sin hacer múltiples llamadas individuales.
-     * 
-     * @param projectId - ID del proyecto
-     * @param commentIds - Array de IDs de comentarios
-     * @param userId - ID del usuario
-     * @returns Objeto mapeando commentId => boolean (liked)
-     */
-    getCommentsLikeStatuses: async (projectId: string, commentIds: string[], userId: string): Promise<Record<string, boolean>> => {
-        try {
-            const statuses: Record<string, boolean> = {};
-
-            const promises = commentIds.map(async (commentId) => {
-                const likeRef = doc(db, 'projects', projectId, 'comments', commentId, 'likes', userId);
-                const snap = await getDoc(likeRef);
-                statuses[commentId] = snap.exists();
-            });
-
-            await Promise.all(promises);
-            return statuses;
-        } catch (error) {
-            console.error("Error obteniendo estados de like:", error);
-            return {};
-        }
-    },
-
-    /**
-     * Agrega una respuesta a un comentario.
-     * 
-     * Las respuestas se almacenan como comentarios regulares con
-     * un campo parentId que indica a cuál comentario responden.
-     * 
-     * @param projectId - ID del proyecto
-     * @param parentCommentId - ID del comentario padre
-     * @param replyData - Datos de la respuesta
-     * @returns ID de la respuesta creada
+     * Agrega una respuesta a un comentario (alias de addReply).
      */
     addCommentReply: async (
         projectId: string,
         parentCommentId: string,
-        replyData: { authorId: string; authorName: string; authorUsername?: string; authorAvatar: string; text: string; }
-    ) => {
-        try {
-            const commentsCol = collection(db, 'projects', projectId, 'comments');
-            const newReplyRef = doc(commentsCol);
-
-            await setDoc(newReplyRef, {
-                ...replyData,
-                id: newReplyRef.id,
-                parentId: parentCommentId,
-                createdAt: new Date().toISOString(),
-                likes: 0
-            });
-
-            const projectRef = doc(db, 'projects', projectId);
-            await updateDoc(projectRef, {
-                'stats.commentCount': increment(1)
-            });
-
-            return newReplyRef.id;
-        } catch (error) {
-            console.error("Error agregando respuesta:", error);
-            throw error;
+        replyData: {
+            authorId: string;
+            authorName: string;
+            authorUsername?: string;
+            authorAvatar: string;
+            text: string;
         }
+    ) => {
+        return projectsCommentsShared.addReply(projectId, parentCommentId, replyData);
+    },
+
+    /**
+     * Alterna el like de un comentario.
+     */
+    toggleCommentLike: (projectId: string, commentId: string, userId: string): Promise<boolean> => {
+        return projectsCommentsShared.toggleCommentLike(projectId, commentId, userId);
+    },
+
+    /**
+     * Verifica si un usuario ha dado like a un comentario.
+     */
+    getCommentLikeStatus: (projectId: string, commentId: string, userId: string): Promise<boolean> => {
+        return projectsCommentsShared.getCommentLikeStatus(projectId, commentId, userId);
+    },
+
+    /**
+     * Obtiene el estado de likes para múltiples comentarios.
+     */
+    getCommentsLikeStatuses: (projectId: string, commentIds: string[], userId: string): Promise<Record<string, boolean>> => {
+        return projectsCommentsShared.getCommentsLikeStatuses(projectId, commentIds, userId);
+    },
+
+    /**
+     * Elimina un comentario.
+     */
+    deleteComment: (projectId: string, commentId: string): Promise<void> => {
+        return projectsCommentsShared.deleteComment(projectId, commentId);
     }
 };
-

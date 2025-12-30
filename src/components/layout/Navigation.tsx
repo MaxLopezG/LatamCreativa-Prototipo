@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Settings, X, Code, Palette, ChevronDown, ChevronRight, User, DollarSign, LogOut, Search, Loader2, Layers, Newspaper } from 'lucide-react';
 import { auth } from '../../lib/firebase';
 import { signOut } from 'firebase/auth';
-import { PRIMARY_NAV_ITEMS, NAV_SECTIONS, NAV_SECTIONS_DEV, SUBSCRIPTIONS } from '../../data/navigation';
+import { PRIMARY_NAV_ITEMS, NAV_SECTIONS, NAV_SECTIONS_DEV } from '../../data/navigation';
 import { ContentMode, useAppStore } from '../../hooks/useAppStore';
 import { usersService } from '../../services/modules/users';
 import { searchService, SearchResult } from '../../services/modules/search';
@@ -628,10 +628,10 @@ export const SecondarySidebar = ({
 
           <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-200 dark:via-white/[0.08] to-transparent my-8"></div>
 
-          {/* Subscriptions */}
+          {/* Siguiendo */}
           <div className="mb-8">
             <h3 className="uppercase text-xs font-semibold text-slate-500 tracking-widest mb-4 px-2">
-              Suscripciones {loadingSubs && <span className="ml-2 opacity-50 animate-pulse">...</span>}
+              Siguiendo {loadingSubs && <span className="ml-2 opacity-50 animate-pulse">...</span>}
             </h3>
 
             <div className="space-y-3">
@@ -664,7 +664,7 @@ export const SecondarySidebar = ({
               ))}
 
               {!user && (
-                <div className="px-2 text-sm text-slate-500">Inicia sesión para ver tus suscripciones.</div>
+                <div className="px-2 text-sm text-slate-500">Inicia sesión para ver a quién sigues.</div>
               )}
             </div>
           </div>

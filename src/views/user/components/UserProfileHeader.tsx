@@ -1,8 +1,9 @@
 import React from 'react';
 import { MapPin, Link as LinkIcon, Calendar, CheckCircle2, UserPlus, MessageSquare, Settings } from 'lucide-react';
+import { User } from '../../../types';
 
 interface UserProfileHeaderProps {
-    displayUser: any;
+    displayUser: User;
     isOwnProfile: boolean;
     isFollowing: boolean;
     isFollowLoading: boolean;

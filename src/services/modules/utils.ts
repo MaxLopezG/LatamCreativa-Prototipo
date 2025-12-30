@@ -16,6 +16,6 @@ export const withTimeout = <T>(promise: Promise<T>, ms: number, errorMessage: st
 };
 
 // Sanitize data to remove undefined values (JSON pure check)
-export const sanitizeData = (data: any) => {
+export const sanitizeData = <T>(data: T): T => {
     return JSON.parse(JSON.stringify(data));
 };

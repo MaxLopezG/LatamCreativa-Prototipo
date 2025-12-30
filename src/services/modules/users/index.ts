@@ -32,6 +32,11 @@ export const usersService = {
     subscribeToUser: usersSocial.subscribeToUser,
     unsubscribeFromUser: usersSocial.unsubscribeFromUser,
     getSubscriptionStatus: usersSocial.getSubscriptionStatus,
+    // Alias semánticos para Follow
+    followUser: usersSocial.followUser,
+    unfollowUser: usersSocial.unfollowUser,
+    isFollowing: usersSocial.isFollowing,
+    // Otros
     getChatMessages: usersSocial.getChatMessages,
     sendMessage: usersSocial.sendMessage,
     incrementProfileViews: usersSocial.incrementProfileViews,

@@ -114,6 +114,7 @@ export const useAppStore = () => {
       openShareModal: store.openShareModal,
       closeShareModal: store.closeShareModal,
       triggerSubscriptionUpdate: store.triggerSubscriptionUpdate,
+      triggerFollowUpdate: store.triggerSubscriptionUpdate, // Alias semántico
       showToast: store.showToast,
 
       // Auth Actions

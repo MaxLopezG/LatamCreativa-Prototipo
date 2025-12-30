@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { useAppStore } from './useAppStore';
 import { PortfolioItem } from '../types';
 import { projectsService } from '../services/modules/projects';
+import { getErrorMessage } from '../utils/helpers';
 
 // --- Hook for Fetching Single Project (by slug or ID) ---
 export const useProject = (slugOrId: string | undefined) => {
@@ -23,8 +24,8 @@ export const useProject = (slugOrId: string | undefined) => {
                 // Uses getProjectBySlug which tries slug first, then falls back to ID
                 const data = await projectsService.getProjectBySlug(slugOrId);
                 setProject(data);
-            } catch (err: any) {
-                setError(err.message);
+            } catch (err: unknown) {
+                setError(getErrorMessage(err));
             } finally {
                 setLoading(false);
             }
@@ -74,8 +75,8 @@ export const useCreateProject = () => {
                 }
             );
             return result; // { id, slug }
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -124,8 +125,8 @@ export const useUpdateProject = () => {
                     onProgress: setProgress
                 }
             );
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -150,8 +151,8 @@ export const useDeleteProject = () => {
         setError(null);
         try {
             await projectsService.deleteProject(state.user.id, id);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -175,8 +176,8 @@ export const useUserProjects = (userId: string | undefined, userName: string | u
             try {
                 const data = await projectsService.getUserProjects(userId || '');
                 setProjects(data);
-            } catch (err: any) {
-                setError(err.message);
+            } catch (err: unknown) {
+                setError(getErrorMessage(err));
             } finally {
                 setLoading(false);
             }
@@ -211,8 +212,8 @@ export const useProjectComments = (projectId: string | undefined) => {
                 setLoading(false);
             });
             return () => unsubscribe();
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
             setLoading(false);
         }
     }, [projectId]);
@@ -240,8 +241,8 @@ export const useAddProjectComment = () => {
                 authorAvatar: state.user.avatar || '',
                 text,
             });
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);
@@ -261,8 +262,8 @@ export const useDeleteProjectComment = () => {
         setError(null);
         try {
             await projectsService.deleteComment(projectId, commentId);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
             throw err;
         } finally {
             setLoading(false);

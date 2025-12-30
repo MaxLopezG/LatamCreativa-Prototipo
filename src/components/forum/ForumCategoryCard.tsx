@@ -6,7 +6,7 @@
  */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import * as Icons from 'lucide-react';
+import { getForumIcon } from '../../utils/forumIcons';
 import { ForumCategory } from '../../types/forum';
 import { CATEGORY_COLOR_CLASSES } from '../../data/forumCategories';
 
@@ -28,7 +28,7 @@ export const ForumCategoryCard: React.FC<ForumCategoryCardProps> = ({ category, 
     const colorClasses = CATEGORY_COLOR_CLASSES[category.color] || CATEGORY_COLOR_CLASSES.gray;
 
     // Dynamic icon loading
-    const IconComponent = (Icons as Record<string, React.FC<{ className?: string }>>)[category.icon] || Icons.MessageSquare;
+    const IconComponent = getForumIcon(category.icon);
 
     const handleClick = () => {
         if (onClick) {

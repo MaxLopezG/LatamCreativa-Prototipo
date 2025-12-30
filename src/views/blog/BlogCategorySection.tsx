@@ -60,10 +60,7 @@ export const BlogCategorySection: React.FC<BlogCategorySectionProps> = ({
         };
 
         fetchArticles();
-
-        // Disable warning because we are using a stable stringified key for the array dependency
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [categoriesKey, title, contentMode]);
+    }, [categoriesKey, title, contentMode]);  // categoriesKey is a stable stringified version of categories array
 
     const scroll = (direction: 'left' | 'right') => {
         if (scrollContainerRef.current) {

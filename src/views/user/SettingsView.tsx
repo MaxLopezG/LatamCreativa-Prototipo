@@ -9,6 +9,7 @@ interface SettingsViewProps {
 
 import { useAppStore } from '../../hooks/useAppStore';
 import { usersService } from '../../services/modules/users';
+import { getFirebaseAuthError } from '../../utils/helpers';
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ onBack }) => {
   const { state } = useAppStore();
@@ -109,17 +110,9 @@ const AccountSettings = () => {
       actions.showToast('Email actualizado. Revisa tu correo para verificar.', 'success');
       setNewEmail('');
       setEmailPassword('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error changing email:', error);
-      if (error.code === 'auth/wrong-password') {
-        actions.showToast('Contraseña incorrecta', 'error');
-      } else if (error.code === 'auth/email-already-in-use') {
-        actions.showToast('Este email ya está en uso', 'error');
-      } else if (error.code === 'auth/invalid-email') {
-        actions.showToast('Email inválido', 'error');
-      } else {
-        actions.showToast(error.message || 'Error al cambiar email', 'error');
-      }
+      actions.showToast(getFirebaseAuthError(error, 'Error al cambiar email'), 'error');
     } finally {
       setIsChangingEmail(false);
     }
@@ -149,15 +142,9 @@ const AccountSettings = () => {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error changing password:', error);
-      if (error.code === 'auth/wrong-password') {
-        actions.showToast('Contraseña actual incorrecta', 'error');
-      } else if (error.code === 'auth/weak-password') {
-        actions.showToast('La contraseña es muy débil', 'error');
-      } else {
-        actions.showToast(error.message || 'Error al cambiar contraseña', 'error');
-      }
+      actions.showToast(getFirebaseAuthError(error, 'Error al cambiar contraseña'), 'error');
     } finally {
       setIsChangingPassword(false);
     }
@@ -176,13 +163,9 @@ const AccountSettings = () => {
       actions.setUser(null);
       actions.showToast('Cuenta eliminada correctamente', 'success');
       navigate('/');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting account:', error);
-      if (error.code === 'auth/wrong-password') {
-        actions.showToast('Contraseña incorrecta', 'error');
-      } else {
-        actions.showToast(error.message || 'Error al eliminar cuenta', 'error');
-      }
+      actions.showToast(getFirebaseAuthError(error, 'Error al eliminar cuenta'), 'error');
     } finally {
       setIsDeleting(false);
     }

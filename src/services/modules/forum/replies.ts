@@ -17,7 +17,6 @@ import {
     updateDoc,
     deleteDoc,
     increment,
-    limit,
     addDoc
 } from 'firebase/firestore';
 import { db } from '../../../lib/firebase';
@@ -26,26 +25,6 @@ import { sanitizeData } from '../utils';
 import { notificationsService } from '../notifications';
 
 const THREADS_COLLECTION = 'forumThreads';
-
-/**
- * Calcula el tiempo transcurrido desde una fecha
- */
-function getTimeAgo(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-    const diffWeeks = Math.floor(diffDays / 7);
-
-    if (diffMins < 1) return 'ahora';
-    if (diffMins < 60) return `hace ${diffMins}m`;
-    if (diffHours < 24) return `hace ${diffHours}h`;
-    if (diffDays < 7) return `hace ${diffDays}d`;
-    if (diffWeeks < 4) return `hace ${diffWeeks}sem`;
-    return `hace ${Math.floor(diffDays / 30)}mes`;
-}
 
 export const forumReplies = {
     /**

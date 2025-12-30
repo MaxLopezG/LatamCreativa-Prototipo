@@ -81,12 +81,7 @@ export const OnboardingModal: React.FC = () => {
             if (skills.length === 0 && user.skills) setSkills(user.skills);
             if (Object.keys(socialLinks).length === 0 && user.socialLinks) setSocialLinks(user.socialLinks);
         }
-
-        // ESLint might complain about missing deps (name, role, etc), but we INTENTIONALLY omit them 
-        // to prevent re-running this effect when the user types in those fields.
-        // We only want to re-run if 'user' updates (e.g. initial load vs auth load).
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user, isOpen]);
+    }, [user, isOpen]);  // Dependencies intentionally limited to prevent re-runs on field typing
 
     if (!isOpen || !user) return null;
 

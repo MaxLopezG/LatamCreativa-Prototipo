@@ -22,7 +22,8 @@ import {
     onSnapshot,
     startAfter,
     QueryDocumentSnapshot,
-    DocumentData
+    DocumentData,
+    QueryConstraint
 } from 'firebase/firestore';
 import { ref, listAll, deleteObject } from 'firebase/storage';
 import { db, storage } from '../../../lib/firebase';
@@ -30,6 +31,13 @@ import { storageService } from '../storage';
 import { PortfolioItem } from '../../../types';
 import { PaginatedResult } from '../utils';
 import { generateUniqueSlug } from '../../../utils/slugUtils';
+
+/** Tipo para items de galería en proyectos */
+interface GalleryItem {
+    type: 'image' | 'video' | 'youtube' | 'sketchfab';
+    url: string;
+    caption: string;
+}
 
 export const projectsCrud = {
     /**
@@ -90,18 +98,18 @@ export const projectsCrud = {
             }
 
             // Prepare Gallery Objects
-            let galleryObjects: any[] = [];
+            let galleryObjects: GalleryItem[] = [];
             if (uploadOptions.galleryMetadata) {
                 galleryObjects = uploadOptions.galleryMetadata.map(meta => {
                     if (meta.type === 'image' && meta.fileIndex !== undefined) {
-                        return { type: 'image', caption: meta.caption || '', url: uploadedUrls[meta.fileIndex] || '' };
+                        return { type: 'image' as const, caption: meta.caption || '', url: uploadedUrls[meta.fileIndex] || '' };
                     } else if (meta.type === 'youtube' || meta.type === 'sketchfab') {
-                        return { type: meta.type, caption: meta.caption || '', url: meta.url || '' };
+                        return { type: meta.type as 'youtube' | 'sketchfab', caption: meta.caption || '', url: meta.url || '' };
                     }
                     return null;
-                }).filter(Boolean);
+                }).filter(item => item !== null) as GalleryItem[];
             } else {
-                galleryObjects = uploadedUrls.map(url => ({ type: 'image', url, caption: '' }));
+                galleryObjects = uploadedUrls.map(url => ({ type: 'image' as const, url, caption: '' }));
             }
 
             const legacyImages = galleryObjects.filter(item => item.type === 'image').map(item => item.url);
@@ -208,20 +216,20 @@ export const projectsCrud = {
             }
 
             // Construct Gallery Objects
-            let galleryObjects: any[] = [];
+            let galleryObjects: GalleryItem[] = [];
             if (uploadOptions.galleryMetadata) {
                 galleryObjects = uploadOptions.galleryMetadata.map(meta => {
                     if (meta.type === 'image') {
                         if (meta.fileIndex !== undefined) {
-                            return { type: 'image', caption: meta.caption || '', url: uploadedUrls[meta.fileIndex] || '' };
+                            return { type: 'image' as const, caption: meta.caption || '', url: uploadedUrls[meta.fileIndex] || '' };
                         } else if (meta.url) {
-                            return { type: 'image', caption: meta.caption || '', url: meta.url };
+                            return { type: 'image' as const, caption: meta.caption || '', url: meta.url };
                         }
                     } else if (meta.type === 'youtube' || meta.type === 'sketchfab') {
-                        return { type: meta.type, caption: meta.caption || '', url: meta.url || '' };
+                        return { type: meta.type as 'youtube' | 'sketchfab', caption: meta.caption || '', url: meta.url || '' };
                     }
                     return null;
-                }).filter(Boolean);
+                }).filter(item => item !== null) as GalleryItem[];
             }
 
             // Cleanup removed gallery images
@@ -334,7 +342,7 @@ export const projectsCrud = {
      */
     getUserProjects: async (userId: string, limitCount?: number): Promise<PortfolioItem[]> => {
         try {
-            const constraints: any[] = [where('authorId', '==', userId), orderBy('createdAt', 'desc')];
+            const constraints: QueryConstraint[] = [where('authorId', '==', userId), orderBy('createdAt', 'desc')];
             if (limitCount) constraints.push(limit(limitCount));
 
             const q = query(collection(db, 'projects'), ...constraints);
