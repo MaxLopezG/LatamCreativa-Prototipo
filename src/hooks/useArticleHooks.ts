@@ -278,34 +278,37 @@ export const useRecommendedArticles = (currentArticleId: string) => {
     return { articles, loading };
 };
 
-// --- Hook for Article Comments ---
+// --- Hook for Article Comments (Real-time subscription like Portfolio) ---
 export const useComments = (articleId: string | undefined) => {
     const [comments, setComments] = useState<BlogComment[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchComments = async () => {
-        if (!articleId) return;
+    useEffect(() => {
+        if (!articleId) {
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         try {
-            const data = await articlesService.getComments(articleId);
-            setComments(data);
+            // Real-time subscription - same pattern as useProjectComments
+            const unsubscribe = articlesService.listenToComments(articleId, (newComments) => {
+                setComments(newComments);
+                setLoading(false);
+            });
+            return () => unsubscribe();
         } catch (err: unknown) {
             setError(getErrorMessage(err));
-        } finally {
             setLoading(false);
         }
-    };
-
-    useEffect(() => {
-        fetchComments();
     }, [articleId]);
 
     const removeComment = (commentId: string) => {
         setComments(prev => prev.filter(c => c.id !== commentId));
     };
 
-    return { comments, loading, error, refresh: fetchComments, removeComment };
+    return { comments, loading, error, removeComment };
 };
 
 // --- Hook for Adding Comment ---

@@ -8,13 +8,17 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfi
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { getFirebaseAuthError } from '../../utils/helpers';
 
-export const AuthView: React.FC = () => {
+interface AuthViewProps {
+    mode?: 'login' | 'register';
+}
+
+export const AuthView: React.FC<AuthViewProps> = ({ mode = 'login' }) => {
     const { state, actions } = useAppStore();
     const { contentMode } = state;
     const isDev = contentMode === 'dev';
     const navigate = useNavigate();
 
-    const [isLogin, setIsLogin] = useState(true);
+    const [isLogin, setIsLogin] = useState(mode !== 'register');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isVerificationSent, setIsVerificationSent] = useState(false);
@@ -237,10 +241,7 @@ export const AuthView: React.FC = () => {
                                 <br />Por favor, verifica tu cuenta para poder continuar.
                             </p>
                             <button
-                                onClick={() => {
-                                    setIsVerificationSent(false);
-                                    setIsLogin(true);
-                                }}
+                                onClick={() => navigate('/login')}
                                 className={`w-full py-3 rounded-xl text-white font-bold transition-all ${activeBg}`}
                             >
                                 Volver al Inicio de Sesión
@@ -258,12 +259,7 @@ export const AuthView: React.FC = () => {
                                 <br />Revisa tu bandeja de entrada y sigue el enlace.
                             </p>
                             <button
-                                onClick={() => {
-                                    setIsResetSent(false);
-                                    setIsForgotPassword(false);
-                                    setIsLogin(true);
-                                    setEmail('');
-                                }}
+                                onClick={() => navigate('/login')}
                                 className={`w-full py-3 rounded-xl text-white font-bold transition-all ${activeBg}`}
                             >
                                 Volver al Inicio de Sesión
@@ -522,7 +518,7 @@ export const AuthView: React.FC = () => {
                     <p className="mt-8 text-center text-sm text-slate-500">
                         {isLogin ? '¿No tienes una cuenta?' : '¿Ya tienes una cuenta?'}
                         <button
-                            onClick={() => setIsLogin(!isLogin)}
+                            onClick={() => navigate(isLogin ? '/register' : '/login')}
                             className={`ml-1 font-bold hover:underline ${activeColor}`}
                         >
                             {isLogin ? 'Regístrate' : 'Inicia Sesión'}

@@ -34,6 +34,7 @@ export const articlesService = {
 
     // Comentarios
     getComments: articlesComments.getComments,
+    listenToComments: articlesComments.listenToComments,
     addComment: articlesComments.addComment,
     toggleCommentLike: articlesComments.toggleCommentLike,
     getCommentLikeStatus: articlesComments.getCommentLikeStatus,

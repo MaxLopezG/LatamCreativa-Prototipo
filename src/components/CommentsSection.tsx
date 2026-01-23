@@ -30,7 +30,7 @@ interface Comment {
  */
 interface AuthorDisplayProps {
     comment: Comment;
-    onClick?: () => void;
+    onNavigate?: (username: string) => void;
     className?: string;
     avatarClassName?: string;
     nameClassName?: string;
@@ -40,14 +40,14 @@ interface AuthorDisplayProps {
 
 const AuthorDisplay: React.FC<AuthorDisplayProps> = ({
     comment,
-    onClick,
+    onNavigate,
     className = '',
     avatarClassName = 'h-10 w-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-amber-500 transition-all',
     nameClassName = 'font-bold text-slate-900 dark:text-white text-sm hover:text-amber-500 cursor-pointer',
     showAvatar = true,
     showName = true
 }) => {
-    // Live author lookup - fetches current name/avatar from user profile
+    // Live author lookup - fetches current name/avatar AND username from user profile
     const { authorName, authorAvatar, authorUsername } = useAuthorInfo(
         comment.authorId,
         comment.authorName || comment.author,
@@ -55,8 +55,9 @@ const AuthorDisplay: React.FC<AuthorDisplayProps> = ({
     );
 
     const handleClick = () => {
-        if (onClick) {
-            onClick();
+        // Use the live authorUsername from the hook, not the static one from the comment
+        if (onNavigate && authorUsername) {
+            onNavigate(authorUsername);
         }
     };
 
@@ -142,6 +143,69 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
     const [replyingTo, setReplyingTo] = useState<string | null>(null);
     const [replyText, setReplyText] = useState('');
     const [isAddingReply, setIsAddingReply] = useState(false);
+
+    // Track optimistic like count changes (delta from original)
+    // These deltas are TEMPORARY - applied only until Firebase updates the comment
+    const [localLikeDeltas, setLocalLikeDeltas] = useState<Record<string, number>>({});
+
+    // Track which likes are currently being processed (to avoid resetting their delta)
+    const pendingLikes = React.useRef<Set<string>>(new Set());
+
+    // Reset deltas when comments update from Firebase (the new values already include the change)
+    React.useEffect(() => {
+        // Clear deltas for comments that are no longer pending
+        setLocalLikeDeltas(prev => {
+            const newDeltas: Record<string, number> = {};
+            // Only keep deltas for comments that have pending operations
+            for (const commentId of Object.keys(prev)) {
+                if (pendingLikes.current.has(commentId)) {
+                    newDeltas[commentId] = prev[commentId];
+                }
+            }
+            return newDeltas;
+        });
+    }, [comments]);
+
+    // Get the displayed like count: original likes + local delta
+    const getLikeCount = (comment: Comment): number => {
+        const originalLikes = comment.likes || 0;
+        const delta = localLikeDeltas[comment.id] || 0;
+        return Math.max(0, originalLikes + delta);
+    };
+
+    // Handle like with optimistic update
+    const handleOptimisticLike = async (commentId: string) => {
+        if (!state.user) {
+            actions.showToast('Inicia sesión para dar like', 'info');
+            return;
+        }
+
+        const currentlyLiked = commentLikes[commentId] || false;
+        const deltaChange = currentlyLiked ? -1 : 1;
+
+        // Mark as pending so the delta isn't cleared when Firebase updates
+        pendingLikes.current.add(commentId);
+
+        // Optimistic update: immediately change the delta
+        setLocalLikeDeltas(prev => ({
+            ...prev,
+            [commentId]: (prev[commentId] || 0) + deltaChange
+        }));
+
+        try {
+            // Fire the actual like operation (parent handles the heart icon state)
+            await onLikeComment(commentId);
+        } catch (error) {
+            // Rollback the delta on error
+            setLocalLikeDeltas(prev => ({
+                ...prev,
+                [commentId]: (prev[commentId] || 0) - deltaChange
+            }));
+        } finally {
+            // Remove from pending - next Firebase update will clear the delta
+            pendingLikes.current.delete(commentId);
+        }
+    };
 
     // Separate root comments and replies
     const rootComments = useMemo(() =>
@@ -274,7 +338,7 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
                             <div className="flex gap-4">
                                 <AuthorDisplay
                                     comment={comment}
-                                    onClick={() => comment.authorUsername && navigate(`/user/${comment.authorUsername}`)}
+                                    onNavigate={(username) => navigate(`/user/${username}`)}
                                     showName={false}
                                     avatarClassName="h-10 w-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-amber-500 transition-all"
                                 />
@@ -282,7 +346,7 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
                                     <div className="flex items-center gap-2 mb-1">
                                         <AuthorDisplay
                                             comment={comment}
-                                            onClick={() => comment.authorUsername && navigate(`/user/${comment.authorUsername}`)}
+                                            onNavigate={(username) => navigate(`/user/${username}`)}
                                             showAvatar={false}
                                             nameClassName="font-bold text-slate-900 dark:text-white text-sm hover:text-amber-500 cursor-pointer"
                                         />
@@ -295,14 +359,14 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
                                     {/* Actions */}
                                     <div className="flex items-center gap-4">
                                         <button
-                                            onClick={() => onLikeComment(comment.id)}
+                                            onClick={() => handleOptimisticLike(comment.id)}
                                             className={`text-xs flex items-center gap-1 transition-colors ${commentLikes[comment.id]
                                                 ? 'text-red-500'
                                                 : 'text-slate-400 hover:text-red-500'
                                                 }`}
                                         >
                                             <Heart className={`h-3.5 w-3.5 ${commentLikes[comment.id] ? 'fill-current' : ''}`} />
-                                            {comment.likes || 0}
+                                            {getLikeCount(comment)}
                                         </button>
                                         <button
                                             onClick={() => handleStartReply(comment.id)}
@@ -358,7 +422,7 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
                                                 <div key={reply.id} className="flex gap-3">
                                                     <AuthorDisplay
                                                         comment={reply}
-                                                        onClick={() => reply.authorUsername && navigate(`/user/${reply.authorUsername}`)}
+                                                        onNavigate={(username) => navigate(`/user/${username}`)}
                                                         showName={false}
                                                         avatarClassName="h-8 w-8 rounded-full object-cover cursor-pointer"
                                                     />
@@ -366,7 +430,7 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
                                                         <div className="flex items-center gap-2 mb-1">
                                                             <AuthorDisplay
                                                                 comment={reply}
-                                                                onClick={() => reply.authorUsername && navigate(`/user/${reply.authorUsername}`)}
+                                                                onNavigate={(username) => navigate(`/user/${username}`)}
                                                                 showAvatar={false}
                                                                 nameClassName="font-bold text-slate-900 dark:text-white text-xs hover:text-amber-500 cursor-pointer"
                                                             />
@@ -384,14 +448,14 @@ export const CommentsSection: React.FC<CommentsSectionProps> = ({
                                                             {getText(reply)}
                                                         </p>
                                                         <button
-                                                            onClick={() => onLikeComment(reply.id)}
+                                                            onClick={() => handleOptimisticLike(reply.id)}
                                                             className={`text-[10px] flex items-center gap-1 mt-1 ${commentLikes[reply.id]
                                                                 ? 'text-red-500'
                                                                 : 'text-slate-400 hover:text-red-500'
                                                                 }`}
                                                         >
                                                             <Heart className={`h-2.5 w-2.5 ${commentLikes[reply.id] ? 'fill-current' : ''}`} />
-                                                            {reply.likes || 0}
+                                                            {getLikeCount(reply)}
                                                         </button>
                                                     </div>
                                                 </div>

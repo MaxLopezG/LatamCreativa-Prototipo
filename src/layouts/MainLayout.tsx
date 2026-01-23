@@ -125,8 +125,8 @@ export const MainLayout: React.FC = () => {
                         onMarkRead={actions.markNotificationRead}
                         onMarkAllRead={actions.markAllNotificationsRead}
                         contentMode={state.contentMode}
-                        onLoginClick={() => navigate('/auth')}
-                        onRegisterClick={() => navigate('/auth')}
+                        onLoginClick={() => navigate('/login')}
+                        onRegisterClick={() => navigate('/register')}
                     />
                 )}
 

@@ -58,8 +58,12 @@ const PreviewPost = lazyImport(() => import('./views/blog/PreviewPost').then(mod
 
 export const router = createBrowserRouter([
   {
-    path: '/auth',
-    element: <SuspendedView Component={lazyImport(() => import('./views/auth/AuthView').then(m => ({ default: m.AuthView })))} />
+    path: '/login',
+    element: <SuspendedView Component={lazyImport(() => import('./views/auth/AuthView').then(m => ({ default: () => <m.AuthView mode="login" /> })))} />
+  },
+  {
+    path: '/register',
+    element: <SuspendedView Component={lazyImport(() => import('./views/auth/AuthView').then(m => ({ default: () => <m.AuthView mode="register" /> })))} />
   },
   {
     path: 'admin',

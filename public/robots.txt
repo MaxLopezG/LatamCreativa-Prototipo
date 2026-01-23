@@ -6,13 +6,16 @@ Allow: /
 
 # Páginas que no deben indexarse
 Disallow: /admin
+Disallow: /admin/*
 Disallow: /auth
 Disallow: /settings
 Disallow: /create/*
 Disallow: /success
+Disallow: /preview/*
+Disallow: /collections
+Disallow: /collections/*
+Disallow: /pro
+Disallow: /search
 
 # Sitemap
 Sitemap: https://latamcreativa.com/sitemap.xml
-
-# Crawl-delay (opcional)
-Crawl-delay: 1

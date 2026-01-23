@@ -17,10 +17,6 @@
                     {
                         "key": "X-Content-Type-Options",
                         "value": "nosniff"
-                    },
-                    {
-                        "key": "Link",
-                        "value": "<https://latamcreativa.com>; rel=\"canonical\""
                     }
                 ]
             },

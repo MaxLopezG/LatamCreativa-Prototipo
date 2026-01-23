@@ -54,7 +54,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
     const [isLikeLoading, setIsLikeLoading] = useState(false);
 
     // --- Comments State ---
-    const { comments, loading: isLoadingComments, refresh: refreshComments } = useComments(article?.id);
+    const { comments, loading: isLoadingComments } = useComments(article?.id);
     const { add: addCommentToArticle, loading: isAddingComment } = useAddComment();
     const [newComment, setNewComment] = useState('');
     const [commentLikes, setCommentLikes] = useState<Record<string, boolean>>({});
@@ -113,7 +113,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                 text: newComment.trim()
             });
             setNewComment('');
-            refreshComments();
+            // No need to refresh - real-time subscription updates automatically
         } catch (error: any) {
             actions.showToast(error.message || 'Error al comentar', 'error');
         }
@@ -123,7 +123,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
         if (!article?.id) return;
         try {
             await articlesService.deleteComment(article.id, commentId);
-            refreshComments();
+            // No need to refresh - real-time subscription updates automatically
             actions.showToast('Comentario eliminado', 'success');
         } catch (error: any) {
             actions.showToast(error.message || 'Error al eliminar', 'error');
@@ -137,12 +137,13 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
         }
         if (!article?.id) return;
 
-        // Optimistic UI update
+        // Optimistic UI update for the heart icon
         const wasLiked = commentLikes[commentId] || false;
         setCommentLikes(prev => ({ ...prev, [commentId]: !wasLiked }));
 
         try {
             await articlesService.toggleCommentLike(article.id, commentId, state.user.id);
+            // No need to refresh - useComments now uses real-time subscription
         } catch (error) {
             // Rollback on error
             setCommentLikes(prev => ({ ...prev, [commentId]: wasLiked }));
@@ -179,7 +180,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
             });
             setReplyingTo(null);
             setReplyText('');
-            refreshComments();
+            // No need to refresh - real-time subscription updates automatically
             actions.showToast('Respuesta publicada', 'success');
         } catch (error: any) {
             actions.showToast(error.message || 'Error al responder', 'error');
@@ -486,12 +487,12 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                                 authorAvatar: state.user.avatar || '',
                                 text
                             });
-                            refreshComments();
+                            // Real-time subscription updates automatically
                         }}
                         onDeleteComment={async (commentId) => {
                             if (!article?.id) return;
                             await articlesService.deleteComment(article.id, commentId);
-                            refreshComments();
+                            // Real-time subscription updates automatically
                         }}
                         onLikeComment={handleCommentLike}
                         onAddReply={async (parentId, text) => {
@@ -504,7 +505,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ articleId, onBack, o
                                 text,
                                 parentId
                             });
-                            refreshComments();
+                            // Real-time subscription updates automatically
                         }}
                         commentLikes={commentLikes}
                     />
