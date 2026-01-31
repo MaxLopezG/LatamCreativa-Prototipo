@@ -17,12 +17,14 @@ export const PRIMARY_NAV_ITEMS: NavItem[] = [
   // 3. Content & News
   { id: 'blog', icon: Newspaper, label: 'Blog' },
 
-  // 4. Learning & Services (Coming Soon)
+  // 4. Community (Foro)
+  { id: 'forum', icon: MessageCircleQuestion, label: 'Foro' },
+
+  // 5. Learning & Services (Coming Soon)
   { id: 'courses', icon: GraduationCap, label: 'Cursos', comingSoon: true },
   { id: 'freelance', icon: Briefcase, label: 'Freelance', comingSoon: true },
 
-  // 5. Community & Collaboration (Coming Soon)
-  { id: 'forum', icon: MessageCircleQuestion, label: 'Foro' },
+  // 6. Jobs & Collaboration (Coming Soon)
   { id: 'jobs', icon: Building2, label: 'Bolsa de Trabajo', comingSoon: true },
   { id: 'projects', icon: Users, label: 'Proyectos Colaborativos', comingSoon: true },
   { id: 'contests', icon: Trophy, label: 'Concursos', comingSoon: true },

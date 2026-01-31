@@ -51,6 +51,8 @@ export const MainLayout: React.FC = () => {
     }, [state.user?.id]);
 
     const isLearningMode = state.activeModule === 'learning';
+    // Welcome page mode: no user + on home route = show clean landing without header/sidebars
+    const isWelcomePage = !state.user && location.pathname === '/';
     const selectionColor = state.contentMode === 'dev' ? 'selection:bg-blue-500/30' : 'selection:bg-amber-500/30';
 
     // Navigation Handler to sync State + Router
@@ -83,8 +85,8 @@ export const MainLayout: React.FC = () => {
     return (
         <div className={`flex w-full h-screen overflow-hidden bg-slate-50 dark:bg-[#0d0d0f] text-slate-600 dark:text-slate-300 font-sans ${selectionColor} transition-colors duration-500 antialiased`}>
 
-            {/* Enhanced Ambient Background - Hidden in learning mode for focus */}
-            {!isLearningMode && (
+            {/* Enhanced Ambient Background - Hidden in learning mode and welcome page */}
+            {!isLearningMode && !isWelcomePage && (
                 <div className="fixed inset-0 z-0 pointer-events-none transition-opacity duration-1000 opacity-60 dark:opacity-100">
                     <div className={`absolute top-[-25%] left-[-15%] w-[60%] h-[60%] rounded-full ${state.contentMode === 'dev' ? 'bg-blue-600/10' : 'bg-blue-400/10'} dark:bg-[#0f172a]/40 blur-[150px] mix-blend-screen animate-pulse duration-[8000ms]`}></div>
                     <div className={`absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full ${state.contentMode === 'dev' ? 'bg-emerald-500/10' : 'bg-amber-500/10'} dark:bg-[#451a03]/30 blur-[150px] mix-blend-screen`}></div>
@@ -92,7 +94,7 @@ export const MainLayout: React.FC = () => {
                 </div>
             )}
 
-            {/* Hide Primary Sidebar in Learning Mode */}
+            {/* Hide Primary Sidebar only in Learning Mode */}
             {!isLearningMode && (
                 <PrimarySidebar
                     activeModule={state.activeModule}
@@ -117,7 +119,8 @@ export const MainLayout: React.FC = () => {
             />
 
             <main className={`relative flex min-w-0 flex-1 flex-col overflow-hidden z-10 ${isLearningMode ? 'bg-[#18181b]' : ''}`}>
-                {!isLearningMode && (
+                {/* Hide Header on Welcome Page */}
+                {!isLearningMode && !isWelcomePage && (
                     <Header
                         onMenuClick={() => actions.setIsSidebarOpen(true)}
                         onLogoClick={handleLogoClick}
@@ -131,13 +134,14 @@ export const MainLayout: React.FC = () => {
                 )}
 
                 {/* Adjusted padding bottom for mobile tab bar, remove padding in learning mode */}
-                <div ref={mainScrollRef} className={`custom-scrollbar flex-1 overflow-y-auto ${isLearningMode ? 'pt-0' : 'pt-20'} pb-32 md:pb-0`}>
+                <div ref={mainScrollRef} className={`custom-scrollbar flex-1 overflow-y-auto ${isLearningMode || isWelcomePage ? 'pt-0' : 'pt-20'} pb-32 md:pb-0`}>
                     <div className="flex flex-col min-h-full">
                         <div className="flex-1">
                             {/* REPLACED VideoContent with Outlet */}
                             <Outlet />
                         </div>
-                        {!isLearningMode && (
+                        {/* Hide Footer on Welcome Page */}
+                        {!isLearningMode && !isWelcomePage && (
                             <Footer onNavigate={handleModuleNavigation} />
                         )}
                     </div>

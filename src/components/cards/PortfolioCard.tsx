@@ -79,8 +79,8 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
           loading="lazy"
         />
 
-        {/* Gradient Overlay for Text Readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-300"></div>
+        {/* Gradient Overlay for Text Readability - More subtle without hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
         {/* Top Badges & Actions */}
         <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-[-10px] group-hover:translate-y-0 z-20 pointer-events-none">
@@ -115,8 +115,8 @@ export const PortfolioCard: React.FC<PortfolioCardProps> = ({
           </div>
         )}
 
-        {/* Info Overlay (Inside Image) */}
-        <div className="absolute bottom-0 left-0 w-full p-4 flex flex-col justify-end z-10">
+        {/* Info Overlay (Inside Image) - Appears on Hover */}
+        <div className="absolute bottom-0 left-0 w-full p-4 flex flex-col justify-end z-10 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
           <h3 className="font-bold text-white text-base leading-tight mb-2 line-clamp-2 group-hover:text-amber-400 transition-colors">
             {item.title}
           </h3>

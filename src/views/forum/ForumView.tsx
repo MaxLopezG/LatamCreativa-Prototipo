@@ -19,6 +19,10 @@ import { useForumThreads } from '../../hooks/useForumHooks';
 import { ThreadCard, ForumCategoryCard, ForumStats } from '../../components/forum';
 import { FORUM_CATEGORIES } from '../../data/forumCategories';
 import { ThreadSortOption } from '../../types/forum';
+import { GuestLimitOverlay } from '../../components/common/GuestLimitOverlay';
+
+// Limit for guest users
+const GUEST_THREAD_LIMIT = 6;
 
 interface ForumViewProps {
     activeCategory?: string;
@@ -76,6 +80,11 @@ export const ForumView: React.FC<ForumViewProps> = ({
     // Get current category info
     const currentCategory = FORUM_CATEGORIES.find(c => c.slug === activeCategory || c.id === activeCategory);
     const displayedCategories = showAllCategories ? FORUM_CATEGORIES : FORUM_CATEGORIES.slice(0, 6);
+
+    // Guest detection and limiting
+    const isGuest = !state.user;
+    const displayThreads = isGuest ? threads.slice(0, GUEST_THREAD_LIMIT) : threads;
+    const hasMoreForGuests = isGuest && threads.length > GUEST_THREAD_LIMIT;
 
     return (
         <div className="min-h-screen pb-12 px-4 md:px-8 lg:px-12 pt-6">
@@ -226,7 +235,7 @@ export const ForumView: React.FC<ForumViewProps> = ({
                             </div>
                         ) : (
                             <>
-                                {threads.map(thread => (
+                                {displayThreads.map(thread => (
                                     <ThreadCard
                                         key={thread.id}
                                         thread={thread}
@@ -240,8 +249,17 @@ export const ForumView: React.FC<ForumViewProps> = ({
                                     />
                                 ))}
 
-                                {/* Pagination */}
-                                {(hasMore || page > 1) && (
+                                {/* Guest limit overlay */}
+                                {hasMoreForGuests && (
+                                    <GuestLimitOverlay
+                                        title="¿Quieres ver más discusiones?"
+                                        description="Regístrate gratis para explorar todos los hilos y participar."
+                                        itemType="hilos"
+                                    />
+                                )}
+
+                                {/* Pagination - hide for guests */}
+                                {!isGuest && (hasMore || page > 1) && (
                                     <div className="flex items-center justify-center gap-4 pt-6">
                                         <button
                                             onClick={prevPage}

@@ -64,7 +64,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <h4 className="text-white font-bold mb-3 md:mb-6 text-sm">Empresa</h4>
             <ul className="space-y-2 md:space-y-3 text-sm text-slate-400">
               <li><button onClick={(e) => handleNav('about', e)} className="hover:text-amber-500 transition-colors text-left">Sobre Nosotros</button></li>
-              <li><button onClick={(e) => handleNav('info/careers', e)} className="hover:text-amber-500 transition-colors text-left">Carreras</button></li>
+              <li><button onClick={(e) => handleNav('careers', e)} className="hover:text-amber-500 transition-colors text-left">Carreras</button></li>
               <li><button onClick={(e) => handleNav('info/contact', e)} className="hover:text-amber-500 transition-colors text-left">Contacto</button></li>
             </ul>
           </div>

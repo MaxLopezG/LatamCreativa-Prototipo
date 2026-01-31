@@ -147,7 +147,7 @@ export const PortfolioSidebar: React.FC<PortfolioSidebarProps> = ({
                                 {isFollowing ? 'Siguiendo' : 'Seguir'}
                             </button>
                             <button className="flex items-center justify-center gap-2 py-3 rounded-xl bg-white text-black font-bold text-sm hover:bg-slate-200 transition-colors">
-                                <Briefcase className="h-4 w-4" /> Contratar
+                                <Briefcase className="h-4 w-4" /> Contactar
                             </button>
                         </div>
                     ) : (

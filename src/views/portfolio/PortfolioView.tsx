@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useSearchParams, useParams } from 'react-router-dom';
+import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
 import { Layers, Plus, Image as ImageIcon, Filter, ArrowUpDown, Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
 import { PortfolioCard } from '../../components/cards/PortfolioCard';
 import { ContentMode, useAppStore } from '../../hooks/useAppStore';
@@ -7,6 +7,11 @@ import { projectsService } from '../../services/modules/projects';
 import { PortfolioItem } from '../../types';
 import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { NAV_SECTIONS, NAV_SECTIONS_DEV } from '../../data/navigation';
+import { GuestLimitOverlay } from '../../components/common/GuestLimitOverlay';
+import { MOCK_PORTFOLIO_ITEMS } from '../../data/mockPortfolio';
+
+// Number of items to blur at the bottom for guests (creates visual fade effect)
+const GUEST_BLUR_LAST_ITEMS = 5;
 
 interface PortfolioViewProps {
   activeCategory: string;
@@ -18,6 +23,7 @@ interface PortfolioViewProps {
 
 export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, onItemSelect, onCreateClick, onSave, contentMode }) => {
   const { state } = useAppStore();
+  const navigate = useNavigate();
   const mode = contentMode || 'creative';
   const { slug } = useParams<{ slug?: string }>();
 
@@ -89,6 +95,12 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, on
     return itemDomain === mode && itemStatus === 'published';
   });
 
+  // Use mock data if no real projects are available (for design preview)
+  const itemsToDisplay = filteredItems.length > 0
+    ? filteredItems
+    : MOCK_PORTFOLIO_ITEMS.filter(item => (item.domain || 'creative') === mode);
+  const usingMockData = filteredItems.length === 0 && itemsToDisplay.length > 0;
+
   const handleNextPage = () => {
     if (!hasMore || loading) return;
     setSearchParams({ page: String(currentPage + 1) });
@@ -100,9 +112,15 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, on
   };
 
   // Apply Category Filter - use effectiveCategory (from slug or prop)
-  const displayItems = effectiveCategory === 'Home' || !effectiveCategory
-    ? filteredItems
-    : filteredItems.filter(item => item.category === effectiveCategory);
+  const allDisplayItems = effectiveCategory === 'Home' || !effectiveCategory
+    ? itemsToDisplay
+    : itemsToDisplay.filter(item => item.category === effectiveCategory);
+
+  // For guests: show all items but blur the last few + show CTA instead of pagination
+  const isGuest = !state.user;
+  const displayItems = allDisplayItems; // Show all items
+  const blurStartIndex = isGuest ? Math.max(0, displayItems.length - GUEST_BLUR_LAST_ITEMS) : displayItems.length;
+  const showGuestCTA = isGuest && displayItems.length > 0;
 
   const accentText = mode === 'dev' ? 'text-blue-500' : 'text-pink-500';
   const accentBg = mode === 'dev' ? 'bg-blue-600' : 'bg-pink-600';
@@ -145,6 +163,16 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, on
         </div>
       </div>
 
+      {/* Mock Data Banner */}
+      {usingMockData && (
+        <div className="relative z-10 mb-6 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 backdrop-blur-sm">
+          <p className="text-amber-300 text-sm text-center">
+            <span className="font-bold">✨ Datos de demostración:</span> Estos son proyectos de ejemplo para visualizar el diseño.
+            Los proyectos reales aparecerán aquí cuando se publiquen.
+          </p>
+        </div>
+      )}
+
       {/* Toolbar & Filters */}
       <div className="relative z-10 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/10 pb-6">
         <div>
@@ -159,14 +187,18 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, on
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={onCreateClick}
-            className={`flex items-center gap-2 px-6 py-2.5 ${accentBg} text-white font-bold rounded-xl hover:scale-105 transition-all shadow-lg hover:shadow-${mode === 'dev' ? 'blue' : 'pink'}-500/20`}
-          >
-            <Plus className="h-4 w-4" /> {mode === 'dev' ? 'Compartir Código' : 'Subir Proyecto'}
-          </button>
-
-          <div className="h-8 w-px bg-white/10 hidden md:block mx-2"></div>
+          {/* Hide create button for guests */}
+          {state.user && (
+            <>
+              <button
+                onClick={onCreateClick}
+                className={`flex items-center gap-2 px-6 py-2.5 ${accentBg} text-white font-bold rounded-xl hover:scale-105 transition-all shadow-lg hover:shadow-${mode === 'dev' ? 'blue' : 'pink'}-500/20`}
+              >
+                <Plus className="h-4 w-4" /> {mode === 'dev' ? 'Compartir Código' : 'Subir Proyecto'}
+              </button>
+              <div className="h-8 w-px bg-white/10 hidden md:block mx-2"></div>
+            </>
+          )}
 
           <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 transition-colors backdrop-blur-sm">
             <Filter className="h-4 w-4" /> Filtrar
@@ -186,28 +218,93 @@ export const PortfolioView: React.FC<PortfolioViewProps> = ({ activeCategory, on
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 mb-16">
           {displayItems.length > 0 ? (
-            displayItems.map((item) => (
-              <PortfolioCard
-                key={item.id}
-                item={item}
-                onClick={() => onItemSelect?.(item.id)}
-                onSave={onSave}
-              />
-            ))
+            displayItems.map((item, index) => {
+              // Apply blur effect to last items for guests
+              const shouldBlur = isGuest && index >= blurStartIndex;
+              const blurIntensity = shouldBlur ? Math.min((index - blurStartIndex + 1) * 2, 8) : 0;
+
+              return (
+                <div key={item.id} className="relative">
+                  <div
+                    className={shouldBlur ? 'pointer-events-none select-none transition-all' : ''}
+                    style={shouldBlur ? { filter: `blur(${blurIntensity}px)`, opacity: 1 - (blurIntensity * 0.05) } : {}}
+                  >
+                    <PortfolioCard
+                      item={item}
+                      onClick={() => !shouldBlur && onItemSelect?.(item.id)}
+                      onSave={!shouldBlur ? onSave : undefined}
+                      hideSaveButton={shouldBlur}
+                    />
+                  </div>
+                </div>
+              );
+            })
           ) : (
             <div className="col-span-full py-20 text-center border border-dashed border-white/10 rounded-3xl bg-white/5">
               <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Layers className="h-8 w-8 text-slate-500" />
               </div>
               <p className="text-slate-400 text-lg">No hay proyectos para mostrar en esta categoría.</p>
-              <button onClick={onCreateClick} className={`mt-4 ${accentText} font-bold hover:underline`}>Sé el primero en subir uno</button>
+              {state.user && (
+                <button onClick={onCreateClick} className={`mt-4 ${accentText} font-bold hover:underline`}>Sé el primero en subir uno</button>
+              )}
+            </div>
+          )}
+
+          {/* Guest CTA - Behance style */}
+          {showGuestCTA && (
+            <div className="col-span-full mt-8">
+              {/* Gradient fade */}
+              <div className="h-20 bg-gradient-to-t from-[#1c1c21] to-transparent -mt-20 relative z-10 pointer-events-none" />
+
+              {/* CTA Section - Minimal like Behance */}
+              <div className="text-center py-12 px-6">
+                <p className="text-slate-300 text-lg mb-6">
+                  <button
+                    onClick={() => navigate('/register')}
+                    className="text-amber-400 hover:text-amber-300 font-semibold hover:underline transition-colors"
+                  >
+                    Regístrate
+                  </button>
+                  {' '}o{' '}
+                  <button
+                    onClick={() => navigate('/login')}
+                    className="text-amber-400 hover:text-amber-300 font-semibold hover:underline transition-colors"
+                  >
+                    Inicia sesión
+                  </button>
+                  {' '}para ver más proyectos personalizados a tus preferencias.
+                </p>
+
+                <div className="flex items-center justify-center gap-4">
+                  <button
+                    onClick={() => navigate('/register')}
+                    className="px-8 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-bold rounded-full hover:scale-105 hover:shadow-xl hover:shadow-amber-500/20 transition-all"
+                  >
+                    Registrarse con Email
+                  </button>
+                  <span className="text-slate-500">o</span>
+                  <button
+                    onClick={() => navigate('/login')}
+                    className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors border border-white/10"
+                    title="Continuar con Google"
+                  >
+                    <svg className="h-5 w-5" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Pagination Controls */}
-      {!loading && (projects.length > 0 || currentPage > 1) && (
+      {/* Pagination Controls - hide for guests */}
+      {!isGuest && !loading && (projects.length > 0 || currentPage > 1) && (
         <div className="mt-12 md:mt-16 flex justify-center items-center gap-4">
           <button
             onClick={handlePrevPage}

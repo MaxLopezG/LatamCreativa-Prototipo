@@ -53,6 +53,12 @@ const FreelanceView = lazyImport(() => import('./views/general/FreelanceView').t
 const TermsView = lazyImport(() => import('./views/legal/TermsView').then(module => ({ default: module.TermsView })));
 const PrivacyView = lazyImport(() => import('./views/legal/PrivacyView').then(module => ({ default: module.PrivacyView })));
 
+// Careers Page
+const CareersView = lazyImport(() => import('./views/general/CareersView').then(module => ({ default: module.CareersView })));
+
+// Social Feed Prototype
+const SocialFeedView = lazyImport(() => import('./views/general/SocialFeedView').then(module => ({ default: module.SocialFeedView })));
+
 // Blog Preview (n8n automation)
 const PreviewPost = lazyImport(() => import('./views/blog/PreviewPost').then(module => ({ default: module.PreviewPost })));
 
@@ -77,7 +83,7 @@ export const router = createBrowserRouter([
     path: '/',
     element: <MainLayout />,
     children: [
-      // Home - Landing Page
+      // Home - Landing (guests) or Feed (authenticated users)
       { index: true, element: <HomeWrapper /> },
 
       // Portfolio
@@ -130,6 +136,12 @@ export const router = createBrowserRouter([
       { path: 'contests', element: <ContestsComingSoon /> },
       { path: 'courses', element: <SuspendedView Component={CoursesView} /> },
       { path: 'freelance', element: <SuspendedView Component={FreelanceView} /> },
+
+      // Social Feed - Public Access (Explore)
+      { path: 'explore', element: <SuspendedView Component={SocialFeedView} /> },
+
+      // Careers
+      { path: 'careers', element: <SuspendedView Component={CareersView} /> },
 
       // Legal Pages
       { path: 'terms', element: <SuspendedView Component={TermsView} /> },

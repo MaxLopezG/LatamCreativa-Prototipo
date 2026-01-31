@@ -70,6 +70,35 @@ export interface User {
     notificationPreferences?: NotificationPreferences;
 }
 
+// Alias para uso en servicios locales
+export interface UserProfile {
+    id: string;
+    name: string;
+    username?: string;
+    email: string;
+    avatar?: string;
+    role?: string;
+    headline?: string;
+    bio?: string;
+    location?: string;
+    website?: string;
+    isVerified?: boolean;
+    isPro?: boolean;
+    availableForWork?: boolean;
+    skills?: string[];
+    socialLinks?: SocialLinks;
+    stats?: {
+        followers: number;
+        following: number;
+        projects: number;
+        articles: number;
+        views: number;
+        likes: number;
+    };
+    createdAt?: string;
+    lastLoginAt?: string;
+}
+
 export interface ArtistProfile {
     id: string;
     name: string;

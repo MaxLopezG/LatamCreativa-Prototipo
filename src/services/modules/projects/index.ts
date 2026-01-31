@@ -1,21 +1,53 @@
 /**
  * Servicio de Proyectos
  * 
- * Re-exporta todas las operaciones de proyectos desde módulos separados.
- * Mantiene compatibilidad con imports existentes.
+ * MODO LOCAL: Usa servicios locales en lugar de Firebase.
+ * Para restaurar Firebase, descomenta las importaciones originales.
  * 
  * @module services/projects
  */
+
+// === MODO LOCAL (Sin Firebase) ===
+import { localProjectsService } from '../../local/projects';
+
+/**
+ * Servicio combinado - Usando servicios locales
+ */
+export const projectsService = {
+    // Operaciones CRUD
+    createProject: localProjectsService.createProject,
+    updateProject: localProjectsService.updateProject,
+    deleteProject: localProjectsService.deleteProject,
+    getProjects: localProjectsService.getProjects,
+    getUserProjects: localProjectsService.getUserProjects,
+    getProject: localProjectsService.getProject,
+    getProjectBySlug: localProjectsService.getProjectBySlug,
+    getProjectsByIds: localProjectsService.getProjectsByIds,
+    getRecentProjects: localProjectsService.getRecentProjects,
+    listenToUserProjects: localProjectsService.listenToUserProjects,
+
+    // Likes y Vistas
+    incrementProjectView: localProjectsService.incrementProjectView,
+    toggleProjectLike: localProjectsService.toggleProjectLike,
+    getProjectLikeStatus: localProjectsService.getProjectLikeStatus,
+
+    // Comentarios (stubs)
+    addComment: localProjectsService.addComment,
+    listenToComments: localProjectsService.listenToComments,
+    deleteComment: localProjectsService.deleteComment,
+    toggleCommentLike: localProjectsService.toggleCommentLike,
+    getCommentLikeStatus: localProjectsService.getCommentLikeStatus,
+    getCommentsLikeStatuses: localProjectsService.getCommentsLikeStatuses,
+    addCommentReply: localProjectsService.addCommentReply
+};
+
+// === MODO FIREBASE (Comentado) ===
+/*
 import { projectsCrud } from './crud';
 import { projectsLikes } from './likes';
 import { projectsComments } from './comments';
 
-/**
- * Servicio combinado que integra todos los sub-módulos de proyectos.
- * Mantiene la misma API que el servicio original de un solo archivo.
- */
 export const projectsService = {
-    // Operaciones CRUD
     createProject: projectsCrud.createProject,
     updateProject: projectsCrud.updateProject,
     deleteProject: projectsCrud.deleteProject,
@@ -26,13 +58,9 @@ export const projectsService = {
     getProjectsByIds: projectsCrud.getProjectsByIds,
     getRecentProjects: projectsCrud.getRecentProjects,
     listenToUserProjects: projectsCrud.listenToUserProjects,
-
-    // Likes y Vistas
     incrementProjectView: projectsLikes.incrementProjectView,
     toggleProjectLike: projectsLikes.toggleProjectLike,
     getProjectLikeStatus: projectsLikes.getProjectLikeStatus,
-
-    // Comentarios
     addComment: projectsComments.addComment,
     listenToComments: projectsComments.listenToComments,
     deleteComment: projectsComments.deleteComment,
@@ -42,7 +70,7 @@ export const projectsService = {
     addCommentReply: projectsComments.addCommentReply
 };
 
-// Re-exportar sub-módulos para imports granulares si es necesario
 export { projectsCrud } from './crud';
 export { projectsLikes } from './likes';
 export { projectsComments } from './comments';
+*/

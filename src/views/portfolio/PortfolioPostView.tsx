@@ -16,6 +16,7 @@ import { PortfolioItem } from '../../types';
 import { PortfolioSidebar } from './components';
 import { CommentsSection } from '../../components/CommentsSection';
 import { SEOHead } from '../../components/SEOHead';
+import { getMockPortfolioById, MOCK_PORTFOLIO_ITEMS } from '../../data/mockPortfolio';
 
 /** Helper para obtener el ID del autor */
 const getAuthorId = (item: PortfolioItem | null | undefined): string | undefined =>
@@ -59,8 +60,10 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
   const [replyText, setReplyText] = useState('');
   const [isAddingReply, setIsAddingReply] = useState(false);
 
-  // La única fuente de la verdad es el proyecto traído desde Firebase.
-  const item = fetchedProject;
+  // La fuente de la verdad es el proyecto de Firebase, con fallback a mock data
+  const mockProject = id ? getMockPortfolioById(id) : undefined;
+  const item = fetchedProject || mockProject || null;
+  const isMockProject = !fetchedProject && !!mockProject;
 
   // Memoized author ID with backward compatibility
   const itemAuthorId = useMemo(() => getAuthorId(item), [item]);
@@ -78,20 +81,20 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
     { preventRedirect: true }
   );
 
-  // --- Efecto 1: Contabilizar Vistas (Solo una vez cada 24h por proyecto) ---
+  // --- Efecto 1: Contabilizar Vistas (Solo una vez cada 24h por proyecto, NO para mock) ---
   useEffect(() => {
-    if (item && item.id) {
+    if (item && item.id && !isMockProject) {
       if (!(item as any).isLocal && shouldCountView('project', item.id)) {
         projectsService.incrementProjectView(item.id);
       }
     }
-  }, [item?.id]); // Dependencia solo del ID del proyecto, no del usuario
+  }, [item?.id, isMockProject]); // Dependencia solo del ID del proyecto, no del usuario
 
   // --- Efecto 2: Datos dependientes del Usuario y Relacionados ---
   useEffect(() => {
     if (item && item.id) {
-      // Verificar Like (Solo si hay usuario)
-      if (state.user) {
+      // Verificar Like (Solo si hay usuario y NO es mock)
+      if (state.user && !isMockProject) {
         projectsService.getProjectLikeStatus(item.id, state.user.id).then(setIsLiked);
 
         // Verificar Follow status
@@ -104,7 +107,11 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
       setLikeCount(Number(item.likes || 0));
 
       // Cargar Proyectos Relacionados
-      if (itemAuthorId) {
+      if (isMockProject) {
+        // Para mock projects, obtener otros mock projects como relacionados
+        const otherMockProjects = MOCK_PORTFOLIO_ITEMS.filter(p => p.id !== item.id).slice(0, 4);
+        setRelatedProjects(otherMockProjects);
+      } else if (itemAuthorId) {
         // Optimized: Fetch only 5 projects (Current + 4 Related)
         projectsService.getUserProjects(itemAuthorId, 5).then(projects => {
           // Filtrar el proyecto actual y tomar los primeros 4
@@ -112,7 +119,7 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
         });
       }
     }
-  }, [item?.id, state.user?.id]);
+  }, [item?.id, state.user?.id, isMockProject]);
 
   // --- Efecto 3: Cargar estado de likes de comentarios ---
   useEffect(() => {
@@ -365,6 +372,15 @@ export const PortfolioPostView: React.FC<PortfolioPostViewProps> = ({ itemId, on
             <X className="h-6 w-6" />
           </button>
           <img src={lightboxImage} alt="Fullscreen" className="max-w-full max-h-[95vh] object-contain rounded shadow-2xl" />
+        </div>
+      )}
+
+      {/* Mock Project Banner */}
+      {isMockProject && (
+        <div className="fixed top-0 left-0 right-0 z-50 px-4 py-2 bg-gradient-to-r from-amber-500/90 to-orange-500/90 backdrop-blur-sm text-center">
+          <p className="text-white text-sm font-medium">
+            ✨ <span className="font-bold">Proyecto de demostración</span> — Este es un ejemplo para visualizar el diseño del portafolio.
+          </p>
         </div>
       )}
 

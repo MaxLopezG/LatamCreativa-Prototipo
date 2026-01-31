@@ -95,18 +95,22 @@ export function HomeWrapper() {
   const { state } = useAppStore();
   const navigate = useNavigate();
 
-  const handleItemSelect = (id: string, type: string) => {
-    if (type === 'portfolio') navigate(`/portfolio/${id}`);
-    if (type === 'blog') navigate(`/blog/${id}`);
-  };
+  // If user is logged in, show Social Feed. Otherwise, show Welcome/Landing Page.
+  if (state.user) {
+    // Lazy load SocialFeedView for authenticated users
+    const SocialFeedView = lazyImport(() => import('../views/general/SocialFeedView').then(module => ({ default: module.SocialFeedView })));
+    return (
+      <Suspended>
+        <SocialFeedView />
+      </Suspended>
+    );
+  }
 
+  // Not logged in - show Welcome landing page
+  const WelcomeView = lazyImport(() => import('../views/general/WelcomeView').then(module => ({ default: module.WelcomeView })));
   return (
     <Suspended>
-      <HomeView
-        onNavigateToModule={(mod) => navigate(mod === 'home' ? '/' : `/${mod}`)}
-        onItemSelect={handleItemSelect}
-        contentMode={state.contentMode}
-      />
+      <WelcomeView />
     </Suspended>
   );
 }
